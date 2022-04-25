@@ -42,3 +42,6 @@ jobs:
       with:
         name: lint-results
         path: ./app/build/reports/lint-results.html
+
+    - name: Check coding style
+      run: ./gradlew ktlintCheck
