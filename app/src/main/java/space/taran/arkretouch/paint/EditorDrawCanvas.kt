@@ -74,10 +74,18 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) :
                 it.right.toFloat(),
                 it.bottom.toFloat(), mCropSelectionPaint
             )
-            canvas.clipOutRect(it.left.toFloat(), it.top.toFloat(),
+            canvas.clipOutRect(
+                it.left.toFloat(), it.top.toFloat(),
                 it.right.toFloat(),
-                it.bottom.toFloat())
-            canvas.drawColor(ResourcesCompat.getColor(resources,R.color.crop_image_view_background,resources.newTheme()))
+                it.bottom.toFloat()
+            )
+            canvas.drawColor(
+                ResourcesCompat.getColor(
+                    resources,
+                    R.color.crop_image_view_background,
+                    resources.newTheme()
+                )
+            )
         }
         canvas.restore()
     }
@@ -165,7 +173,7 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) :
     }
 
     fun getBitmap(): Bitmap? {
-        if(backgroundBitmap==null){
+        if (backgroundBitmap == null) {
             return null
         }
         val rect = this.rectNew
@@ -214,5 +222,16 @@ class EditorDrawCanvas(context: Context, attrs: AttributeSet) :
 
     fun isCanvasChanged(): Boolean {
         return mPaths.isNotEmpty()
+    }
+
+    fun getDrawingDetails(): LinkedHashMap<Path, PaintOptions> {
+        return mPaths
+    }
+
+    fun updateDrawingDetails(hashMap: java.util.LinkedHashMap<*, *>?) {
+        if (hashMap != null) {
+            this.mPaths = (hashMap as LinkedHashMap<Path, PaintOptions>)
+            invalidate()
+        }
     }
 }
