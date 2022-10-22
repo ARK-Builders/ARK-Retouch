@@ -19,9 +19,19 @@ android {
             useSupportLibrary true
         }
     }
-
+    signingConfigs {
+        testRelease {
+            storeFile project.rootProject.file('./testRelease.jks')
+            storePassword "arkretouch"
+            keyAlias "key0"
+            keyPassword "arkretouch"
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.testRelease
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
