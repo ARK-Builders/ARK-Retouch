@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">ARK Retouch</string>
+    <string name="name">Name</string>
+    <string name="overwrite_original_file">Overwrite original file</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="location">Location</string>
+    <string name="pick_folder">Pick folder</string>
+    <string name="open">Open</string>
+    <string name="or">Or</string>
+    <string name="new_">New</string>
+</resources>
