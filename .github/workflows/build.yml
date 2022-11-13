@@ -20,6 +20,9 @@ jobs:
         distribution: 'adopt'
         cache: gradle
 
+    - name: Kotlin linter
+      run: ./gradlew ktlintCheck
+
     - name: Build Release APK
       run: ./gradlew assembleRelease
 

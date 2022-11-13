@@ -101,16 +101,17 @@ fun PickerScreen(
             text = stringResource(R.string.or),
             fontSize = 24.sp
         )
-        Column(modifier = Modifier
-            .weight(2f)
-            .fillMaxWidth()
-            .padding(20.dp)
-            .clip(RoundedCornerShape(10))
-            .background(Purple500)
-            .clickable {
-                onNavigateToEdit(null)
-            }
-            .border(2.dp, Purple700, shape = RoundedCornerShape(10)),
+        Column(
+            modifier = Modifier
+                .weight(2f)
+                .fillMaxWidth()
+                .padding(20.dp)
+                .clip(RoundedCornerShape(10))
+                .background(Purple500)
+                .clickable {
+                    onNavigateToEdit(null)
+                }
+                .border(2.dp, Purple700, shape = RoundedCornerShape(10)),
             verticalArrangement = Arrangement.SpaceEvenly,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -128,7 +129,6 @@ fun PickerScreen(
             )
         }
     }
-
 }
 
 fun imageFilePickerConfig(initPath: Path? = null) = ArkFilePickerConfig(

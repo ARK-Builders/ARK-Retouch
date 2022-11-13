@@ -63,7 +63,6 @@ fun SavePathDialog(
         }
     }
 
-
     Dialog(onDismissRequest = onDismissClick) {
         Column(
             Modifier
@@ -85,8 +84,12 @@ fun SavePathDialog(
                     fragmentManager.onArkPathPicked(lifecycleOwner) {
                         currentPath = it
                     }
-                }) {
-                Text(text = currentPath?.toString() ?: stringResource(R.string.pick_folder))
+                }
+            ) {
+                Text(
+                    text = currentPath?.toString()
+                        ?: stringResource(R.string.pick_folder)
+                )
             }
             OutlinedTextField(
                 modifier = Modifier.padding(5.dp),

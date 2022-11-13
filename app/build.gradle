@@ -1,7 +1,10 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
+    id 'org.jlleitschuh.gradle.ktlint'
 }
 
 android {
@@ -83,3 +86,18 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
 }
+
+task installGitHook(type: Copy) {
+    def suffix = "linux"
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        suffix = "windows"
+    }
+    from new File(rootProject.rootDir, "scripts/pre-commit-$suffix")
+    into { new File(rootProject.rootDir, '.git/hooks') }
+    rename("pre-commit-$suffix", 'pre-commit')
+    fileMode 0775
+}
+
+tasks.preBuild.dependsOn installGitHook
+tasks.preBuild.dependsOn ktlintCheck
+

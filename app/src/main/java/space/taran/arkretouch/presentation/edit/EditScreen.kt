@@ -113,7 +113,6 @@ fun EditScreen(
         sketchbookSize.value = availableSize.value
     }
 
-
     DrawContainer(
         availableSize,
         sketchbookSize.value,
@@ -297,7 +296,6 @@ private fun EditMenuContainer(
                 contentDescription = "",
                 modifier = Modifier.size(32.dp),
             )
-
         }
         AnimatedVisibility(
             visible = viewModel.menusVisible,
@@ -359,12 +357,13 @@ private fun EditMenuContent(
                 contentDescription = null
             )
 
-            Box(modifier = Modifier
-                .padding(12.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(color = controller.currentPaintColor.value)
-                .clickable { colorDialogExpanded.value = true }
+            Box(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(color = controller.currentPaintColor.value)
+                    .clickable { colorDialogExpanded.value = true }
             )
 
             ColorPickerDialog(
@@ -414,7 +413,6 @@ private fun EditMenuContent(
         }
     }
 }
-
 
 private fun loadImageWithPath(
     context: Context,
