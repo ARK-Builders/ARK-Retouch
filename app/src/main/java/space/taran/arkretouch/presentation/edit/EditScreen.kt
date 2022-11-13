@@ -5,6 +5,9 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -24,10 +27,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +66,7 @@ import space.taran.arkretouch.presentation.askWritePermissions
 import space.taran.arkretouch.presentation.isWritePermGranted
 import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
+import space.taran.arkretouch.presentation.theme.Gray
 import java.nio.file.Path
 
 @Composable
@@ -78,61 +84,92 @@ fun EditScreen(
             setPaintColor(primaryColor)
         }
     }
-    var availableSize by remember { mutableStateOf(IntSize.Zero) }
+    val availableSize = remember { mutableStateOf(IntSize.Zero) }
     val sketchbookSize = remember { mutableStateOf(IntSize.Zero) }
     val context = LocalContext.current
 
     LaunchedEffect(availableSize) {
-        if (availableSize == IntSize.Zero) return@LaunchedEffect
+        if (availableSize.value == IntSize.Zero) return@LaunchedEffect
         imagePath?.let {
             loadImageWithPath(
                 context,
                 imagePath,
                 controller,
-                availableSize,
+                availableSize.value,
                 sketchbookSize
             )
             return@LaunchedEffect
         }
         imageUri?.let {
-            loadImageWithUri(context, imageUri, controller, availableSize, sketchbookSize)
+            loadImageWithUri(
+                context,
+                imageUri,
+                controller,
+                availableSize.value,
+                sketchbookSize
+            )
             return@LaunchedEffect
         }
-        sketchbookSize.value = availableSize
+        sketchbookSize.value = availableSize.value
     }
 
-    Column {
-        TopMenu(imagePath, fragmentManager, viewModel, controller, navigateBack)
-        Box(
-            Modifier
-                .fillMaxSize()
-                .weight(1f)
-                .onSizeChanged {
-                    availableSize = it
-                }
-        ) {
-            Sketchbook(
-                modifier = Modifier
-                    .pointerInteropFilter {
-                        viewModel.strokeSliderExpanded.value = false
-                        false
-                    }
-                    .size(
-                        sketchbookSize.value.width.toDp(),
-                        sketchbookSize.value.height.toDp()
-                    )
-                    .align(Alignment.Center),
-                controller = controller,
-                backgroundColor = Color.White,
-            )
-            StrokeWidthPopup(
-                Modifier.align(Alignment.BottomCenter),
-                controller,
-                viewModel
-            )
-        }
 
-        EditMenu(controller, viewModel)
+    DrawContainer(
+        availableSize,
+        sketchbookSize.value,
+        controller,
+        viewModel
+    )
+    Menus(imagePath, fragmentManager, viewModel, controller, navigateBack)
+}
+
+@Composable
+private fun Menus(
+    imagePath: Path?,
+    fragmentManager: FragmentManager,
+    viewModel: EditViewModel,
+    controller: SketchbookController,
+    navigateBack: () -> Unit
+) {
+    Box(Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.align(Alignment.TopCenter)) {
+            TopMenu(imagePath, fragmentManager, viewModel, controller, navigateBack)
+        }
+        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            EditMenuContainer(controller, viewModel)
+        }
+    }
+}
+
+@Composable
+private fun DrawContainer(
+    availableSize: MutableState<IntSize>,
+    sketchbookSize: IntSize,
+    controller: SketchbookController,
+    viewModel: EditViewModel
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 32.dp)
+            .onSizeChanged {
+                availableSize.value = it
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Sketchbook(
+            modifier = Modifier
+                .pointerInteropFilter {
+                    viewModel.strokeSliderExpanded = false
+                    false
+                }
+                .size(
+                    sketchbookSize.width.toDp(),
+                    sketchbookSize.height.toDp()
+                ),
+            controller = controller,
+            backgroundColor = Color.White,
+        )
     }
 }
 
@@ -158,6 +195,9 @@ private fun TopMenu(
                 navigateBack()
             }
         )
+
+    if (!viewModel.menusVisible)
+        return
 
     Row(
         modifier = Modifier
@@ -190,14 +230,11 @@ private fun StrokeWidthPopup(
     controller: SketchbookController,
     viewModel: EditViewModel
 ) {
-    val strokeSliderExpanded by viewModel.strokeSliderExpanded.collectAsState()
-    var strokeWidth by remember { mutableStateOf(5f) }
-    controller.setPaintStrokeWidth(strokeWidth.dp.toPx())
-    controller.setEraseRadius(strokeWidth.dp.toPx())
-    if (strokeSliderExpanded) {
+    controller.setPaintStrokeWidth(viewModel.strokeWidth.dp.toPx())
+    controller.setEraseRadius(viewModel.strokeWidth.dp.toPx())
+    if (viewModel.strokeSliderExpanded) {
         Column(
             modifier = modifier
-                .background(color = Color.White)
                 .fillMaxWidth()
                 .height(150.dp)
                 .padding(8.dp)
@@ -214,7 +251,7 @@ private fun StrokeWidthPopup(
                         )
                         .align(Alignment.Center)
                         .fillMaxWidth()
-                        .height(strokeWidth.dp)
+                        .height(viewModel.strokeWidth.dp)
                         .clip(RoundedCornerShape(30))
                         .background(controller.currentPaintColor.value)
                 )
@@ -223,9 +260,9 @@ private fun StrokeWidthPopup(
             Slider(
                 modifier = Modifier
                     .fillMaxWidth(),
-                value = strokeWidth,
+                value = viewModel.strokeWidth,
                 onValueChange = {
-                    strokeWidth = it
+                    viewModel.strokeWidth = it
                 },
                 valueRange = 5f..50f,
             )
@@ -234,14 +271,58 @@ private fun StrokeWidthPopup(
 }
 
 @Composable
-private fun EditMenu(controller: SketchbookController, viewModel: EditViewModel) {
-    val colorDialogExpanded = remember { mutableStateOf(false) }
+private fun EditMenuContainer(
+    controller: SketchbookController,
+    viewModel: EditViewModel
+) {
+    Column(
+        Modifier
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(topStartPercent = 30, topEndPercent = 30))
+                .background(Gray)
+                .clickable {
+                    viewModel.menusVisible = !viewModel.menusVisible
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (viewModel.menusVisible) Icons.Filled.KeyboardArrowDown
+                else Icons.Filled.KeyboardArrowUp,
+                contentDescription = "",
+                modifier = Modifier.size(32.dp),
+            )
 
+        }
+        AnimatedVisibility(
+            visible = viewModel.menusVisible,
+            enter = expandVertically(expandFrom = Alignment.Bottom),
+            exit = shrinkVertically(shrinkTowards = Alignment.Top)
+        ) {
+            EditMenuContent(controller, viewModel)
+        }
+    }
+}
+
+@Composable
+private fun EditMenuContent(
+    controller: SketchbookController,
+    viewModel: EditViewModel
+) {
+    val colorDialogExpanded = remember { mutableStateOf(false) }
     Column(
         Modifier
             .wrapContentHeight()
             .fillMaxWidth()
+            .background(Gray)
     ) {
+        StrokeWidthPopup(Modifier, controller, viewModel)
+
         Row(
             Modifier
                 .wrapContentHeight()
@@ -300,8 +381,8 @@ private fun EditMenu(controller: SketchbookController, viewModel: EditViewModel)
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        viewModel.strokeSliderExpanded.value =
-                            !viewModel.strokeSliderExpanded.value
+                        viewModel.strokeSliderExpanded =
+                            !viewModel.strokeSliderExpanded
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_line_weight),
                 tint = MaterialTheme.colors.primary,
@@ -333,6 +414,7 @@ private fun EditMenu(controller: SketchbookController, viewModel: EditViewModel)
         }
     }
 }
+
 
 private fun loadImageWithPath(
     context: Context,

@@ -1,6 +1,10 @@
 package space.taran.arkretouch.presentation.edit
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toPixelMap
@@ -18,7 +22,9 @@ import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 
 class EditViewModel : ViewModel() {
-    val strokeSliderExpanded = MutableStateFlow(false)
+    var strokeSliderExpanded by mutableStateOf(false)
+    var menusVisible by mutableStateOf(true)
+    var strokeWidth by mutableStateOf(5f)
 
     fun saveImage(savePath: Path, bitmap: ImageBitmap) =
         viewModelScope.launch(Dispatchers.IO) {
