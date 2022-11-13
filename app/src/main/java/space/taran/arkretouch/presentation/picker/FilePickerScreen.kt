@@ -42,7 +42,7 @@ import space.taran.arkretouch.presentation.theme.Purple700
 import java.nio.file.Path
 
 @Composable
-fun FilePickerScreen(
+fun PickerScreen(
     fragmentManager: FragmentManager,
     onNavigateToEdit: (Path?) -> Unit
 ) {

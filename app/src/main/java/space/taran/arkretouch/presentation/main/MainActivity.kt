@@ -23,9 +23,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import space.taran.arkretouch.BuildConfig.APPLICATION_ID
 import space.taran.arkretouch.presentation.edit.EditScreen
-import space.taran.arkretouch.presentation.picker.FilePickerScreen
+import space.taran.arkretouch.presentation.picker.PickerScreen
 import space.taran.arkretouch.presentation.theme.ARKRetouchTheme
 import kotlin.io.path.Path
+
+private const val REAL_PATH_KEY = "real_file_path_2"
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,21 +38,30 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             ARKRetouchTheme {
-                MainScreen(supportFragmentManager)
+                MainScreen(
+                    supportFragmentManager,
+                    uri = intent.data?.toString(),
+                    realPath = intent.getStringExtra(REAL_PATH_KEY)
+                )
             }
         }
     }
 }
 
 @Composable
-fun MainScreen(fragmentManager: FragmentManager) {
+fun MainScreen(fragmentManager: FragmentManager, uri: String?, realPath: String?) {
     val navController = rememberNavController()
+    val startScreen = if (uri != null || realPath != null)
+        "edit?path={path}&uri={uri}"
+    else
+        "picker"
+
     NavHost(
         navController = navController,
-        startDestination = "new"
+        startDestination = startScreen
     ) {
-        composable("new") {
-            FilePickerScreen(
+        composable("picker") {
+            PickerScreen(
                 fragmentManager,
                 onNavigateToEdit = { path ->
                     val screen = path?.let {
@@ -61,16 +72,25 @@ fun MainScreen(fragmentManager: FragmentManager) {
             )
         }
         composable(
-            "edit?path={path}",
-            arguments = listOf(navArgument("path") {
-                type = NavType.StringType
-                nullable = true
-            })
+            "edit?path={path}&uri={uri}",
+            arguments = listOf(
+                navArgument("path") {
+                    type = NavType.StringType
+                    defaultValue = realPath
+                    nullable = true
+                },
+                navArgument("uri") {
+                    type = NavType.StringType
+                    defaultValue = uri
+                    nullable = true
+                }
+            )
         ) { entry ->
             EditScreen(
                 entry.arguments?.getString("path")?.let { Path(it) },
+                entry.arguments?.getString("uri"),
                 fragmentManager,
-                navigateBack =  { navController.popBackStack() }
+                navigateBack = { navController.popBackStack() }
             )
         }
     }

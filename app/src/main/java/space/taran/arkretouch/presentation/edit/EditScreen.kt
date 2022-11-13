@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,16 +39,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import io.getstream.sketchbook.ColorPickerDialog
@@ -63,7 +63,8 @@ import java.nio.file.Path
 
 @Composable
 fun EditScreen(
-    image: Path?,
+    imagePath: Path?,
+    imageUri: String?,
     fragmentManager: FragmentManager,
     navigateBack: () -> Unit
 ) {
@@ -80,21 +81,25 @@ fun EditScreen(
 
     LaunchedEffect(availableSize) {
         if (availableSize == IntSize.Zero) return@LaunchedEffect
-        image?.let {
-            loadImage(
+        imagePath?.let {
+            loadImageWithPath(
                 context,
-                image,
+                imagePath,
                 controller,
                 availableSize,
                 sketchbookSize
             )
-        } ?: let {
-            sketchbookSize.value = availableSize
+            return@LaunchedEffect
         }
+        imageUri?.let {
+            loadImageWithUri(context, imageUri, controller, availableSize, sketchbookSize)
+            return@LaunchedEffect
+        }
+        sketchbookSize.value = availableSize
     }
 
     Column {
-        TopMenu(image, fragmentManager, viewModel, controller, navigateBack)
+        TopMenu(imagePath, fragmentManager, viewModel, controller, navigateBack)
         Box(
             Modifier
                 .fillMaxSize()
@@ -321,30 +326,52 @@ private fun EditMenu(controller: SketchbookController, viewModel: EditViewModel)
     }
 }
 
-private fun loadImage(
+private fun loadImageWithPath(
     context: Context,
     image: Path,
     controller: SketchbookController,
     availableSize: IntSize,
     sketchbookSize: MutableState<IntSize>
 ) {
-    Glide
-        .with(context)
-        .asBitmap()
+    initGlideBuilder(context)
         .load(image.toFile())
-        .into(object : CustomTarget<Bitmap>() {
-            override fun onResourceReady(
-                bitmap: Bitmap,
-                transition: Transition<in Bitmap>?
-            ) {
-                val newBitmap =
-                    resize(bitmap, availableSize.width, availableSize.height)
-                controller.setImageBitmap(newBitmap.asImageBitmap())
-                sketchbookSize.value = IntSize(newBitmap.width, newBitmap.height)
-            }
+        .loadInto(controller, availableSize, sketchbookSize)
+}
 
-            override fun onLoadCleared(placeholder: Drawable?) {}
-        })
+private fun loadImageWithUri(
+    context: Context,
+    uri: String,
+    controller: SketchbookController,
+    availableSize: IntSize,
+    sketchbookSize: MutableState<IntSize>
+) {
+    initGlideBuilder(context)
+        .load(uri.toUri())
+        .loadInto(controller, availableSize, sketchbookSize)
+}
+
+private fun initGlideBuilder(context: Context) = Glide
+    .with(context)
+    .asBitmap()
+
+private fun RequestBuilder<Bitmap>.loadInto(
+    controller: SketchbookController,
+    availableSize: IntSize,
+    sketchbookSize: MutableState<IntSize>
+) {
+    into(object : CustomTarget<Bitmap>() {
+        override fun onResourceReady(
+            bitmap: Bitmap,
+            transition: Transition<in Bitmap>?
+        ) {
+            val newBitmap =
+                resize(bitmap, availableSize.width, availableSize.height)
+            controller.setImageBitmap(newBitmap.asImageBitmap())
+            sketchbookSize.value = IntSize(newBitmap.width, newBitmap.height)
+        }
+
+        override fun onLoadCleared(placeholder: Drawable?) {}
+    })
 }
 
 private fun resize(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
