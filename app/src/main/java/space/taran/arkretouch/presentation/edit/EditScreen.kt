@@ -57,6 +57,8 @@ import io.getstream.sketchbook.Sketchbook
 import io.getstream.sketchbook.SketchbookController
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
+import space.taran.arkretouch.presentation.askWritePermissions
+import space.taran.arkretouch.presentation.isWritePermGranted
 import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
 import java.nio.file.Path
@@ -141,6 +143,7 @@ private fun TopMenu(
     controller: SketchbookController,
     navigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var showSavePathDialog by remember { mutableStateOf(false) }
 
     if (showSavePathDialog)
@@ -167,6 +170,10 @@ private fun TopMenu(
                 .size(36.dp)
                 .clip(CircleShape)
                 .clickable {
+                    if (!context.isWritePermGranted()) {
+                        context.askWritePermissions()
+                        return@clickable
+                    }
                     showSavePathDialog = true
                 },
             imageVector = ImageVector.vectorResource(R.drawable.ic_save),

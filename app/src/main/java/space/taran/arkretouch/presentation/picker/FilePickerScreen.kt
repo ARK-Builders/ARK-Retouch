@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -37,6 +38,8 @@ import space.taran.arkfilepicker.ArkFilePickerFragment
 import space.taran.arkfilepicker.ArkFilePickerMode
 import space.taran.arkfilepicker.onArkPathPicked
 import space.taran.arkretouch.R
+import space.taran.arkretouch.presentation.askWritePermissions
+import space.taran.arkretouch.presentation.isWritePermGranted
 import space.taran.arkretouch.presentation.theme.Purple500
 import space.taran.arkretouch.presentation.theme.Purple700
 import java.nio.file.Path
@@ -47,6 +50,7 @@ fun PickerScreen(
     onNavigateToEdit: (Path?) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
     var size by remember { mutableStateOf(IntSize.Zero) }
     Column(
         modifier = Modifier
@@ -63,6 +67,11 @@ fun PickerScreen(
                 .clip(RoundedCornerShape(10))
                 .background(Purple500)
                 .clickable {
+                    if (!context.isWritePermGranted()) {
+                        context.askWritePermissions()
+                        return@clickable
+                    }
+
                     ArkFilePickerFragment
                         .newInstance(imageFilePickerConfig())
                         .show(fragmentManager, null)
