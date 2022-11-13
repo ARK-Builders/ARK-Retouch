@@ -72,9 +72,10 @@ fun EditScreen(
 ) {
     val viewModel: EditViewModel =
         viewModel(factory = DIManager.component.editVMFactory())
+    val primaryColor = MaterialTheme.colors.primary
     val controller = remember {
         SketchbookController().apply {
-            setPaintColor(Color.Black)
+            setPaintColor(primaryColor)
         }
     }
     var availableSize by remember { mutableStateOf(IntSize.Zero) }
