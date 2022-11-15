@@ -5,6 +5,7 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -24,9 +25,13 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -50,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -87,6 +93,15 @@ fun EditScreen(
     val availableSize = remember { mutableStateOf(IntSize.Zero) }
     val sketchbookSize = remember { mutableStateOf(IntSize.Zero) }
     val context = LocalContext.current
+
+    ExitDialog(
+        viewModel = viewModel,
+        navigateBack = { navigateBack() }
+    )
+
+    BackHandler {
+        viewModel.showExitDialog = true
+    }
 
     LaunchedEffect(availableSize) {
         if (availableSize.value == IntSize.Zero) return@LaunchedEffect
@@ -181,16 +196,15 @@ private fun TopMenu(
     navigateBack: () -> Unit
 ) {
     val context = LocalContext.current
-    var showSavePathDialog by remember { mutableStateOf(false) }
 
-    if (showSavePathDialog)
+    if (viewModel.showSavePathDialog)
         SavePathDialog(
             initialImagePath = imagePath,
             fragmentManager = fragmentManager,
-            onDismissClick = { showSavePathDialog = false },
+            onDismissClick = { viewModel.showSavePathDialog = false },
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath, controller.getSketchbookBitmap())
-                showSavePathDialog = false
+                viewModel.showSavePathDialog = false
                 navigateBack()
             }
         )
@@ -214,7 +228,7 @@ private fun TopMenu(
                         context.askWritePermissions()
                         return@clickable
                     }
-                    showSavePathDialog = true
+                    viewModel.showSavePathDialog = true
                 },
             imageVector = ImageVector.vectorResource(R.drawable.ic_save),
             tint = MaterialTheme.colors.primary,
@@ -412,6 +426,47 @@ private fun EditMenuContent(
             )
         }
     }
+}
+
+@Composable
+private fun ExitDialog(
+    viewModel: EditViewModel,
+    navigateBack: () -> Unit,
+) {
+    if (!viewModel.showExitDialog) return
+
+    AlertDialog(
+        onDismissRequest = {
+            viewModel.showExitDialog = false
+        },
+        title = {
+            Text(
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+                text = "Do you want to save the changes?",
+                fontSize = 16.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    viewModel.showExitDialog = false
+                    viewModel.showSavePathDialog = true
+                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    viewModel.showExitDialog = false
+                    navigateBack()
+                }
+            ) {
+                Text("Exit")
+            }
+        }
+    )
 }
 
 private fun loadImageWithPath(

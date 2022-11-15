@@ -20,6 +20,8 @@ class EditViewModel : ViewModel() {
     var strokeSliderExpanded by mutableStateOf(false)
     var menusVisible by mutableStateOf(true)
     var strokeWidth by mutableStateOf(5f)
+    var showSavePathDialog by mutableStateOf(false)
+    var showExitDialog by mutableStateOf(false)
 
     fun saveImage(savePath: Path, bitmap: ImageBitmap) =
         viewModelScope.launch(Dispatchers.IO) {
