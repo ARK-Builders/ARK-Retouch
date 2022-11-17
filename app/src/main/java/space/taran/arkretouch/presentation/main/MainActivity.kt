@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
                 MainScreen(
                     supportFragmentManager,
                     uri = intent.data?.toString(),
-                    realPath = intent.getStringExtra(REAL_PATH_KEY)
+                    realPath = intent.getStringExtra(REAL_PATH_KEY),
+                    launchedFromIntent = intent.data != null,
                 )
             }
         }
@@ -39,10 +40,15 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun MainScreen(fragmentManager: FragmentManager, uri: String?, realPath: String?) {
+fun MainScreen(
+    fragmentManager: FragmentManager,
+    uri: String?,
+    realPath: String?,
+    launchedFromIntent: Boolean = false,
+) {
     val navController = rememberNavController()
     val startScreen = if (uri != null || realPath != null)
-        "edit?path={path}&uri={uri}"
+        "edit?path={path}&uri={uri}&launchedFromIntent={launchedFromIntent}"
     else
         "picker"
 
@@ -62,7 +68,9 @@ fun MainScreen(fragmentManager: FragmentManager, uri: String?, realPath: String?
             )
         }
         composable(
-            "edit?path={path}&uri={uri}",
+            "edit?path={path}&" +
+                "uri={uri}&" +
+                "launchedFromIntent={launchedFromIntent}",
             arguments = listOf(
                 navArgument("path") {
                     type = NavType.StringType
@@ -73,6 +81,10 @@ fun MainScreen(fragmentManager: FragmentManager, uri: String?, realPath: String?
                     type = NavType.StringType
                     defaultValue = uri
                     nullable = true
+                },
+                navArgument("launchedFromIntent") {
+                    type = NavType.BoolType
+                    defaultValue = launchedFromIntent
                 }
             )
         ) { entry ->
@@ -80,7 +92,8 @@ fun MainScreen(fragmentManager: FragmentManager, uri: String?, realPath: String?
                 entry.arguments?.getString("path")?.let { Path(it) },
                 entry.arguments?.getString("uri"),
                 fragmentManager,
-                navigateBack = { navController.popBackStack() }
+                navigateBack = { navController.popBackStack() },
+                entry.arguments?.getBoolean("launchedFromIntent")!!
             )
         }
     }

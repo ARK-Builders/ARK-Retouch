@@ -10,7 +10,7 @@ import javax.inject.Singleton
 @Singleton
 @Component
 interface AppComponent {
-    fun editVMFactory(): EditViewModelFactory
+    fun editVMFactory(): EditViewModelFactory.Factory
 
     @Component.Factory
     interface Factory {

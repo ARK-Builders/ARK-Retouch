@@ -59,6 +59,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestBuilder
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import io.getstream.sketchbook.Sketchbook
@@ -66,6 +67,7 @@ import io.getstream.sketchbook.SketchbookController
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.askWritePermissions
+import space.taran.arkretouch.presentation.getActivity
 import space.taran.arkretouch.presentation.isWritePermGranted
 import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
@@ -77,10 +79,13 @@ fun EditScreen(
     imagePath: Path?,
     imageUri: String?,
     fragmentManager: FragmentManager,
-    navigateBack: () -> Unit
+    navigateBack: () -> Unit,
+    launchedFromIntent: Boolean
 ) {
     val viewModel: EditViewModel =
-        viewModel(factory = DIManager.component.editVMFactory())
+        viewModel(
+            factory = DIManager.component.editVMFactory().create(launchedFromIntent)
+        )
     val primaryColor = MaterialTheme.colors.primary
     val controller = remember {
         SketchbookController().apply {
@@ -93,12 +98,15 @@ fun EditScreen(
 
     ExitDialog(
         viewModel = viewModel,
-        navigateBack = { navigateBack() }
+        navigateBack = { navigateBack() },
+        launchedFromIntent = launchedFromIntent
     )
 
     BackHandler {
         viewModel.showExitDialog = true
     }
+
+    HandleCloseAppEffect(viewModel)
 
     LaunchedEffect(availableSize) {
         if (availableSize.value == IntSize.Zero) return@LaunchedEffect
@@ -427,12 +435,19 @@ private fun EditMenuContent(
 }
 
 @Composable
+private fun HandleCloseAppEffect(viewModel: EditViewModel) {
+    if (viewModel.closeApp)
+        LocalContext.current.getActivity()?.finish()
+}
+
+@Composable
 private fun ExitDialog(
     viewModel: EditViewModel,
     navigateBack: () -> Unit,
+    launchedFromIntent: Boolean
 ) {
     if (!viewModel.showExitDialog) return
-
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = {
             viewModel.showExitDialog = false
@@ -458,7 +473,11 @@ private fun ExitDialog(
             TextButton(
                 onClick = {
                     viewModel.showExitDialog = false
-                    navigateBack()
+                    if (launchedFromIntent) {
+                        context.getActivity()?.finish()
+                    } else {
+                        navigateBack()
+                    }
                 }
             ) {
                 Text("Exit")
