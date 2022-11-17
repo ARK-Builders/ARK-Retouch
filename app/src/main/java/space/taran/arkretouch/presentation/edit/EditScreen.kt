@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -99,11 +100,16 @@ fun EditScreen(
     ExitDialog(
         viewModel = viewModel,
         navigateBack = { navigateBack() },
-        launchedFromIntent = launchedFromIntent
+        launchedFromIntent = launchedFromIntent,
+        controller = controller
     )
 
     BackHandler {
-        viewModel.showExitDialog = true
+        if (controller.canUndo.value) {
+            controller.undo()
+        } else {
+            viewModel.showExitDialog = true
+        }
     }
 
     HandleCloseAppEffect(viewModel)
@@ -157,7 +163,7 @@ private fun Menus(
     navigateBack: () -> Unit
 ) {
     Box(Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.align(Alignment.TopCenter)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             TopMenu(imagePath, fragmentManager, viewModel, controller, navigateBack)
         }
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
@@ -199,7 +205,7 @@ private fun DrawContainer(
 }
 
 @Composable
-private fun TopMenu(
+private fun BoxScope.TopMenu(
     imagePath: Path?,
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
@@ -223,29 +229,37 @@ private fun TopMenu(
     if (!viewModel.menusVisible)
         return
 
-    Row(
+    Icon(
         modifier = Modifier
-            .wrapContentHeight()
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.End
-    ) {
-        Icon(
-            modifier = Modifier
-                .padding(8.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable {
-                    if (!context.isWritePermGranted()) {
-                        context.askWritePermissions()
-                        return@clickable
-                    }
-                    viewModel.showSavePathDialog = true
-                },
-            imageVector = ImageVector.vectorResource(R.drawable.ic_save),
-            tint = MaterialTheme.colors.primary,
-            contentDescription = null
-        )
-    }
+            .align(Alignment.TopStart)
+            .padding(8.dp)
+            .size(36.dp)
+            .clip(CircleShape)
+            .clickable {
+                viewModel.showExitDialog = true
+            },
+        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+        tint = MaterialTheme.colors.primary,
+        contentDescription = null
+    )
+
+    Icon(
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(8.dp)
+            .size(36.dp)
+            .clip(CircleShape)
+            .clickable {
+                if (!context.isWritePermGranted()) {
+                    context.askWritePermissions()
+                    return@clickable
+                }
+                viewModel.showSavePathDialog = true
+            },
+        imageVector = ImageVector.vectorResource(R.drawable.ic_save),
+        tint = MaterialTheme.colors.primary,
+        contentDescription = null
+    )
 }
 
 @Composable
@@ -442,12 +456,22 @@ private fun HandleCloseAppEffect(viewModel: EditViewModel) {
 
 @Composable
 private fun ExitDialog(
+    controller: SketchbookController,
     viewModel: EditViewModel,
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
 ) {
     if (!viewModel.showExitDialog) return
-    val context = LocalContext.current
+
+    if (!controller.canUndo.value) {
+        viewModel.showExitDialog = false
+        if (launchedFromIntent)
+            viewModel.closeApp = true
+        else
+            navigateBack()
+        return
+    }
+
     AlertDialog(
         onDismissRequest = {
             viewModel.showExitDialog = false
@@ -474,7 +498,7 @@ private fun ExitDialog(
                 onClick = {
                     viewModel.showExitDialog = false
                     if (launchedFromIntent) {
-                        context.getActivity()?.finish()
+                        viewModel.closeApp = true
                     } else {
                         navigateBack()
                     }
