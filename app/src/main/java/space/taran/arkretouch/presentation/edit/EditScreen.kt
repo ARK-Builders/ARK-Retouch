@@ -38,10 +38,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -63,7 +61,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import io.getstream.sketchbook.ColorPickerDialog
 import io.getstream.sketchbook.Sketchbook
 import io.getstream.sketchbook.SketchbookController
 import space.taran.arkretouch.R
@@ -134,7 +131,13 @@ fun EditScreen(
         controller,
         viewModel
     )
-    Menus(imagePath, fragmentManager, viewModel, controller, navigateBack)
+    Menus(
+        imagePath,
+        fragmentManager,
+        viewModel,
+        controller,
+        navigateBack
+    )
 }
 
 @Composable
@@ -370,7 +373,6 @@ private fun EditMenuContent(
                 },
                 contentDescription = null
             )
-
             Box(
                 modifier = Modifier
                     .padding(12.dp)
@@ -379,14 +381,10 @@ private fun EditMenuContent(
                     .background(color = controller.currentPaintColor.value)
                     .clickable { colorDialogExpanded.value = true }
             )
-
             ColorPickerDialog(
-                controller = controller,
-                expanded = colorDialogExpanded,
+                isVisible = colorDialogExpanded,
                 initialColor = controller.currentPaintColor.value,
-                onColorSelected = { color ->
-                    controller.setPaintColor(color)
-                }
+                onColorChanged = { controller.setPaintColor(it) },
             )
             Icon(
                 modifier = Modifier
@@ -496,6 +494,8 @@ private fun loadImageWithUri(
 private fun initGlideBuilder(context: Context) = Glide
     .with(context)
     .asBitmap()
+    .skipMemoryCache(true)
+    .diskCacheStrategy(DiskCacheStrategy.NONE)
 
 private fun RequestBuilder<Bitmap>.loadInto(
     controller: SketchbookController,
