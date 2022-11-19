@@ -1,18 +1,21 @@
 package space.taran.arkretouch.presentation.main
 
 import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import space.taran.arkretouch.presentation.askWritePermissions
+import space.taran.arkretouch.presentation.utils.PermissionsHelper
 import space.taran.arkretouch.presentation.edit.EditScreen
-import space.taran.arkretouch.presentation.isWritePermGranted
+import space.taran.arkretouch.presentation.utils.isWritePermGranted
 import space.taran.arkretouch.presentation.picker.PickerScreen
 import space.taran.arkretouch.presentation.theme.ARKRetouchTheme
 import kotlin.io.path.Path
@@ -22,9 +25,6 @@ private const val REAL_PATH_KEY = "real_file_path_2"
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        if (!isWritePermGranted())
-            askWritePermissions()
 
         setContent {
             ARKRetouchTheme {
@@ -46,31 +46,48 @@ fun MainScreen(
     realPath: String?,
     launchedFromIntent: Boolean = false,
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
-    val startScreen = if (uri != null || realPath != null)
-        "edit?path={path}&uri={uri}&launchedFromIntent={launchedFromIntent}"
-    else
-        "picker"
+    val startScreen =
+        if ((uri != null || realPath != null) && context.isWritePermGranted())
+            NavHelper.editRoute
+        else
+            NavHelper.pickerRoute
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = PermissionsHelper.writePermContract()
+    ) { isGranted ->
+        if (!isGranted) return@rememberLauncherForActivityResult
+        navController.navigate(
+            NavHelper.parseEditArgs(realPath, uri, launchedFromIntent)
+        )
+    }
+
+    SideEffect {
+        if (!context.isWritePermGranted())
+            PermissionsHelper.launchWritePerm(launcher)
+    }
 
     NavHost(
         navController = navController,
         startDestination = startScreen
     ) {
-        composable("picker") {
+        composable(NavHelper.pickerRoute) {
             PickerScreen(
                 fragmentManager,
                 onNavigateToEdit = { path ->
-                    val screen = path?.let {
-                        "edit?path=$path"
-                    } ?: "edit"
-                    navController.navigate(screen)
+                    navController.navigate(
+                        NavHelper.parseEditArgs(
+                            path?.toString(),
+                            uri = null,
+                            launchedFromIntent = false
+                        )
+                    )
                 }
             )
         }
         composable(
-            "edit?path={path}&" +
-                "uri={uri}&" +
-                "launchedFromIntent={launchedFromIntent}",
+            route = NavHelper.editRoute,
             arguments = listOf(
                 navArgument("path") {
                     type = NavType.StringType
@@ -96,5 +113,27 @@ fun MainScreen(
                 entry.arguments?.getBoolean("launchedFromIntent")!!
             )
         }
+    }
+}
+
+private object NavHelper {
+    const val editRoute =
+        "edit?path={path}&uri={uri}&launchedFromIntent={launchedFromIntent}"
+
+    const val pickerRoute = "picker"
+
+    fun parseEditArgs(
+        path: String?,
+        uri: String?,
+        launchedFromIntent: Boolean
+    ): String {
+        val screen = if (path != null) {
+            "edit?path=$path&launchedFromIntent=$launchedFromIntent"
+        } else if (uri != null) {
+            "edit?uri=$uri&launchedFromIntent=$launchedFromIntent"
+        } else {
+            "edit"
+        }
+        return screen
     }
 }

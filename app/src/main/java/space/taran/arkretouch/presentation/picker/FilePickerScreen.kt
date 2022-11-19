@@ -38,8 +38,8 @@ import space.taran.arkfilepicker.ArkFilePickerFragment
 import space.taran.arkfilepicker.ArkFilePickerMode
 import space.taran.arkfilepicker.onArkPathPicked
 import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.askWritePermissions
-import space.taran.arkretouch.presentation.isWritePermGranted
+import space.taran.arkretouch.presentation.utils.askWritePermissions
+import space.taran.arkretouch.presentation.utils.isWritePermGranted
 import space.taran.arkretouch.presentation.theme.Purple500
 import space.taran.arkretouch.presentation.theme.Purple700
 import java.nio.file.Path

@@ -13,6 +13,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.file.Path
 import kotlin.io.path.outputStream
@@ -25,7 +26,9 @@ class EditViewModel(
     var strokeWidth by mutableStateOf(5f)
     var showSavePathDialog by mutableStateOf(false)
     var showExitDialog by mutableStateOf(false)
-    var closeApp by mutableStateOf(false)
+    var imageSaved by mutableStateOf(false)
+    var exitConfirmed = false
+        private set
 
     fun saveImage(savePath: Path, bitmap: ImageBitmap) =
         viewModelScope.launch(Dispatchers.IO) {
@@ -33,9 +36,14 @@ class EditViewModel(
                 bitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
-            if (launchedFromIntent)
-                closeApp = true
+            imageSaved = true
         }
+
+    fun confirmExit() = viewModelScope.launch {
+        exitConfirmed = true
+        delay(2_000)
+        exitConfirmed = false
+    }
 }
 
 class EditViewModelFactory @AssistedInject constructor(

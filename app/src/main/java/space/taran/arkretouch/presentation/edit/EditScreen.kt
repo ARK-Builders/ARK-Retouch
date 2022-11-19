@@ -5,6 +5,7 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -67,12 +68,12 @@ import io.getstream.sketchbook.Sketchbook
 import io.getstream.sketchbook.SketchbookController
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.askWritePermissions
-import space.taran.arkretouch.presentation.getActivity
-import space.taran.arkretouch.presentation.isWritePermGranted
 import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
+import space.taran.arkretouch.presentation.utils.askWritePermissions
+import space.taran.arkretouch.presentation.utils.getActivity
+import space.taran.arkretouch.presentation.utils.isWritePermGranted
 import java.nio.file.Path
 
 @Composable
@@ -101,18 +102,27 @@ fun EditScreen(
         viewModel = viewModel,
         navigateBack = { navigateBack() },
         launchedFromIntent = launchedFromIntent,
-        controller = controller
     )
 
     BackHandler {
         if (controller.canUndo.value) {
             controller.undo()
+            return@BackHandler
+        }
+
+        if (viewModel.exitConfirmed) {
+            if (launchedFromIntent)
+                context.getActivity()?.finish()
+            else
+                navigateBack()
         } else {
-            viewModel.showExitDialog = true
+            Toast.makeText(context, "Tap back again to exit", Toast.LENGTH_SHORT)
+                .show()
+            viewModel.confirmExit()
         }
     }
 
-    HandleCloseAppEffect(viewModel)
+    HandleImageSavedEffect(viewModel, launchedFromIntent, navigateBack)
 
     LaunchedEffect(availableSize) {
         if (availableSize.value == IntSize.Zero) return@LaunchedEffect
@@ -150,6 +160,7 @@ fun EditScreen(
         fragmentManager,
         viewModel,
         controller,
+        launchedFromIntent,
         navigateBack
     )
 }
@@ -160,11 +171,19 @@ private fun Menus(
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
     controller: SketchbookController,
-    navigateBack: () -> Unit
+    launchedFromIntent: Boolean,
+    navigateBack: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
-            TopMenu(imagePath, fragmentManager, viewModel, controller, navigateBack)
+            TopMenu(
+                imagePath,
+                fragmentManager,
+                viewModel,
+                controller,
+                launchedFromIntent,
+                navigateBack
+            )
         }
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
             EditMenuContainer(controller, viewModel)
@@ -210,6 +229,7 @@ private fun BoxScope.TopMenu(
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
     controller: SketchbookController,
+    launchedFromIntent: Boolean,
     navigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -222,7 +242,6 @@ private fun BoxScope.TopMenu(
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath, controller.getSketchbookBitmap())
                 viewModel.showSavePathDialog = false
-                navigateBack()
             }
         )
 
@@ -236,7 +255,17 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
-                viewModel.showExitDialog = true
+                if (!controller.canUndo.value) {
+                    if (launchedFromIntent) {
+                        context
+                            .getActivity()
+                            ?.finish()
+                    } else {
+                        navigateBack()
+                    }
+                } else {
+                    viewModel.showExitDialog = true
+                }
             },
         imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
         tint = MaterialTheme.colors.primary,
@@ -302,7 +331,7 @@ private fun StrokeWidthPopup(
                 onValueChange = {
                     viewModel.strokeWidth = it
                 },
-                valueRange = 5f..50f,
+                valueRange = 0.5f..50f,
             )
         }
     }
@@ -449,28 +478,30 @@ private fun EditMenuContent(
 }
 
 @Composable
-private fun HandleCloseAppEffect(viewModel: EditViewModel) {
-    if (viewModel.closeApp)
-        LocalContext.current.getActivity()?.finish()
+private fun HandleImageSavedEffect(
+    viewModel: EditViewModel,
+    launchedFromIntent: Boolean,
+    navigateBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    LaunchedEffect(viewModel.imageSaved) {
+        if (!viewModel.imageSaved) return@LaunchedEffect
+        if (launchedFromIntent)
+            context.getActivity()?.finish()
+        else
+            navigateBack()
+    }
 }
 
 @Composable
 private fun ExitDialog(
-    controller: SketchbookController,
     viewModel: EditViewModel,
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
 ) {
     if (!viewModel.showExitDialog) return
 
-    if (!controller.canUndo.value) {
-        viewModel.showExitDialog = false
-        if (launchedFromIntent)
-            viewModel.closeApp = true
-        else
-            navigateBack()
-        return
-    }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = {
@@ -498,7 +529,7 @@ private fun ExitDialog(
                 onClick = {
                     viewModel.showExitDialog = false
                     if (launchedFromIntent) {
-                        viewModel.closeApp = true
+                        context.getActivity()?.finish()
                     } else {
                         navigateBack()
                     }

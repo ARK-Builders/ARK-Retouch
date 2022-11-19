@@ -36,7 +36,7 @@ import space.taran.arkfilepicker.ArkFilePickerFragment
 import space.taran.arkfilepicker.ArkFilePickerMode
 import space.taran.arkfilepicker.onArkPathPicked
 import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.findNotExistCopyName
+import space.taran.arkretouch.presentation.utils.findNotExistCopyName
 import kotlin.io.path.name
 
 @Composable

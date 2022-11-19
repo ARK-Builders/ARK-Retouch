@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation
+package space.taran.arkretouch.presentation.utils
 
 import android.Manifest
 import android.content.Context
