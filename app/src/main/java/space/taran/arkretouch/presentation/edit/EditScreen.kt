@@ -2,9 +2,7 @@
 
 package space.taran.arkretouch.presentation.edit
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
+import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -39,7 +37,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -47,7 +44,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -56,19 +52,11 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
-import io.getstream.sketchbook.Sketchbook
-import io.getstream.sketchbook.SketchbookController
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.picker.toDp
+import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -84,18 +72,14 @@ fun EditScreen(
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
 ) {
-    val viewModel: EditViewModel =
-        viewModel(
-            factory = DIManager.component.editVMFactory().create(launchedFromIntent)
-        )
     val primaryColor = MaterialTheme.colors.primary
-    val controller = remember {
-        SketchbookController().apply {
-            setPaintColor(primaryColor)
+    val viewModel: EditViewModel =
+        viewModel<EditViewModel>(
+            factory = DIManager.component.editVMFactory()
+                .create(launchedFromIntent, imagePath, imageUri)
+        ).apply {
+            editManager.setPaintColor(primaryColor)
         }
-    }
-    val availableSize = remember { mutableStateOf(IntSize.Zero) }
-    val sketchbookSize = remember { mutableStateOf(IntSize.Zero) }
     val context = LocalContext.current
 
     ExitDialog(
@@ -105,8 +89,9 @@ fun EditScreen(
     )
 
     BackHandler {
-        if (controller.canUndo.value) {
-            controller.undo()
+        val editManager = viewModel.editManager
+        if (editManager.canUndo.value) {
+            editManager.undo()
             return@BackHandler
         }
 
@@ -124,42 +109,13 @@ fun EditScreen(
 
     HandleImageSavedEffect(viewModel, launchedFromIntent, navigateBack)
 
-    LaunchedEffect(availableSize) {
-        if (availableSize.value == IntSize.Zero) return@LaunchedEffect
-        imagePath?.let {
-            loadImageWithPath(
-                context,
-                imagePath,
-                controller,
-                availableSize.value,
-                sketchbookSize
-            )
-            return@LaunchedEffect
-        }
-        imageUri?.let {
-            loadImageWithUri(
-                context,
-                imageUri,
-                controller,
-                availableSize.value,
-                sketchbookSize
-            )
-            return@LaunchedEffect
-        }
-        sketchbookSize.value = availableSize.value
-    }
-
     DrawContainer(
-        availableSize,
-        sketchbookSize.value,
-        controller,
         viewModel
     )
     Menus(
         imagePath,
         fragmentManager,
         viewModel,
-        controller,
         launchedFromIntent,
         navigateBack
     )
@@ -170,7 +126,6 @@ private fun Menus(
     imagePath: Path?,
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
-    controller: SketchbookController,
     launchedFromIntent: Boolean,
     navigateBack: () -> Unit,
 ) {
@@ -180,46 +135,37 @@ private fun Menus(
                 imagePath,
                 fragmentManager,
                 viewModel,
-                controller,
                 launchedFromIntent,
                 navigateBack
             )
         }
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-            EditMenuContainer(controller, viewModel)
+            EditMenuContainer(viewModel)
         }
     }
 }
 
 @Composable
 private fun DrawContainer(
-    availableSize: MutableState<IntSize>,
-    sketchbookSize: IntSize,
-    controller: SketchbookController,
     viewModel: EditViewModel
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(bottom = 32.dp)
-            .onSizeChanged {
-                availableSize.value = it
+            .pointerInteropFilter { event ->
+                if (event.action == MotionEvent.ACTION_DOWN)
+                    viewModel.strokeSliderExpanded = false
+                false
+            }
+            .onSizeChanged { newSize ->
+                if (newSize == IntSize.Zero) return@onSizeChanged
+                viewModel.editManager.drawAreaSize.value = newSize
+                viewModel.loadImage()
             },
         contentAlignment = Alignment.Center
     ) {
-        Sketchbook(
-            modifier = Modifier
-                .pointerInteropFilter {
-                    viewModel.strokeSliderExpanded = false
-                    false
-                }
-                .size(
-                    sketchbookSize.width.toDp(),
-                    sketchbookSize.height.toDp()
-                ),
-            controller = controller,
-            backgroundColor = Color.White,
-        )
+        EditCanvas(viewModel)
     }
 }
 
@@ -228,7 +174,6 @@ private fun BoxScope.TopMenu(
     imagePath: Path?,
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
-    controller: SketchbookController,
     launchedFromIntent: Boolean,
     navigateBack: () -> Unit
 ) {
@@ -240,7 +185,7 @@ private fun BoxScope.TopMenu(
             fragmentManager = fragmentManager,
             onDismissClick = { viewModel.showSavePathDialog = false },
             onPositiveClick = { savePath ->
-                viewModel.saveImage(savePath, controller.getSketchbookBitmap())
+                viewModel.saveImage(savePath)
                 viewModel.showSavePathDialog = false
             }
         )
@@ -255,7 +200,7 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
-                if (!controller.canUndo.value) {
+                if (!viewModel.editManager.canUndo.value) {
                     if (launchedFromIntent) {
                         context
                             .getActivity()
@@ -294,11 +239,10 @@ private fun BoxScope.TopMenu(
 @Composable
 private fun StrokeWidthPopup(
     modifier: Modifier,
-    controller: SketchbookController,
     viewModel: EditViewModel
 ) {
-    controller.setPaintStrokeWidth(viewModel.strokeWidth.dp.toPx())
-    controller.setEraseRadius(viewModel.strokeWidth.dp.toPx())
+    val editManager = viewModel.editManager
+    editManager.setPaintStrokeWidth(viewModel.strokeWidth.dp.toPx())
     if (viewModel.strokeSliderExpanded) {
         Column(
             modifier = modifier
@@ -320,7 +264,7 @@ private fun StrokeWidthPopup(
                         .fillMaxWidth()
                         .height(viewModel.strokeWidth.dp)
                         .clip(RoundedCornerShape(30))
-                        .background(controller.currentPaintColor.value)
+                        .background(editManager.currentPaintColor.value)
                 )
             }
 
@@ -338,10 +282,7 @@ private fun StrokeWidthPopup(
 }
 
 @Composable
-private fun EditMenuContainer(
-    controller: SketchbookController,
-    viewModel: EditViewModel
-) {
+private fun EditMenuContainer(viewModel: EditViewModel) {
     Column(
         Modifier
             .fillMaxSize(),
@@ -370,24 +311,24 @@ private fun EditMenuContainer(
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            EditMenuContent(controller, viewModel)
+            EditMenuContent(viewModel)
         }
     }
 }
 
 @Composable
 private fun EditMenuContent(
-    controller: SketchbookController,
     viewModel: EditViewModel
 ) {
     val colorDialogExpanded = remember { mutableStateOf(false) }
+    val editManager = viewModel.editManager
     Column(
         Modifier
             .wrapContentHeight()
             .fillMaxWidth()
             .background(Gray)
     ) {
-        StrokeWidthPopup(Modifier, controller, viewModel)
+        StrokeWidthPopup(Modifier, viewModel)
 
         Row(
             Modifier
@@ -401,9 +342,9 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { controller.undo() },
+                    .clickable { editManager.undo() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
-                tint = if (controller.canUndo.value) {
+                tint = if (editManager.canUndo.value) {
                     MaterialTheme.colors.primary
                 } else {
                     Color.Black
@@ -415,9 +356,9 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { controller.redo() },
+                    .clickable { editManager.redo() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
-                tint = if (controller.canRedo.value) {
+                tint = if (editManager.canRedo.value) {
                     MaterialTheme.colors.primary
                 } else {
                     Color.Black
@@ -429,13 +370,13 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(color = controller.currentPaintColor.value)
+                    .background(color = editManager.currentPaintColor.value)
                     .clickable { colorDialogExpanded.value = true }
             )
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
-                initialColor = controller.currentPaintColor.value,
-                onColorChanged = { controller.setPaintColor(it) },
+                initialColor = editManager.currentPaintColor.value,
+                onColorChanged = { editManager.setPaintColor(it) },
             )
             Icon(
                 modifier = Modifier
@@ -455,7 +396,7 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { controller.clearPaths() },
+                    .clickable { editManager.clearPaths() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
                 tint = MaterialTheme.colors.primary,
                 contentDescription = null
@@ -465,9 +406,9 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { controller.toggleEraseMode() },
+                    .clickable { editManager.toggleEraseMode() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
-                tint = if (controller.isEraseMode.value)
+                tint = if (editManager.isEraseMode.value)
                     MaterialTheme.colors.primary
                 else
                     Color.Black,
@@ -539,73 +480,4 @@ private fun ExitDialog(
             }
         }
     )
-}
-
-private fun loadImageWithPath(
-    context: Context,
-    image: Path,
-    controller: SketchbookController,
-    availableSize: IntSize,
-    sketchbookSize: MutableState<IntSize>
-) {
-    initGlideBuilder(context)
-        .load(image.toFile())
-        .loadInto(controller, availableSize, sketchbookSize)
-}
-
-private fun loadImageWithUri(
-    context: Context,
-    uri: String,
-    controller: SketchbookController,
-    availableSize: IntSize,
-    sketchbookSize: MutableState<IntSize>
-) {
-    initGlideBuilder(context)
-        .load(uri.toUri())
-        .loadInto(controller, availableSize, sketchbookSize)
-}
-
-private fun initGlideBuilder(context: Context) = Glide
-    .with(context)
-    .asBitmap()
-    .skipMemoryCache(true)
-    .diskCacheStrategy(DiskCacheStrategy.NONE)
-
-private fun RequestBuilder<Bitmap>.loadInto(
-    controller: SketchbookController,
-    availableSize: IntSize,
-    sketchbookSize: MutableState<IntSize>
-) {
-    into(object : CustomTarget<Bitmap>() {
-        override fun onResourceReady(
-            bitmap: Bitmap,
-            transition: Transition<in Bitmap>?
-        ) {
-            val newBitmap =
-                resize(bitmap, availableSize.width, availableSize.height)
-            controller.setImageBitmap(newBitmap.asImageBitmap())
-            sketchbookSize.value = IntSize(newBitmap.width, newBitmap.height)
-        }
-
-        override fun onLoadCleared(placeholder: Drawable?) {}
-    })
-}
-
-private fun resize(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
-    val width = bitmap.width
-    val height = bitmap.height
-
-    val bitmapRatio = width.toFloat() / height.toFloat()
-    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
-
-    var finalWidth = maxWidth
-    var finalHeight = maxHeight
-
-    if (maxRatio > bitmapRatio) {
-        finalWidth = (maxHeight.toFloat() * bitmapRatio).toInt()
-    } else {
-        finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
-    }
-
-    return Bitmap.createScaledBitmap(bitmap, finalWidth, finalHeight, true)
 }
