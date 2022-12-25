@@ -56,7 +56,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.drawing.EditCanvas
+import space.taran.arkretouch.presentation.drawing.EditDrawCanvas
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -165,7 +165,7 @@ private fun DrawContainer(
             },
         contentAlignment = Alignment.Center
     ) {
-        EditCanvas(viewModel)
+        EditDrawCanvas(viewModel)
     }
 }
 
