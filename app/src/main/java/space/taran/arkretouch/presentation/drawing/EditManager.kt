@@ -76,15 +76,15 @@ class EditManager {
         }
     }
 
-    fun addDrawPath(path: Path) {
-        drawPaths.add(
-            DrawPath(
-                path,
-                currentPaint.copy().apply {
-                    strokeWidth = drawPaint.value.strokeWidth
-                }
-            )
+    fun addDrawPath(path: Path): DrawPath {
+        val drawPath = DrawPath(
+            path,
+            currentPaint.copy().apply {
+                strokeWidth = drawPaint.value.strokeWidth
+            }
         )
+        drawPaths.add(drawPath)
+        return drawPath
     }
 
     fun setPaintColor(color: Color) {
