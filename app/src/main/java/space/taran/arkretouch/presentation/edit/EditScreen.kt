@@ -5,6 +5,8 @@ package space.taran.arkretouch.presentation.edit
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.canhub.cropper.CropImageContractOptions
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
@@ -70,8 +73,10 @@ fun EditScreen(
     imageUri: String?,
     fragmentManager: FragmentManager,
     navigateBack: () -> Unit,
-    launchedFromIntent: Boolean
+    launchedFromIntent: Boolean,
 ) {
+    val context = LocalContext.current
+    var cropLauncher: ActivityResultLauncher<CropImageContractOptions>? = null
     val primaryColor = MaterialTheme.colors.primary
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
@@ -79,13 +84,36 @@ fun EditScreen(
                 .create(launchedFromIntent, imagePath, imageUri)
         ).apply {
             editManager.setPaintColor(primaryColor)
+            editManager.crop = {
+                val uri = getImageUri(
+                    context,
+                    editManager.cropCounter.value.toString()
+                )
+                CropHelper.launchCropActivity(
+                    cropLauncher!!,
+                    uri
+                )
+                editManager.setUriToCrop(uri.toString())
+            }
         }
-    val context = LocalContext.current
+
+    cropLauncher = rememberLauncherForActivityResult(
+        CropContract(),
+    ) { cropResult ->
+        if (cropResult.isSuccessful) {
+            val uri = cropResult.uriContent.toString()
+            viewModel.apply {
+                editManager.notifyImageCropped(uri)
+                editManager.invalidatorTick.value++
+                loadCroppedImage()
+            }
+        } else cropResult.error?.printStackTrace()
+    }
 
     ExitDialog(
         viewModel = viewModel,
         navigateBack = { navigateBack() },
-        launchedFromIntent = launchedFromIntent,
+        launchedFromIntent = launchedFromIntent
     )
 
     BackHandler {
@@ -140,7 +168,7 @@ private fun Menus(
             )
         }
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-            EditMenuContainer(viewModel)
+            EditMenuContainer(viewModel, navigateBack)
         }
     }
 }
@@ -282,7 +310,7 @@ private fun StrokeWidthPopup(
 }
 
 @Composable
-private fun EditMenuContainer(viewModel: EditViewModel) {
+private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize(),
@@ -311,14 +339,15 @@ private fun EditMenuContainer(viewModel: EditViewModel) {
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            EditMenuContent(viewModel)
+            EditMenuContent(viewModel, navigateBack)
         }
     }
 }
 
 @Composable
 private fun EditMenuContent(
-    viewModel: EditViewModel
+    viewModel: EditViewModel,
+    navigateBack: () -> Unit
 ) {
     val colorDialogExpanded = remember { mutableStateOf(false) }
     val editManager = viewModel.editManager
@@ -342,7 +371,9 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.undo() },
+                    .clickable {
+                        editManager.apply { editManager.undo() }
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (editManager.canUndo.value) {
                     MaterialTheme.colors.primary
@@ -356,7 +387,11 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.redo() },
+                    .clickable {
+                        editManager.apply {
+                            editManager.redo()
+                        }
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
                 tint = if (editManager.canRedo.value) {
                     MaterialTheme.colors.primary
@@ -412,6 +447,18 @@ private fun EditMenuContent(
                     MaterialTheme.colors.primary
                 else
                     Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.crop()
+                    },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
+                tint = MaterialTheme.colors.primary,
                 contentDescription = null
             )
         }

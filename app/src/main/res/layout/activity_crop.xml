@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    >
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme"
+        app:title="@string/crop" />
+
+    <com.canhub.cropper.CropImageView
+        android:id="@+id/iv_crop"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center">
+                <TextView
+                    android:id="@+id/tv_crop_free"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textColor="@color/purple_200"
+                    android:layout_gravity="center"
+                    app:drawableTint="@color/purple_200"
+                    android:text="@string/ark_retouch_crop_free"
+                    app:drawableTopCompat="@drawable/ic_crop_free"/>
+               <TextView
+                   android:id="@+id/tv_crop_square"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textColor="@color/white"
+                    android:layout_gravity="center"
+                    app:drawableTint="@color/white"
+                    android:text="@string/ark_retouch_crop_square"
+                    app:drawableTopCompat="@drawable/ic_crop_square"/>
+               <TextView
+                   android:id="@+id/tv_crop_16_9"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textColor="@color/white"
+                    android:layout_gravity="center"
+                    app:drawableTint="@color/white"
+                    android:text="@string/ark_retouch_crop_16_9"
+                    app:drawableTopCompat="@drawable/ic_crop_16_9"/>
+               <TextView
+                   android:id="@+id/tv_crop_3_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textColor="@color/white"
+                    android:layout_gravity="center"
+                    app:drawableTint="@color/white"
+                    android:text="@string/ark_retouch_crop_3_2"
+                    app:drawableTopCompat="@drawable/ic_crop_3_2"/>
+               <TextView
+                   android:id="@+id/tv_crop_5_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textColor="@color/white"
+                    android:layout_gravity="center"
+                    app:drawableTint="@color/white"
+                    android:text="@string/ark_retouch_crop_5_4"
+                    app:drawableTopCompat="@drawable/ic_crop_5_4"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+</LinearLayout>

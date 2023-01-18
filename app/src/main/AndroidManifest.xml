@@ -40,6 +40,20 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".presentation.edit.CropActivity"
+            />
+        <provider
+            android:exported="false"
+            android:grantUriPermissions="true"
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="space.taran.arkretouch2.fileprovider">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/paths"
+                />
+        </provider>
     </application>
 
 </manifest>

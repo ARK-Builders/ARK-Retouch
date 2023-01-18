@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
+import timber.log.Timber
 import java.util.Stack
 
 class EditManager {
@@ -51,28 +52,103 @@ class EditManager {
     private val _canRedo: MutableState<Boolean> = mutableStateOf(false)
     val canRedo: State<Boolean> = _canRedo
 
+    val cropCounter = mutableStateOf(0)
+
+    private val undoStack = Stack<String>()
+    private val redoStack = Stack<String>()
+
+    private val cropStack = Stack<String>()
+    private val redoCropStack = Stack<String>()
+
+    lateinit var crop: () -> Unit
+
+    lateinit var refresh: (String) -> Unit
+
+    private var currentUri = ""
+
     internal fun clearRedoPath() {
         redoPaths.clear()
     }
 
+    private fun clearRedo() {
+        redoStack.clear()
+        redoPaths.clear()
+        redoCropStack.clear()
+    }
+
     fun updateRevised() {
-        _canUndo.value = drawPaths.isNotEmpty()
-        _canRedo.value = redoPaths.isNotEmpty()
+        _canUndo.value = drawPaths.isNotEmpty() ||
+            cropStack.isNotEmpty()
+        _canRedo.value = redoPaths.isNotEmpty() ||
+            redoCropStack.isNotEmpty()
+    }
+
+    fun notifyImageCropped(uri: String) {
+        if (canRedo.value) clearRedo()
+        drawPaths.clear()
+        cropStack.add(currentUri)
+        currentUri = uri
+        undoStack.add(CROP)
+        cropCounter.value += 1
+        updateRevised()
+    }
+
+    fun getUri() = currentUri
+
+    fun setUriToCrop(uri: String) {
+        currentUri = uri
+        Timber.tag("Back uri").d(currentUri)
+    }
+
+    private fun undoCrop() {
+        redoCropStack.push(currentUri)
+        currentUri = cropStack.pop()
+        Timber.tag("Undo uri").d(currentUri)
+        updateRevised()
+        cropCounter.value += 1
+        refresh(currentUri)
+    }
+
+    private fun redoCrop() {
+        cropStack.push(currentUri)
+        currentUri = redoCropStack.pop()
+        Timber.tag("Redo uri").d(currentUri)
+        updateRevised()
+        cropCounter.value -= 1
+        refresh(currentUri)
     }
 
     fun undo() {
         if (canUndo.value) {
-            redoPaths.push(drawPaths.pop())
+            val undoTask = undoStack.pop()
             invalidatorTick.value++
-            updateRevised()
+            redoStack.push(undoTask)
+            if (undoTask == DRAW && drawPaths.isNotEmpty()) {
+                redoPaths.push(drawPaths.pop())
+                updateRevised()
+                return
+            }
+            if (undoTask == CROP && cropStack.isNotEmpty()) {
+                undoCrop()
+                return
+            }
         }
     }
 
     fun redo() {
         if (canRedo.value) {
-            drawPaths.push(redoPaths.pop())
+            val redoTask = redoStack.pop()
             invalidatorTick.value++
-            updateRevised()
+            undoStack.push(redoTask)
+            if (redoTask == DRAW && redoPaths.isNotEmpty()) {
+                drawPaths.push(redoPaths.pop())
+                updateRevised()
+                return
+            }
+            if (redoTask == CROP && redoCropStack.isNotEmpty()) {
+                redoCrop()
+                return
+            }
         }
     }
 
@@ -85,6 +161,8 @@ class EditManager {
                 }
             )
         )
+        if (canRedo.value) clearRedo()
+        undoStack.add(DRAW)
     }
 
     fun setPaintColor(color: Color) {
@@ -97,6 +175,13 @@ class EditManager {
         redoPaths.clear()
         invalidatorTick.value++
         updateRevised()
+    }
+
+    fun clearCrop() {}
+
+    fun clearEdits() {
+        clearPaths()
+        clearCrop()
     }
 
     fun toggleEraseMode() {
@@ -113,6 +198,11 @@ class EditManager {
         val xOffset = (drawArea.width - bitmap.width) / 2f
         val yOffset = (drawArea.height - bitmap.height) / 2f
         return Offset(xOffset, yOffset)
+    }
+
+    private companion object {
+        const val DRAW = "draw"
+        const val CROP = "crop"
     }
 }
 
