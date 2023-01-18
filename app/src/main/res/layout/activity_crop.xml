@@ -13,6 +13,7 @@
         android:layout_height="wrap_content"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
+        app:popupTheme="?attr/actionBarPopupTheme"
         app:title="@string/crop" />
 
     <com.canhub.cropper.CropImageView
