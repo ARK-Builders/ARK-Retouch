@@ -3,6 +3,7 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,6 +14,7 @@ import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -30,6 +32,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
+import space.taran.arkretouch.presentation.utils.rotate
+import timber.log.Timber
+import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.outputStream
 
@@ -69,33 +74,95 @@ class EditViewModel(
 
     fun saveImage(savePath: Path) =
         viewModelScope.launch(Dispatchers.IO) {
-            val size = editManager.drawAreaSize.value
-            val drawBitmap = ImageBitmap(
-                size.width,
-                size.height,
-                ImageBitmapConfig.Argb8888
-            )
-            val drawCanvas = Canvas(drawBitmap)
-            val combinedBitmap =
-                ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
-            val combinedCanvas = Canvas(combinedBitmap)
-            editManager.backgroundImage.value?.let {
-                combinedCanvas.drawImage(
-                    it,
-                    editManager.calcImageOffset(),
-                    Paint()
-                )
-            }
-            editManager.drawPaths.forEach {
-                drawCanvas.drawPath(it.path, it.paint)
-            }
-            combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
+            val combinedBitmap = getCombinedImageBitmap()
+
             savePath.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
             imageSaved = true
         }
+
+    fun getImageUri(
+        context: Context = DIManager.component.app(),
+        bitmap: Bitmap? = null,
+        name: String = ""
+    ) = getCachedImageUri(context, bitmap, name)
+
+    private fun getCachedImageUri(
+        context: Context,
+        bitmap: Bitmap? = null,
+        name: String = ""
+    ): Uri {
+        var uri: Uri? = null
+        val imageCacheFolder = File(context.cacheDir, "images")
+        val imgBitmap = bitmap ?: getCombinedImageBitmap().asAndroidBitmap()
+        try {
+            imageCacheFolder.mkdirs()
+            val file = File(imageCacheFolder, "image$name.png")
+            file.outputStream().use { out ->
+                imgBitmap
+                    .compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            Timber.tag("Cached image path").d(file.path.toString())
+            uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return uri!!
+    }
+
+    fun getCombinedImageBitmap(): ImageBitmap {
+        val size = editManager.drawAreaSize.value
+        val drawBitmap = ImageBitmap(
+            size.width,
+            size.height,
+            ImageBitmapConfig.Argb8888
+        )
+        val drawCanvas = Canvas(drawBitmap)
+        val combinedBitmap =
+            ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
+        val combinedCanvas = Canvas(combinedBitmap)
+        editManager.backgroundImage.value?.let {
+            combinedCanvas.drawImage(
+                it,
+                editManager.calcImageOffset(),
+                Paint()
+            )
+        }
+        editManager.drawPaths.forEach {
+            drawCanvas.drawPath(it.path, it.paint)
+        }
+        combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
+        return combinedBitmap
+    }
+
+    fun rotateImage(
+        angle: Float
+    ) {
+        editManager.apply {
+            rotationAngle.value += angle
+            val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
+            val shouldResize = horizontalAxisDetectorModulus != 0f
+            val bitmap = bitmapToRotate.rotate(
+                editManager.rotationAngle.value,
+                shouldResize,
+                resize = { bitmap, width, height ->
+                    resize(
+                        bitmap.asImageBitmap(),
+                        width,
+                        height
+                    )
+                        .asAndroidBitmap()
+                }
+            )
+            backgroundImage.value = bitmap.asImageBitmap()
+        }
+    }
 
     fun confirmExit() = viewModelScope.launch {
         exitConfirmed = true
@@ -158,8 +225,11 @@ private fun RequestBuilder<Bitmap>.loadInto(
             transition: Transition<in Bitmap>?
         ) {
             val areaSize = editManager.drawAreaSize.value
-            editManager.backgroundImage.value =
-                resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
+            editManager.apply {
+                backgroundImage.value =
+                    resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
+                setOriginalBackgroundImage(backgroundImage.value)
+            }
         }
 
         override fun onLoadCleared(placeholder: Drawable?) {}

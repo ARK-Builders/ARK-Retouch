@@ -40,6 +40,17 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:authorities="space.taran.arkretouch2.fileprovider"
+            android:name="androidx.core.content.FileProvider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/paths"
+                />
+        </provider>
     </application>
 
 </manifest>

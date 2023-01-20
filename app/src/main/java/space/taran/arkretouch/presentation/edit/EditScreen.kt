@@ -11,17 +11,18 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +45,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -90,6 +92,13 @@ fun EditScreen(
 
     BackHandler {
         val editManager = viewModel.editManager
+        if (editManager.isRotateMode.value) {
+            editManager.toggleRotateMode()
+            editManager.cancelRotateMode()
+            viewModel.menusVisible = true
+            return@BackHandler
+        }
+
         if (editManager.canUndo.value) {
             editManager.undo()
             return@BackHandler
@@ -139,7 +148,26 @@ private fun Menus(
                 navigateBack
             )
         }
-        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .height(IntrinsicSize.Min),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (viewModel.editManager.isRotateMode.value)
+                Icon(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            viewModel.rotateImage(-90F)
+                        },
+                    imageVector = ImageVector
+                        .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
+                    tint = MaterialTheme.colors.primary,
+                    contentDescription = null
+                )
             EditMenuContainer(viewModel)
         }
     }
@@ -190,7 +218,10 @@ private fun BoxScope.TopMenu(
             }
         )
 
-    if (!viewModel.menusVisible)
+    if (
+        !viewModel.menusVisible &&
+        !viewModel.editManager.isRotateMode.value
+    )
         return
 
     Icon(
@@ -200,7 +231,17 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
-                if (!viewModel.editManager.canUndo.value) {
+                if (viewModel.editManager.isRotateMode.value) {
+                    viewModel.apply {
+                        editManager.toggleRotateMode()
+                        editManager.cancelRotateMode()
+                        menusVisible = true
+                        return@clickable
+                    }
+                }
+                if (
+                    !viewModel.editManager.canUndo.value
+                ) {
                     if (launchedFromIntent) {
                         context
                             .getActivity()
@@ -224,13 +265,24 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
+                if (viewModel.editManager.isRotateMode.value) {
+                    viewModel.apply {
+                        editManager.addRotation()
+                        editManager.toggleRotateMode()
+                        viewModel.menusVisible = true
+                        return@clickable
+                    }
+                }
                 if (!context.isWritePermGranted()) {
                     context.askWritePermissions()
                     return@clickable
                 }
                 viewModel.showSavePathDialog = true
             },
-        imageVector = ImageVector.vectorResource(R.drawable.ic_save),
+        imageVector = if (viewModel.editManager.isRotateMode.value)
+            ImageVector.vectorResource(R.drawable.ic_check)
+        else
+            ImageVector.vectorResource(R.drawable.ic_save),
         tint = MaterialTheme.colors.primary,
         contentDescription = null
     )
@@ -342,13 +394,15 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.undo() },
+                    .clickable {
+                        if (!editManager.isRotateMode.value)
+                            editManager.undo()
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
-                tint = if (editManager.canUndo.value) {
-                    MaterialTheme.colors.primary
-                } else {
-                    Color.Black
-                },
+                tint = if (
+                    editManager.canUndo.value &&
+                    !editManager.isRotateMode.value
+                ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
@@ -356,13 +410,15 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.redo() },
+                    .clickable {
+                        if (!editManager.isRotateMode.value)
+                            editManager.redo()
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
-                tint = if (editManager.canRedo.value) {
-                    MaterialTheme.colors.primary
-                } else {
-                    Color.Black
-                },
+                tint = if (
+                    editManager.canRedo.value &&
+                    !editManager.isRotateMode.value
+                ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Box(
@@ -371,7 +427,10 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .background(color = editManager.currentPaintColor.value)
-                    .clickable { colorDialogExpanded.value = true }
+                    .clickable {
+                        if (!editManager.isRotateMode.value)
+                            colorDialogExpanded.value = true
+                    }
             )
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
@@ -384,11 +443,14 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        viewModel.strokeSliderExpanded =
-                            !viewModel.strokeSliderExpanded
+                        if (!editManager.isRotateMode.value)
+                            viewModel.strokeSliderExpanded =
+                                !viewModel.strokeSliderExpanded
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_line_weight),
-                tint = MaterialTheme.colors.primary,
+                tint = if (!editManager.isRotateMode.value)
+                    MaterialTheme.colors.primary
+                else Color.Black,
                 contentDescription = null
             )
             Icon(
@@ -396,9 +458,14 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.clearPaths() },
+                    .clickable {
+                        if (!editManager.isRotateMode.value)
+                            editManager.clearEdits()
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
-                tint = MaterialTheme.colors.primary,
+                tint = if (!editManager.isRotateMode.value)
+                    MaterialTheme.colors.primary
+                else Color.Black,
                 contentDescription = null
             )
             Icon(
@@ -406,9 +473,40 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.toggleEraseMode() },
+                    .clickable {
+                        if (!editManager.isRotateMode.value)
+                            editManager.toggleEraseMode()
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
-                tint = if (editManager.isEraseMode.value)
+                tint = if (
+                    editManager.isEraseMode.value &&
+                    !editManager.isRotateMode.value
+                ) MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.apply {
+                            toggleRotateMode()
+                            if (isRotateMode.value) {
+                                val imgBitmap = viewModel.getCombinedImageBitmap()
+                                bitmapToRotate =
+                                    imgBitmap.asAndroidBitmap()
+                                setBackgroundImage2(backgroundImage.value)
+                                backgroundImage.value = imgBitmap
+                            } else editManager.cancelRotateMode()
+                            viewModel.menusVisible = !editManager.isRotateMode.value
+                        }
+                    },
+                imageVector = ImageVector
+                    .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
+                tint = if (editManager.isRotateMode.value)
                     MaterialTheme.colors.primary
                 else
                     Color.Black,

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
+import kotlin.math.atan2
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
@@ -47,37 +48,55 @@ fun EditDrawCanvas(viewModel: EditViewModel) {
                 val eventX = event.x
                 val eventY = event.y
 
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        path.reset()
-                        path.moveTo(eventX, eventY)
-                        currentPoint.x = eventX
-                        currentPoint.y = eventY
-                        editManager.addDrawPath(path)
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        path.quadraticBezierTo(
-                            currentPoint.x,
-                            currentPoint.y,
-                            (eventX + currentPoint.x) / 2,
-                            (eventY + currentPoint.y) / 2
-                        )
-                        currentPoint.x = eventX
-                        currentPoint.y = eventY
-                    }
-                    MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
-                        // draw a dot
-                        if (eventX == currentPoint.x &&
-                            eventY == currentPoint.y
-                        ) {
-                            path.lineTo(currentPoint.x, currentPoint.y)
+                if (!editManager.isRotateMode.value)
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            path.reset()
+                            path.moveTo(eventX, eventY)
+                            currentPoint.x = eventX
+                            currentPoint.y = eventY
+                            editManager.addDrawPath(path)
                         }
+                        MotionEvent.ACTION_MOVE -> {
+                            path.quadraticBezierTo(
+                                currentPoint.x,
+                                currentPoint.y,
+                                (eventX + currentPoint.x) / 2,
+                                (eventY + currentPoint.y) / 2
+                            )
+                            currentPoint.x = eventX
+                            currentPoint.y = eventY
+                        }
+                        MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+                            // draw a dot
+                            if (eventX == currentPoint.x &&
+                                eventY == currentPoint.y
+                            ) {
+                                path.lineTo(currentPoint.x, currentPoint.y)
+                            }
 
-                        editManager.clearRedoPath()
-                        editManager.updateRevised()
-                        path = Path()
+                            editManager.clearRedoPath()
+                            editManager.updateRevised()
+                            path = Path()
+                        }
+                        else -> false
                     }
-                    else -> false
+                else when (event.action) {
+                    MotionEvent.ACTION_MOVE -> {
+                        val angle1 = atan2(currentPoint.y, currentPoint.x)
+                        val angle2 = atan2(eventY, eventX)
+                        val degreesAngle = Math.toDegrees(
+                            (angle2 - angle1).toDouble()
+                        )
+                        viewModel.rotateImage(degreesAngle.toFloat())
+                        currentPoint.x = eventX
+                        currentPoint.y = eventY
+                    }
+                    MotionEvent.ACTION_DOWN -> {
+                        currentPoint.x = eventX
+                        currentPoint.y = eventY
+                    }
+                    MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
                 }
                 editManager.invalidatorTick.value++
                 true
@@ -87,9 +106,10 @@ fun EditDrawCanvas(viewModel: EditViewModel) {
         editManager.invalidatorTick.value
 
         drawIntoCanvas { canvas ->
-            editManager.drawPaths.forEach {
-                canvas.drawPath(it.path, it.paint)
-            }
+            if (!editManager.isRotateMode.value)
+                editManager.drawPaths.forEach {
+                    canvas.drawPath(it.path, it.paint)
+                }
         }
     }
 }
