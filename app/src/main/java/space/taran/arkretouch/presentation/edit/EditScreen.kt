@@ -197,6 +197,13 @@ private fun BoxScope.TopMenu(
             onShareClick = {
                 viewModel.shareImage(context)
                 viewModel.showMoreOptionsPopup = false
+            },
+            onSaveClick = {
+                if (!context.isWritePermGranted()) {
+                    context.askWritePermissions()
+                    return@MoreOptionsPopup
+                }
+                viewModel.showSavePathDialog = true
             }
         )
 
@@ -231,23 +238,6 @@ private fun BoxScope.TopMenu(
         Modifier
             .align(Alignment.TopEnd)
     ) {
-        Icon(
-            modifier = Modifier
-                .padding(8.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable {
-                    if (!context.isWritePermGranted()) {
-                        context.askWritePermissions()
-                        return@clickable
-                    }
-                    viewModel.showSavePathDialog = true
-                },
-            imageVector = ImageVector.vectorResource(R.drawable.ic_save),
-            tint = MaterialTheme.colors.primary,
-            contentDescription = null
-        )
-
         Icon(
             modifier = Modifier
                 .padding(8.dp)

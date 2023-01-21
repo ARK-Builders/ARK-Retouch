@@ -21,16 +21,25 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import space.taran.arkretouch.R
+import space.taran.arkretouch.presentation.picker.toPx
 
 @Composable
 fun MoreOptionsPopup(
     onShareClick: () -> Unit,
+    onSaveClick: () -> Unit,
     onDismissClick: () -> Unit
 ) {
     Popup(
         alignment = Alignment.TopEnd,
-        offset = IntOffset(-36, 36),
+        offset = IntOffset(
+            -8.dp.toPx().toInt(),
+            8.dp.toPx().toInt()
+        ),
+        properties = PopupProperties(
+            focusable = true
+        ),
         onDismissRequest = onDismissClick,
     ) {
         Column(
@@ -41,15 +50,15 @@ fun MoreOptionsPopup(
                 )
                 .padding(8.dp)
         ) {
-            Row(
-                Modifier
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(5))
-                    .clickable {
-                        onShareClick()
-                    }
-            ) {
-                Column {
+            Row {
+                Column(
+                    Modifier
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(5))
+                        .clickable {
+                            onShareClick()
+                        }
+                ) {
                     Icon(
                         modifier = Modifier
                             .padding(8.dp)
@@ -60,6 +69,29 @@ fun MoreOptionsPopup(
                     )
                     Text(
                         text = stringResource(R.string.share),
+                        Modifier
+                            .padding(bottom = 8.dp)
+                            .align(Alignment.CenterHorizontally),
+                        fontSize = 12.sp
+                    )
+                }
+                Column(
+                    Modifier
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(5))
+                        .clickable {
+                            onSaveClick()
+                        }
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(36.dp),
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_save),
+                        contentDescription = null
+                    )
+                    Text(
+                        text = stringResource(R.string.save),
                         Modifier
                             .padding(bottom = 8.dp)
                             .align(Alignment.CenterHorizontally),
