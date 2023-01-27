@@ -250,15 +250,11 @@ private fun BoxScope.TopMenu(
                     viewModel.editManager.toggleCropMode()
                     return@clickable
                 }
-                if (!context.isWritePermGranted()) {
-                    context.askWritePermissions()
-                    return@clickable
-                }
-                viewModel.showSavePathDialog = true
+                viewModel.showMoreOptionsPopup = true
             },
         imageVector = if (viewModel.editManager.isCropMode.value)
             ImageVector.vectorResource(R.drawable.ic_check)
-        else ImageVector.vectorResource(R.drawable.ic_save),
+        else ImageVector.vectorResource(R.drawable.ic_more_vert),
         tint = MaterialTheme.colors.primary,
         contentDescription = null
     )

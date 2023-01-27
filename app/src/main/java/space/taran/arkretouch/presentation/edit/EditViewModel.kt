@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -33,6 +34,8 @@ import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
+import timber.log.Timber
+import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.outputStream
 
@@ -68,19 +71,6 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
-        }
-    }
-
-    fun loadCroppedImage() {
-        editManager.apply {
-            refresh = {
-                loadImageWithUri(
-                    DIManager.component.app(),
-                    it,
-                    editManager
-                )
-            }
-            refresh(getUri())
         }
     }
 
@@ -139,7 +129,7 @@ class EditViewModel(
         return uri!!
     }
 
-    private fun getCombinedImageBitmap(): ImageBitmap {
+    fun getCombinedImageBitmap(): ImageBitmap {
         val size = editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
@@ -162,6 +152,14 @@ class EditViewModel(
         }
         combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         return combinedBitmap
+    }
+
+    fun loadCroppedBitmap() {
+        editManager.apply {
+            loadBitmap(crop()) { bitmap, width, height ->
+                resize(bitmap, width, height)
+            }
+        }
     }
 }
 
@@ -219,8 +217,11 @@ private fun RequestBuilder<Bitmap>.loadInto(
             transition: Transition<in Bitmap>?
         ) {
             val areaSize = editManager.drawAreaSize.value
-            editManager.backgroundImage.value =
-                resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
+            editManager.apply {
+                backgroundImage.value =
+                    resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
+                originalImage.value = backgroundImage.value
+            }
         }
 
         override fun onLoadCleared(placeholder: Drawable?) {}

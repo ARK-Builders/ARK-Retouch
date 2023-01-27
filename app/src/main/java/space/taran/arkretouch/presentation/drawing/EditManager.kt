@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
-import timber.log.Timber
 import java.util.Stack
 
 class EditManager {
@@ -39,6 +38,8 @@ class EditManager {
     private val croppedPathsStack = Stack<Stack<DrawPath>>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
+    var originalImage = mutableStateOf<ImageBitmap?>(null)
+
     var drawAreaSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
@@ -56,8 +57,6 @@ class EditManager {
     private val _canRedo: MutableState<Boolean> = mutableStateOf(false)
     val canRedo: State<Boolean> = _canRedo
 
-    val cropCounter = mutableStateOf(0)
-
     private val _isCropMode = mutableStateOf(false)
     val isCropMode = _isCropMode
 
@@ -68,10 +67,6 @@ class EditManager {
     private val redoCropStack = Stack<ImageBitmap>()
 
     lateinit var crop: () -> Bitmap
-
-    lateinit var refresh: (String) -> Unit
-
-    private var currentUri = ""
 
     internal fun clearRedoPath() {
         redoPaths.clear()
@@ -101,26 +96,11 @@ class EditManager {
             redoCropStack.isNotEmpty()
     }
 
-    fun notifyImageCropped(uri: String) {
-        if (canRedo.value) clearRedo()
-        cropStack.add(backgroundImage.value)
-        undoStack.add(CROP)
-        cropCounter.value += 1
-        updateRevised()
-    }
-
     fun addCrop() {
         if (canRedo.value) clearRedo()
         cropStack.add(backgroundImage.value)
         undoStack.add(CROP)
         updateRevised()
-    }
-
-    fun getUri() = currentUri
-
-    fun setUriToCrop(uri: String) {
-        currentUri = uri
-        Timber.tag("Back uri").d(currentUri)
     }
 
     private fun undoCrop() {
@@ -235,6 +215,11 @@ class EditManager {
     fun clearEdits() {
         clearPaths()
         clearCrop()
+        restoreOriginalImage()
+    }
+
+    private fun restoreOriginalImage() {
+        backgroundImage.value = originalImage.value
     }
 
     fun toggleEraseMode() {
