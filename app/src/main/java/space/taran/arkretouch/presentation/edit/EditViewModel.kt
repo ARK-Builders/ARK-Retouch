@@ -53,6 +53,8 @@ class EditViewModel(
     var exitConfirmed = false
         private set
 
+    lateinit var crop: Bitmap
+
     fun loadImage() {
         imagePath?.let {
             loadImageWithPath(
@@ -120,7 +122,7 @@ class EditViewModel(
         return uri!!
     }
 
-    private fun getCombinedImageBitmap(): ImageBitmap {
+    fun getCombinedImageBitmap(): ImageBitmap {
         val size = editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
@@ -143,6 +145,14 @@ class EditViewModel(
         }
         combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         return combinedBitmap
+    }
+
+    fun loadCroppedBitmap() {
+        editManager.apply {
+            loadBitmap(crop()) { bitmap, width, height ->
+                resize(bitmap, width, height)
+            }
+        }
     }
 
     fun confirmExit() = viewModelScope.launch {

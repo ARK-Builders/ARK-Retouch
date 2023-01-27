@@ -84,17 +84,6 @@ fun EditScreen(
                 .create(launchedFromIntent, imagePath, imageUri)
         ).apply {
             editManager.setPaintColor(primaryColor)
-            editManager.crop = {
-                val uri = getImageUri(
-                    context,
-                    editManager.cropCounter.value.toString()
-                )
-                CropHelper.launchCropActivity(
-                    cropLauncher!!,
-                    uri
-                )
-                editManager.setUriToCrop(uri.toString())
-            }
         }
 
     cropLauncher = rememberLauncherForActivityResult(
@@ -218,7 +207,10 @@ private fun BoxScope.TopMenu(
             }
         )
 
-    if (!viewModel.menusVisible)
+    if (
+        !viewModel.menusVisible &&
+        !viewModel.editManager.isCropMode.value
+    )
         return
 
     Icon(
@@ -252,13 +244,21 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
+                if (viewModel.editManager.isCropMode.value) {
+                    viewModel.editManager.addCrop()
+                    viewModel.loadCroppedBitmap()
+                    viewModel.editManager.toggleCropMode()
+                    return@clickable
+                }
                 if (!context.isWritePermGranted()) {
                     context.askWritePermissions()
                     return@clickable
                 }
                 viewModel.showSavePathDialog = true
             },
-        imageVector = ImageVector.vectorResource(R.drawable.ic_save),
+        imageVector = if (viewModel.editManager.isCropMode.value)
+            ImageVector.vectorResource(R.drawable.ic_check)
+        else ImageVector.vectorResource(R.drawable.ic_save),
         tint = MaterialTheme.colors.primary,
         contentDescription = null
     )
@@ -372,10 +372,15 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply { editManager.undo() }
+                        if (editManager.isCropMode.value)
+                            return@clickable
+                        editManager.undo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
-                tint = if (editManager.canUndo.value) {
+                tint = if (
+                    editManager.canUndo.value &&
+                    !editManager.isCropMode.value
+                ) {
                     MaterialTheme.colors.primary
                 } else {
                     Color.Black
@@ -388,12 +393,15 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            editManager.redo()
-                        }
+                        if (editManager.isCropMode.value)
+                            return@clickable
+                        editManager.redo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
-                tint = if (editManager.canRedo.value) {
+                tint = if (
+                    editManager.canRedo.value &&
+                    !editManager.isCropMode.value
+                ) {
                     MaterialTheme.colors.primary
                 } else {
                     Color.Black
@@ -406,7 +414,11 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .background(color = editManager.currentPaintColor.value)
-                    .clickable { colorDialogExpanded.value = true }
+                    .clickable {
+                        if (editManager.isCropMode.value)
+                            return@clickable
+                        colorDialogExpanded.value = true
+                    }
             )
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
@@ -419,11 +431,15 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
+                        if (editManager.isCropMode.value)
+                            return@clickable
                         viewModel.strokeSliderExpanded =
                             !viewModel.strokeSliderExpanded
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_line_weight),
-                tint = MaterialTheme.colors.primary,
+                tint = if (!editManager.isCropMode.value)
+                    MaterialTheme.colors.primary
+                else Color.Black,
                 contentDescription = null
             )
             Icon(
@@ -431,9 +447,15 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.clearPaths() },
+                    .clickable {
+                        if (editManager.isCropMode.value)
+                            return@clickable
+                        editManager.clearEdits()
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
-                tint = MaterialTheme.colors.primary,
+                tint = if (!editManager.isCropMode.value)
+                    MaterialTheme.colors.primary
+                else Color.Black,
                 contentDescription = null
             )
             Icon(
@@ -441,9 +463,16 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.toggleEraseMode() },
+                    .clickable {
+                        if (editManager.isCropMode.value)
+                            return@clickable
+                        editManager.toggleEraseMode()
+                    },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
-                tint = if (editManager.isEraseMode.value)
+                tint = if (
+                    editManager.isEraseMode.value &&
+                    !editManager.isCropMode.value
+                )
                     MaterialTheme.colors.primary
                 else
                     Color.Black,
@@ -455,10 +484,13 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.crop()
+                        editManager.toggleCropMode()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
-                tint = MaterialTheme.colors.primary,
+                tint = if (editManager.isCropMode.value)
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
                 contentDescription = null
             )
         }

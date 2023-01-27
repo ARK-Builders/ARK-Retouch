@@ -1,15 +1,17 @@
 package space.taran.arkretouch.presentation.drawing
 
+import android.graphics.Bitmap
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
@@ -34,6 +36,8 @@ class EditManager {
     val drawPaths = Stack<DrawPath>()
     private val redoPaths = Stack<DrawPath>()
 
+    private val croppedPathsStack = Stack<Stack<DrawPath>>()
+
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
     var drawAreaSize = mutableStateOf(IntSize.Zero)
 
@@ -54,13 +58,16 @@ class EditManager {
 
     val cropCounter = mutableStateOf(0)
 
+    private val _isCropMode = mutableStateOf(false)
+    val isCropMode = _isCropMode
+
     private val undoStack = Stack<String>()
     private val redoStack = Stack<String>()
 
-    private val cropStack = Stack<String>()
-    private val redoCropStack = Stack<String>()
+    private val cropStack = Stack<ImageBitmap>()
+    private val redoCropStack = Stack<ImageBitmap>()
 
-    lateinit var crop: () -> Unit
+    lateinit var crop: () -> Bitmap
 
     lateinit var refresh: (String) -> Unit
 
@@ -68,6 +75,16 @@ class EditManager {
 
     internal fun clearRedoPath() {
         redoPaths.clear()
+    }
+
+    fun keepCroppedPaths() {
+        val stack = Stack<DrawPath>()
+        val size = drawPaths.size
+        for (i in 1..size) {
+            stack.push(drawPaths.pop())
+        }
+        croppedPathsStack.add(stack)
+        updateRevised()
     }
 
     private fun clearRedo() {
@@ -78,18 +95,24 @@ class EditManager {
 
     fun updateRevised() {
         _canUndo.value = drawPaths.isNotEmpty() ||
-            cropStack.isNotEmpty()
+            cropStack.isNotEmpty() ||
+            croppedPathsStack.isNotEmpty()
         _canRedo.value = redoPaths.isNotEmpty() ||
             redoCropStack.isNotEmpty()
     }
 
     fun notifyImageCropped(uri: String) {
         if (canRedo.value) clearRedo()
-        drawPaths.clear()
-        cropStack.add(currentUri)
-        currentUri = uri
+        cropStack.add(backgroundImage.value)
         undoStack.add(CROP)
         cropCounter.value += 1
+        updateRevised()
+    }
+
+    fun addCrop() {
+        if (canRedo.value) clearRedo()
+        cropStack.add(backgroundImage.value)
+        undoStack.add(CROP)
         updateRevised()
     }
 
@@ -101,21 +124,48 @@ class EditManager {
     }
 
     private fun undoCrop() {
-        redoCropStack.push(currentUri)
-        currentUri = cropStack.pop()
-        Timber.tag("Undo uri").d(currentUri)
-        updateRevised()
-        cropCounter.value += 1
-        refresh(currentUri)
+        if (cropStack.isNotEmpty()) {
+            redoCropStack.push(backgroundImage.value)
+            backgroundImage.value = cropStack.pop()
+            if (croppedPathsStack.isNotEmpty()) {
+                val paths = croppedPathsStack.pop()
+                val size = paths.size
+                for (i in 1..size) {
+                    drawPaths.push(paths.pop())
+                }
+            }
+            updateRevised()
+        }
     }
 
     private fun redoCrop() {
-        cropStack.push(currentUri)
-        currentUri = redoCropStack.pop()
-        Timber.tag("Redo uri").d(currentUri)
-        updateRevised()
-        cropCounter.value -= 1
-        refresh(currentUri)
+        if (redoCropStack.isNotEmpty()) {
+            cropStack.push(backgroundImage.value)
+            backgroundImage.value = redoCropStack.pop()
+            if (drawPaths.isNotEmpty())
+                keepCroppedPaths()
+            updateRevised()
+        }
+    }
+
+    private fun undoDraw() {
+        if (drawPaths.isNotEmpty()) {
+            redoPaths.push(drawPaths.pop())
+            updateRevised()
+            return
+        }
+    }
+
+    private fun clearCroppedPaths() {
+        croppedPathsStack.clear()
+    }
+
+    private fun redoDraw() {
+        if (redoPaths.isNotEmpty()) {
+            drawPaths.push(redoPaths.pop())
+            updateRevised()
+            return
+        }
     }
 
     fun undo() {
@@ -123,12 +173,11 @@ class EditManager {
             val undoTask = undoStack.pop()
             invalidatorTick.value++
             redoStack.push(undoTask)
-            if (undoTask == DRAW && drawPaths.isNotEmpty()) {
-                redoPaths.push(drawPaths.pop())
-                updateRevised()
+            if (undoTask == DRAW) {
+                undoDraw()
                 return
             }
-            if (undoTask == CROP && cropStack.isNotEmpty()) {
+            if (undoTask == CROP) {
                 undoCrop()
                 return
             }
@@ -140,9 +189,8 @@ class EditManager {
             val redoTask = redoStack.pop()
             invalidatorTick.value++
             undoStack.push(redoTask)
-            if (redoTask == DRAW && redoPaths.isNotEmpty()) {
-                drawPaths.push(redoPaths.pop())
-                updateRevised()
+            if (redoTask == DRAW) {
+                redoDraw()
                 return
             }
             if (redoTask == CROP && redoCropStack.isNotEmpty()) {
@@ -170,14 +218,19 @@ class EditManager {
         _currentPaintColor.value = color
     }
 
-    fun clearPaths() {
+    private fun clearPaths() {
         drawPaths.clear()
         redoPaths.clear()
         invalidatorTick.value++
         updateRevised()
     }
 
-    fun clearCrop() {}
+    private fun clearCrop() {
+        cropStack.clear()
+        redoCropStack.clear()
+        clearCroppedPaths()
+        updateRevised()
+    }
 
     fun clearEdits() {
         clearPaths()
@@ -186,6 +239,10 @@ class EditManager {
 
     fun toggleEraseMode() {
         _isEraseMode.value = !isEraseMode.value
+    }
+
+    fun toggleCropMode() {
+        _isCropMode.value = !isCropMode.value
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {
@@ -198,6 +255,18 @@ class EditManager {
         val xOffset = (drawArea.width - bitmap.width) / 2f
         val yOffset = (drawArea.height - bitmap.height) / 2f
         return Offset(xOffset, yOffset)
+    }
+
+    fun loadBitmap(
+        bitmap: Bitmap,
+        resize: (ImageBitmap, Int, Int) -> ImageBitmap
+    ) {
+        val drawArea = drawAreaSize.value
+        backgroundImage.value = resize(
+            bitmap.asImageBitmap(),
+            drawArea.width,
+            drawArea.height
+        )
     }
 
     private companion object {
