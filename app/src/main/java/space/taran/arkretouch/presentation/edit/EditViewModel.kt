@@ -1,9 +1,9 @@
 package space.taran.arkretouch.presentation.edit
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -30,10 +30,9 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
-import timber.log.Timber
-import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.outputStream
 
@@ -49,11 +48,10 @@ class EditViewModel(
     var strokeWidth by mutableStateOf(5f)
     var showSavePathDialog by mutableStateOf(false)
     var showExitDialog by mutableStateOf(false)
+    var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
-
-    lateinit var crop: Bitmap
 
     fun loadImage() {
         imagePath?.let {
@@ -96,16 +94,35 @@ class EditViewModel(
             imageSaved = true
         }
 
-    fun getImageUri(context: Context, name: String = "") =
-        getCachedImageUri(context, name)
+    fun confirmExit() = viewModelScope.launch {
+        exitConfirmed = true
+        delay(2_000)
+        exitConfirmed = false
+    }
 
-    private fun getCachedImageUri(context: Context, name: String = ""): Uri {
+    fun shareImage(context: Context) =
+        viewModelScope.launch(Dispatchers.IO) {
+            val intent = Intent(Intent.ACTION_SEND)
+            val uri = getCachedImageUri(context)
+            intent.type = "image/*"
+            intent.putExtra(Intent.EXTRA_STREAM, uri)
+            context.apply {
+                startActivity(
+                    Intent.createChooser(
+                        intent,
+                        getString(R.string.share)
+                    )
+                )
+            }
+        }
+
+    private fun getCachedImageUri(context: Context): Uri {
         var uri: Uri? = null
         val imageCacheFolder = File(context.cacheDir, "images")
         val combinedBitmap = getCombinedImageBitmap()
         try {
             imageCacheFolder.mkdirs()
-            val file = File(imageCacheFolder, "image$name.png")
+            val file = File(imageCacheFolder, "image_to_share.png")
             file.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
@@ -122,7 +139,7 @@ class EditViewModel(
         return uri!!
     }
 
-    fun getCombinedImageBitmap(): ImageBitmap {
+    private fun getCombinedImageBitmap(): ImageBitmap {
         val size = editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
@@ -145,20 +162,6 @@ class EditViewModel(
         }
         combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         return combinedBitmap
-    }
-
-    fun loadCroppedBitmap() {
-        editManager.apply {
-            loadBitmap(crop()) { bitmap, width, height ->
-                resize(bitmap, width, height)
-            }
-        }
-    }
-
-    fun confirmExit() = viewModelScope.launch {
-        exitConfirmed = true
-        delay(2_000)
-        exitConfirmed = false
     }
 }
 

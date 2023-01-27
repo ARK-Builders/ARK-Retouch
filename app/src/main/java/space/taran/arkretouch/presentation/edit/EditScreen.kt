@@ -5,25 +5,23 @@ package space.taran.arkretouch.presentation.edit
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.canhub.cropper.CropImageContractOptions
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
@@ -73,10 +70,8 @@ fun EditScreen(
     imageUri: String?,
     fragmentManager: FragmentManager,
     navigateBack: () -> Unit,
-    launchedFromIntent: Boolean,
+    launchedFromIntent: Boolean
 ) {
-    val context = LocalContext.current
-    var cropLauncher: ActivityResultLauncher<CropImageContractOptions>? = null
     val primaryColor = MaterialTheme.colors.primary
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
@@ -85,24 +80,12 @@ fun EditScreen(
         ).apply {
             editManager.setPaintColor(primaryColor)
         }
-
-    cropLauncher = rememberLauncherForActivityResult(
-        CropContract(),
-    ) { cropResult ->
-        if (cropResult.isSuccessful) {
-            val uri = cropResult.uriContent.toString()
-            viewModel.apply {
-                editManager.notifyImageCropped(uri)
-                editManager.invalidatorTick.value++
-                loadCroppedImage()
-            }
-        } else cropResult.error?.printStackTrace()
-    }
+    val context = LocalContext.current
 
     ExitDialog(
         viewModel = viewModel,
         navigateBack = { navigateBack() },
-        launchedFromIntent = launchedFromIntent
+        launchedFromIntent = launchedFromIntent,
     )
 
     BackHandler {
@@ -204,6 +187,23 @@ private fun BoxScope.TopMenu(
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath)
                 viewModel.showSavePathDialog = false
+            }
+        )
+    if (viewModel.showMoreOptionsPopup)
+        MoreOptionsPopup(
+            onDismissClick = {
+                viewModel.showMoreOptionsPopup = false
+            },
+            onShareClick = {
+                viewModel.shareImage(context)
+                viewModel.showMoreOptionsPopup = false
+            },
+            onSaveClick = {
+                if (!context.isWritePermGranted()) {
+                    context.askWritePermissions()
+                    return@MoreOptionsPopup
+                }
+                viewModel.showSavePathDialog = true
             }
         )
 
