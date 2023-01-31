@@ -38,7 +38,8 @@ class EditManager {
     private val croppedPathsStack = Stack<Stack<DrawPath>>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    var originalImage = mutableStateOf<ImageBitmap?>(null)
+    private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
+    private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
 
@@ -74,9 +75,11 @@ class EditManager {
 
     fun keepCroppedPaths() {
         val stack = Stack<DrawPath>()
-        val size = drawPaths.size
-        for (i in 1..size) {
-            stack.push(drawPaths.pop())
+        if (drawPaths.isNotEmpty()) {
+            val size = drawPaths.size
+            for (i in 1..size) {
+                stack.push(drawPaths.pop())
+            }
         }
         croppedPathsStack.add(stack)
         updateRevised()
@@ -98,22 +101,28 @@ class EditManager {
 
     fun addCrop() {
         if (canRedo.value) clearRedo()
-        cropStack.add(backgroundImage.value)
+        cropStack.add(backgroundImage2.value)
         undoStack.add(CROP)
         updateRevised()
+    }
+
+    private fun redrawCroppedPaths() {
+        if (croppedPathsStack.isNotEmpty()) {
+            val paths = croppedPathsStack.pop()
+            if (paths.isNotEmpty()) {
+                val size = paths.size
+                for (i in 1..size) {
+                    drawPaths.push(paths.pop())
+                }
+            }
+        }
     }
 
     private fun undoCrop() {
         if (cropStack.isNotEmpty()) {
             redoCropStack.push(backgroundImage.value)
             backgroundImage.value = cropStack.pop()
-            if (croppedPathsStack.isNotEmpty()) {
-                val paths = croppedPathsStack.pop()
-                val size = paths.size
-                for (i in 1..size) {
-                    drawPaths.push(paths.pop())
-                }
-            }
+            redrawCroppedPaths()
             updateRevised()
         }
     }
@@ -122,10 +131,13 @@ class EditManager {
         if (redoCropStack.isNotEmpty()) {
             cropStack.push(backgroundImage.value)
             backgroundImage.value = redoCropStack.pop()
-            if (drawPaths.isNotEmpty())
-                keepCroppedPaths()
+            keepCroppedPaths()
             updateRevised()
         }
+    }
+
+    private fun clearCroppedPaths() {
+        croppedPathsStack.clear()
     }
 
     private fun undoDraw() {
@@ -134,10 +146,6 @@ class EditManager {
             updateRevised()
             return
         }
-    }
-
-    private fun clearCroppedPaths() {
-        croppedPathsStack.clear()
     }
 
     private fun redoDraw() {
@@ -215,11 +223,19 @@ class EditManager {
     fun clearEdits() {
         clearPaths()
         clearCrop()
-        restoreOriginalImage()
+        restoreOriginalBackgroundImage()
     }
 
-    private fun restoreOriginalImage() {
-        backgroundImage.value = originalImage.value
+    fun setBackgroundImage(imgBitmap: ImageBitmap?) {
+        backgroundImage2.value = imgBitmap
+    }
+
+    fun setOriginalBackgroundImage(imgBitmap: ImageBitmap?) {
+        originalBackgroundImage.value = imgBitmap
+    }
+
+    private fun restoreOriginalBackgroundImage() {
+        backgroundImage.value = originalBackgroundImage.value
     }
 
     fun toggleEraseMode() {
@@ -228,6 +244,10 @@ class EditManager {
 
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
+    }
+
+    fun cancelCropMode() {
+        backgroundImage.value = backgroundImage2.value
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {

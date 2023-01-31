@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
@@ -20,7 +21,6 @@ import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
 import space.taran.arkretouch.presentation.utils.crop
-import timber.log.Timber
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
@@ -96,9 +96,6 @@ fun EditDrawCanvas(viewModel: EditViewModel) {
                             cropWindow.detectTouchedSide(
                                 Offset(eventX, eventY)
                             )
-                            Timber.tag("is touched").d(
-                                cropWindow.isTouched(eventX, eventY).toString()
-                            )
                         }
                         MotionEvent.ACTION_MOVE -> {
                             val deltaX = computeDeltaX(currentPoint.x, eventX)
@@ -120,21 +117,32 @@ fun EditDrawCanvas(viewModel: EditViewModel) {
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
+        val bitmap = viewModel
+            .getCombinedImageBitmap().asAndroidBitmap()
         drawIntoCanvas { canvas ->
-            editManager.drawPaths.forEach {
-                canvas.drawPath(it.path, it.paint)
+            if (!editManager.isCropMode.value) {
+                editManager.drawPaths.forEach {
+                    canvas.drawPath(it.path, it.paint)
+                }
             }
 
             if (editManager.isCropMode.value) {
                 cropWindow.init(
-                    viewModel.getCombinedImageBitmap().asAndroidBitmap(),
-                    canvas
+                    bitmap,
+                    canvas,
+                    fitBitmap = { bitmap, width, height ->
+                        viewModel.resizeBitmap(
+                            bitmap.asImageBitmap(),
+                            width,
+                            height
+                        ).asAndroidBitmap()
+                    }
                 )
                 editManager.crop = {
+                    editManager.keepCroppedPaths()
                     with(cropWindow) {
-                        editManager.keepCroppedPaths()
                         getBitmap().crop(
-                            getCropRect()
+                            getCropParams()
                         )
                     }
                 }

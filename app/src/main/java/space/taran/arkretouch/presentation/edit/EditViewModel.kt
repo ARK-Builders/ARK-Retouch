@@ -161,6 +161,19 @@ class EditViewModel(
             }
         }
     }
+
+    fun resizeBitmap(
+        imgBitmap: ImageBitmap,
+        maxWidth: Int,
+        maxHeight: Int
+    ): ImageBitmap {
+        val img = resize(imgBitmap, maxWidth, maxHeight)
+        editManager.apply {
+            setBackgroundImage(backgroundImage.value)
+            backgroundImage.value = img
+            return img
+        }
+    }
 }
 
 class EditViewModelFactory @AssistedInject constructor(
@@ -220,7 +233,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
             editManager.apply {
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
-                originalImage.value = backgroundImage.value
+                setOriginalBackgroundImage(backgroundImage.value)
             }
         }
 

@@ -57,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
+import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -90,6 +91,12 @@ fun EditScreen(
 
     BackHandler {
         val editManager = viewModel.editManager
+
+        if (editManager.isCropMode.value) {
+            editManager.toggleCropMode()
+            editManager.cancelCropMode()
+            viewModel.menusVisible = true
+        }
         if (editManager.canUndo.value) {
             editManager.undo()
             return@BackHandler
@@ -220,6 +227,12 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
+                if (viewModel.editManager.isCropMode.value) {
+                    viewModel.editManager.toggleCropMode()
+                    viewModel.editManager.cancelCropMode()
+                    viewModel.menusVisible = true
+                    return@clickable
+                }
                 if (!viewModel.editManager.canUndo.value) {
                     if (launchedFromIntent) {
                         context
@@ -248,6 +261,7 @@ private fun BoxScope.TopMenu(
                     viewModel.editManager.addCrop()
                     viewModel.loadCroppedBitmap()
                     viewModel.editManager.toggleCropMode()
+                    viewModel.menusVisible = true
                     return@clickable
                 }
                 viewModel.showMoreOptionsPopup = true
@@ -312,6 +326,10 @@ private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit
             .fillMaxSize(),
         verticalArrangement = Arrangement.Bottom
     ) {
+        CropAspectRatiosMenu(
+            isVisible = viewModel.editManager.isCropMode.value
+        )
+
         Box(
             Modifier
                 .fillMaxWidth()
@@ -481,6 +499,9 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.toggleCropMode()
+                        if (!editManager.isCropMode.value)
+                            editManager.cancelCropMode()
+                        viewModel.menusVisible = !editManager.isCropMode.value
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
                 tint = if (editManager.isCropMode.value)
