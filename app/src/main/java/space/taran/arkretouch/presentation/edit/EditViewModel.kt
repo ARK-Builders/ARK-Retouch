@@ -154,23 +154,29 @@ class EditViewModel(
         return combinedBitmap
     }
 
+    fun prepareBitmapToCrop() {
+        editManager.apply {
+            backgroundImage.value =
+                cropWindow.getBitmap().asImageBitmap()
+        }
+    }
+
     fun loadCroppedBitmap() {
         editManager.apply {
-            loadBitmap(crop()) { bitmap, width, height ->
+            resizeCroppedBitmap { bitmap, width, height ->
                 resize(bitmap, width, height)
             }
         }
     }
 
-    fun resizeBitmap(
+    fun fitBitmapToCropWindow(
         imgBitmap: ImageBitmap,
         maxWidth: Int,
         maxHeight: Int
-    ): ImageBitmap {
-        val img = resize(imgBitmap, maxWidth, maxHeight)
+    ): Bitmap {
         editManager.apply {
-            setBackgroundImage(backgroundImage.value)
-            backgroundImage.value = img
+            val img = resize(imgBitmap, maxWidth, maxHeight).asAndroidBitmap()
+            backgroundImage.value = img.asImageBitmap()
             return img
         }
     }

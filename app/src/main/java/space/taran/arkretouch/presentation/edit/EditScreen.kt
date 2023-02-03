@@ -44,6 +44,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -95,7 +97,9 @@ fun EditScreen(
         if (editManager.isCropMode.value) {
             editManager.toggleCropMode()
             editManager.cancelCropMode()
+            editManager.cropWindow.close()
             viewModel.menusVisible = true
+            return@BackHandler
         }
         if (editManager.canUndo.value) {
             editManager.undo()
@@ -119,6 +123,7 @@ fun EditScreen(
     DrawContainer(
         viewModel
     )
+
     Menus(
         imagePath,
         fragmentManager,
@@ -227,22 +232,25 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
-                if (viewModel.editManager.isCropMode.value) {
-                    viewModel.editManager.toggleCropMode()
-                    viewModel.editManager.cancelCropMode()
-                    viewModel.menusVisible = true
-                    return@clickable
-                }
-                if (!viewModel.editManager.canUndo.value) {
-                    if (launchedFromIntent) {
-                        context
-                            .getActivity()
-                            ?.finish()
-                    } else {
-                        navigateBack()
+                viewModel.editManager.apply {
+                    if (isCropMode.value) {
+                        toggleCropMode()
+                        cancelCropMode()
+                        cropWindow.close()
+                        viewModel.menusVisible = true
+                        return@clickable
                     }
-                } else {
-                    viewModel.showExitDialog = true
+                    if (!canUndo.value) {
+                        if (launchedFromIntent) {
+                            context
+                                .getActivity()
+                                ?.finish()
+                        } else {
+                            navigateBack()
+                        }
+                    } else {
+                        viewModel.showExitDialog = true
+                    }
                 }
             },
         imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
@@ -257,12 +265,15 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
-                if (viewModel.editManager.isCropMode.value) {
-                    viewModel.editManager.addCrop()
-                    viewModel.loadCroppedBitmap()
-                    viewModel.editManager.toggleCropMode()
-                    viewModel.menusVisible = true
-                    return@clickable
+                viewModel.editManager.apply {
+                    if (isCropMode.value) {
+                        addCrop()
+                        viewModel.loadCroppedBitmap()
+                        toggleCropMode()
+                        cropWindow.close()
+                        viewModel.menusVisible = true
+                        return@clickable
+                    }
                 }
                 viewModel.showMoreOptionsPopup = true
             },
@@ -327,7 +338,8 @@ private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit
         verticalArrangement = Arrangement.Bottom
     ) {
         CropAspectRatiosMenu(
-            isVisible = viewModel.editManager.isCropMode.value
+            isVisible = viewModel.editManager.isCropMode.value,
+            viewModel.editManager.cropWindow
         )
 
         Box(
@@ -498,10 +510,29 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.toggleCropMode()
-                        if (!editManager.isCropMode.value)
+                        editManager.apply {
+                            toggleCropMode()
+                            viewModel.menusVisible = !editManager.isCropMode.value
+                            if (isCropMode.value) {
+                                val bitmap =
+                                    viewModel.getCombinedImageBitmap()
+                                        .asAndroidBitmap()
+                                setBackgroundImage2(bitmap.asImageBitmap())
+                                viewModel.editManager.cropWindow.init(
+                                    bitmap,
+                                    fitBitmap = { bitmap1, maxWidth, maxHeight ->
+                                        viewModel.fitBitmapToCropWindow(
+                                            bitmap1.asImageBitmap(),
+                                            maxWidth,
+                                            maxHeight
+                                        )
+                                    }
+                                )
+                                return@clickable
+                            }
                             editManager.cancelCropMode()
-                        viewModel.menusVisible = !editManager.isCropMode.value
+                            editManager.cropWindow.close()
+                        }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
                 tint = if (editManager.isCropMode.value)

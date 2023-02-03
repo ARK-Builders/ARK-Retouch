@@ -18,23 +18,28 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.edit.crop.AspectRatios.aspectRatios
-import space.taran.arkretouch.presentation.edit.crop.AspectRatios.isCropFree
-import space.taran.arkretouch.presentation.edit.crop.AspectRatios.isCropSquare
-import space.taran.arkretouch.presentation.edit.crop.AspectRatios.isCrop_16_9
-import space.taran.arkretouch.presentation.edit.crop.AspectRatios.isCrop_3_2
-import space.taran.arkretouch.presentation.edit.crop.AspectRatios.isCrop_5_4
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.aspectRatios
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropFree
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropSquare
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_9_16
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_2_3
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_4_5
 
 @Composable
-fun CropAspectRatiosMenu(isVisible: Boolean = false) {
-
-    if (isVisible)
+fun CropAspectRatiosMenu(
+    isVisible: Boolean = false,
+    cropWindow: CropWindow
+) {
+    if (isVisible) {
+        cropWindow.resize()
         Row(
             Modifier
                 .fillMaxWidth()
@@ -102,7 +107,7 @@ fun CropAspectRatiosMenu(isVisible: Boolean = false) {
                 Modifier
                     .clip(RoundedCornerShape(5.dp))
                     .clickable {
-                        switchAspectRatio(isCrop_5_4)
+                        switchAspectRatio(isCrop_4_5)
                     }
             ) {
                 Icon(
@@ -111,20 +116,21 @@ fun CropAspectRatiosMenu(isVisible: Boolean = false) {
                             start = 12.dp, end = 12.dp,
                             top = 5.dp, bottom = 5.dp
                         )
+                        .rotate(90f)
                         .align(Alignment.CenterHorizontally)
                         .size(30.dp),
                     imageVector =
                     ImageVector.vectorResource(id = R.drawable.ic_crop_5_4),
                     contentDescription =
-                    stringResource(id = R.string.ark_retouch_crop_5_4),
-                    tint = if (isCrop_5_4.value)
+                    stringResource(id = R.string.ark_retouch_crop_4_5),
+                    tint = if (isCrop_4_5.value)
                         MaterialTheme.colors.primary
                     else Color.Black
                 )
                 Text(
-                    stringResource(R.string.ark_retouch_crop_5_4),
+                    stringResource(R.string.ark_retouch_crop_4_5),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    color = if (isCrop_5_4.value)
+                    color = if (isCrop_4_5.value)
                         MaterialTheme.colors.primary
                     else Color.Black
                 )
@@ -133,7 +139,7 @@ fun CropAspectRatiosMenu(isVisible: Boolean = false) {
                 Modifier
                     .clip(RoundedCornerShape(5.dp))
                     .clickable {
-                        switchAspectRatio(isCrop_16_9)
+                        switchAspectRatio(isCrop_9_16)
                     }
             ) {
                 Icon(
@@ -142,20 +148,21 @@ fun CropAspectRatiosMenu(isVisible: Boolean = false) {
                             start = 12.dp, end = 12.dp,
                             top = 5.dp, bottom = 5.dp
                         )
+                        .rotate(90f)
                         .align(Alignment.CenterHorizontally)
                         .size(30.dp),
                     imageVector =
                     ImageVector.vectorResource(id = R.drawable.ic_crop_16_9),
                     contentDescription =
-                    stringResource(id = R.string.ark_retouch_crop_16_9),
-                    tint = if (isCrop_16_9.value)
+                    stringResource(id = R.string.ark_retouch_crop_9_16),
+                    tint = if (isCrop_9_16.value)
                         MaterialTheme.colors.primary
                     else Color.Black
                 )
                 Text(
-                    stringResource(R.string.ark_retouch_crop_16_9),
+                    stringResource(R.string.ark_retouch_crop_9_16),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    color = if (isCrop_16_9.value)
+                    color = if (isCrop_9_16.value)
                         MaterialTheme.colors.primary
                     else Color.Black
                 )
@@ -164,7 +171,7 @@ fun CropAspectRatiosMenu(isVisible: Boolean = false) {
                 Modifier
                     .clip(RoundedCornerShape(5.dp))
                     .clickable {
-                        switchAspectRatio(isCrop_3_2)
+                        switchAspectRatio(isCrop_2_3)
                     }
             ) {
                 Icon(
@@ -173,26 +180,27 @@ fun CropAspectRatiosMenu(isVisible: Boolean = false) {
                             start = 12.dp, end = 12.dp,
                             top = 5.dp, bottom = 5.dp
                         )
+                        .rotate(90f)
                         .align(Alignment.CenterHorizontally)
                         .size(30.dp),
                     imageVector =
                     ImageVector.vectorResource(id = R.drawable.ic_crop_3_2),
                     contentDescription =
-                    stringResource(id = R.string.ark_retouch_crop_3_2),
-                    tint = if (isCrop_3_2.value)
+                    stringResource(id = R.string.ark_retouch_crop_2_3),
+                    tint = if (isCrop_2_3.value)
                         MaterialTheme.colors.primary
                     else Color.Black
                 )
                 Text(
-                    stringResource(R.string.ark_retouch_crop_3_2),
+                    stringResource(R.string.ark_retouch_crop_2_3),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    color = if (isCrop_3_2.value)
+                    color = if (isCrop_2_3.value)
                         MaterialTheme.colors.primary
                     else Color.Black
                 )
             }
         }
-    else switchAspectRatio(isCropFree)
+    } else switchAspectRatio(isCropFree)
 }
 
 internal fun switchAspectRatio(selected: MutableState<Boolean>) {
@@ -204,22 +212,26 @@ internal fun switchAspectRatio(selected: MutableState<Boolean>) {
     }
 }
 
-internal object AspectRatios {
-    val isCropFree = mutableStateOf(true)
+internal object AspectRatio {
+    val isCropFree = mutableStateOf(false)
     val isCropSquare = mutableStateOf(false)
-    val isCrop_5_4 = mutableStateOf(false)
-    val isCrop_16_9 = mutableStateOf(false)
-    val isCrop_3_2 = mutableStateOf(false)
+    val isCrop_4_5 = mutableStateOf(false)
+    val isCrop_9_16 = mutableStateOf(false)
+    val isCrop_2_3 = mutableStateOf(false)
+
+    val isFixed = mutableStateOf(false)
+
     val aspectRatios = listOf(
         isCropFree,
         isCropSquare,
-        isCrop_5_4,
-        isCrop_16_9,
-        isCrop_3_2
+        isCrop_4_5,
+        isCrop_9_16,
+        isCrop_2_3
     )
-    val CROP_FREE = Pair(0, 0)
-    val CROP_SQUARE = Pair(1, 1)
-    val CROP_5_4 = Pair(5, 4)
-    val CROP_16_9 = Pair(16, 9)
-    val CROP_3_2 = Pair(3, 2)
+
+    val CROP_FREE = Offset(0f, 0f)
+    val CROP_SQUARE = Offset(1f, 1f)
+    val CROP_4_5 = Offset(4f, 5f)
+    val CROP_9_16 = Offset(9f, 16f)
+    val CROP_2_3 = Offset(2f, 3f)
 }

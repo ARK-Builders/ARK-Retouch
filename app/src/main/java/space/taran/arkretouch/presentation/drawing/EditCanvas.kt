@@ -11,16 +11,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
-import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
-import space.taran.arkretouch.presentation.utils.crop
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
@@ -40,7 +36,6 @@ fun EditDrawCanvas(viewModel: EditViewModel) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
-    val cropWindow = CropWindow()
 
     Canvas(
         modifier = Modifier
@@ -88,65 +83,42 @@ fun EditDrawCanvas(viewModel: EditViewModel) {
                         }
                         else -> false
                     }
-                else
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            currentPoint.x = eventX
-                            currentPoint.y = eventY
-                            cropWindow.detectTouchedSide(
-                                Offset(eventX, eventY)
-                            )
-                        }
-                        MotionEvent.ACTION_MOVE -> {
-                            val deltaX = computeDeltaX(currentPoint.x, eventX)
-                            val deltaY = computeDeltaY(currentPoint.y, eventY)
-
-                            cropWindow.setDelta(Offset(deltaX, deltaY))
-                            currentPoint.x = eventX
-                            currentPoint.y = eventY
-                        }
-                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                            cropWindow.detectTouchedSide(
-                                Offset(eventX, eventY)
-                            )
-                        }
+                else when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        currentPoint.x = eventX
+                        currentPoint.y = eventY
+                        editManager.cropWindow.detectTouchedSide(
+                            Offset(eventX, eventY)
+                        )
                     }
+                    MotionEvent.ACTION_MOVE -> {
+                        val deltaX = computeDeltaX(currentPoint.x, eventX)
+                        val deltaY = computeDeltaY(currentPoint.y, eventY)
+
+                        editManager.cropWindow.setDelta(Offset(deltaX, deltaY))
+                        currentPoint.x = eventX
+                        currentPoint.y = eventY
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
+                }
                 editManager.invalidatorTick.value++
                 true
             }
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
-        val bitmap = viewModel
-            .getCombinedImageBitmap().asAndroidBitmap()
         drawIntoCanvas { canvas ->
             if (!editManager.isCropMode.value) {
                 editManager.drawPaths.forEach {
                     canvas.drawPath(it.path, it.paint)
                 }
-            }
-
-            if (editManager.isCropMode.value) {
-                cropWindow.init(
-                    bitmap,
-                    canvas,
-                    fitBitmap = { bitmap, width, height ->
-                        viewModel.resizeBitmap(
-                            bitmap.asImageBitmap(),
-                            width,
-                            height
-                        ).asAndroidBitmap()
-                    }
-                )
-                editManager.crop = {
-                    editManager.keepCroppedPaths()
-                    with(cropWindow) {
-                        getBitmap().crop(
-                            getCropParams()
-                        )
-                    }
+            } else {
+                if (editManager.cropWindow.isAspectRatioFixed()) {
+                    editManager.cropWindow.show(canvas)
+                    return@drawIntoCanvas
                 }
-            } else cropWindow.reInit()
+                editManager.cropWindow.show(canvas)
+            }
         }
     }
 }

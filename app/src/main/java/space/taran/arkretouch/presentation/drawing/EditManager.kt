@@ -8,13 +8,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.presentation.edit.crop.CropWindow
+import space.taran.arkretouch.presentation.utils.crop
 import java.util.Stack
 
 class EditManager {
@@ -25,6 +27,9 @@ class EditManager {
         style = PaintingStyle.Stroke
         blendMode = BlendMode.SrcOut
     }
+
+    val cropWindow = CropWindow()
+
     val currentPaint: Paint
         get() = if (isEraseMode.value) {
             erasePaint
@@ -67,13 +72,20 @@ class EditManager {
     private val cropStack = Stack<ImageBitmap>()
     private val redoCropStack = Stack<ImageBitmap>()
 
-    lateinit var crop: () -> Bitmap
+    private fun crop(): Bitmap {
+        keepCroppedPaths()
+        return with(cropWindow) {
+            getBitmap().crop(
+                getCropParams()
+            )
+        }
+    }
 
     internal fun clearRedoPath() {
         redoPaths.clear()
     }
 
-    fun keepCroppedPaths() {
+    private fun keepCroppedPaths() {
         val stack = Stack<DrawPath>()
         if (drawPaths.isNotEmpty()) {
             val size = drawPaths.size
@@ -226,8 +238,10 @@ class EditManager {
         restoreOriginalBackgroundImage()
     }
 
-    fun setBackgroundImage(imgBitmap: ImageBitmap?) {
-        backgroundImage2.value = imgBitmap
+    fun setBackgroundImage2(imgBitmap: ImageBitmap?) {
+        if (drawPaths.isNotEmpty())
+            backgroundImage2.value = backgroundImage.value
+        else backgroundImage2.value = imgBitmap
     }
 
     fun setOriginalBackgroundImage(imgBitmap: ImageBitmap?) {
@@ -262,13 +276,12 @@ class EditManager {
         return Offset(xOffset, yOffset)
     }
 
-    fun loadBitmap(
-        bitmap: Bitmap,
+    fun resizeCroppedBitmap(
         resize: (ImageBitmap, Int, Int) -> ImageBitmap
     ) {
         val drawArea = drawAreaSize.value
         backgroundImage.value = resize(
-            bitmap.asImageBitmap(),
+            crop().asImageBitmap(),
             drawArea.width,
             drawArea.height
         )
