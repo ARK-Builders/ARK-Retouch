@@ -12,17 +12,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -161,7 +161,7 @@ private fun Menus(
                         .size(40.dp)
                         .clip(CircleShape)
                         .clickable {
-                            viewModel.rotateImage(-90F)
+                            viewModel.rotateImage(-90F, true)
                         },
                     imageVector = ImageVector
                         .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
@@ -217,6 +217,23 @@ private fun BoxScope.TopMenu(
                 viewModel.showSavePathDialog = false
             }
         )
+    if (viewModel.showMoreOptionsPopup)
+        MoreOptionsPopup(
+            onDismissClick = {
+                viewModel.showMoreOptionsPopup = false
+            },
+            onShareClick = {
+                viewModel.shareImage(context)
+                viewModel.showMoreOptionsPopup = false
+            },
+            onSaveClick = {
+                if (!context.isWritePermGranted()) {
+                    context.askWritePermissions()
+                    return@MoreOptionsPopup
+                }
+                viewModel.showSavePathDialog = true
+            }
+        )
 
     if (
         !viewModel.menusVisible &&
@@ -258,34 +275,34 @@ private fun BoxScope.TopMenu(
         contentDescription = null
     )
 
-    Icon(
-        modifier = Modifier
+    Row(
+        Modifier
             .align(Alignment.TopEnd)
-            .padding(8.dp)
-            .size(36.dp)
-            .clip(CircleShape)
-            .clickable {
-                if (viewModel.editManager.isRotateMode.value) {
-                    viewModel.apply {
-                        editManager.addRotation()
-                        editManager.toggleRotateMode()
-                        viewModel.menusVisible = true
-                        return@clickable
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(8.dp)
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable {
+                    if (viewModel.editManager.isRotateMode.value) {
+                        viewModel.apply {
+                            editManager.addRotation()
+                            editManager.toggleRotateMode()
+                            viewModel.menusVisible = true
+                            return@clickable
+                        }
                     }
-                }
-                if (!context.isWritePermGranted()) {
-                    context.askWritePermissions()
-                    return@clickable
-                }
-                viewModel.showSavePathDialog = true
-            },
-        imageVector = if (viewModel.editManager.isRotateMode.value)
-            ImageVector.vectorResource(R.drawable.ic_check)
-        else
-            ImageVector.vectorResource(R.drawable.ic_save),
-        tint = MaterialTheme.colors.primary,
-        contentDescription = null
-    )
+                    viewModel.showMoreOptionsPopup = true
+                },
+            imageVector = if (viewModel.editManager.isRotateMode.value)
+                ImageVector.vectorResource(R.drawable.ic_check)
+            else
+                ImageVector.vectorResource(R.drawable.ic_more_vert),
+            tint = MaterialTheme.colors.primary,
+            contentDescription = null
+        )
+    }
 }
 
 @Composable

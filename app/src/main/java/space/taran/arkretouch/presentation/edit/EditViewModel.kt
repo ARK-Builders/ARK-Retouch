@@ -1,6 +1,7 @@
 package space.taran.arkretouch.presentation.edit
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -30,6 +31,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.utils.rotate
@@ -50,6 +52,7 @@ class EditViewModel(
     var strokeWidth by mutableStateOf(5f)
     var showSavePathDialog by mutableStateOf(false)
     var showExitDialog by mutableStateOf(false)
+    var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
@@ -82,6 +85,48 @@ class EditViewModel(
             }
             imageSaved = true
         }
+
+    fun shareImage(context: Context) =
+        viewModelScope.launch(Dispatchers.IO) {
+            val intent = Intent(Intent.ACTION_SEND)
+            val uri = getCachedImageUri(context)
+            intent.type = "image/*"
+            intent.putExtra(Intent.EXTRA_STREAM, uri)
+            context.apply {
+                startActivity(
+                    Intent.createChooser(
+                        intent,
+                        getString(R.string.share)
+                    )
+                )
+            }
+        }
+
+    fun rotateImage(
+        angle: Float,
+        isFixedAngle: Boolean = false
+    ) {
+        editManager.apply {
+            rotationAngle.value += angle
+            val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
+            val oddModulus = horizontalAxisDetectorModulus % 2f
+            val isOdd = oddModulus == 1f || oddModulus == -1f
+            val shouldResize = isOdd && isFixedAngle
+            val bitmap = bitmapToRotate.rotate(
+                editManager.rotationAngle.value,
+                shouldResize,
+                resize = { bitmap, width, height ->
+                    resize(
+                        bitmap.asImageBitmap(),
+                        width,
+                        height
+                    )
+                        .asAndroidBitmap()
+                }
+            )
+            backgroundImage.value = bitmap.asImageBitmap()
+        }
+    }
 
     fun getImageUri(
         context: Context = DIManager.component.app(),
@@ -139,29 +184,6 @@ class EditViewModel(
         }
         combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         return combinedBitmap
-    }
-
-    fun rotateImage(
-        angle: Float
-    ) {
-        editManager.apply {
-            rotationAngle.value += angle
-            val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
-            val shouldResize = horizontalAxisDetectorModulus != 0f
-            val bitmap = bitmapToRotate.rotate(
-                editManager.rotationAngle.value,
-                shouldResize,
-                resize = { bitmap, width, height ->
-                    resize(
-                        bitmap.asImageBitmap(),
-                        width,
-                        height
-                    )
-                        .asAndroidBitmap()
-                }
-            )
-            backgroundImage.value = bitmap.asImageBitmap()
-        }
     }
 
     fun confirmExit() = viewModelScope.launch {
