@@ -114,17 +114,6 @@ class CropWindow {
 
         if (isAspectRatioFixed()) {
             if (isTouchedOnCorner.value) {
-                delta = if (delta.x != 0f) {
-                    Offset(
-                        delta.x,
-                        delta.x * aspectRatio
-                    )
-                } else {
-                    Offset(
-                        delta.y,
-                        delta.y * (1 / aspectRatio)
-                    )
-                }
                 if (isTouchedTopLeft.value) {
                     left = rect.left + delta.x
                     top = rect.top + delta.y
@@ -141,6 +130,11 @@ class CropWindow {
                     right = rect.right + delta.x
                     bottom = rect.bottom + delta.y
                 }
+                val newHeight = (right - left) * aspectRatio
+                if (isTouchedTopLeft.value || isTouchedTopRight.value)
+                    top = bottom - newHeight
+                if (isTouchedBottomLeft.value || isTouchedBottomRight.value)
+                    bottom = top + newHeight
             } else {
                 if (isTouchedLeft.value) {
                     left = rect.left + delta.x
