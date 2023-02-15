@@ -27,6 +27,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import space.taran.arkretouch.R
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.aspectRatios
+import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isChanged
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropFree
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropSquare
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_9_16
@@ -39,7 +40,10 @@ fun CropAspectRatiosMenu(
     cropWindow: CropWindow
 ) {
     if (isVisible) {
-        cropWindow.resize()
+        if (isChanged.value) {
+            cropWindow.resize()
+            isChanged.value = false
+        }
         Row(
             Modifier
                 .fillMaxWidth()
@@ -210,6 +214,7 @@ internal fun switchAspectRatio(selected: MutableState<Boolean>) {
     }.forEach {
         it.value = false
     }
+    isChanged.value = true
 }
 
 internal object AspectRatio {
@@ -218,8 +223,7 @@ internal object AspectRatio {
     val isCrop_4_5 = mutableStateOf(false)
     val isCrop_9_16 = mutableStateOf(false)
     val isCrop_2_3 = mutableStateOf(false)
-
-    val isFixed = mutableStateOf(false)
+    val isChanged = mutableStateOf(false)
 
     val aspectRatios = listOf(
         isCropFree,

@@ -47,6 +47,7 @@ class EditManager {
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
+    var bitmapSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -238,10 +239,8 @@ class EditManager {
         restoreOriginalBackgroundImage()
     }
 
-    fun setBackgroundImage2(imgBitmap: ImageBitmap?) {
-        if (drawPaths.isNotEmpty())
-            backgroundImage2.value = backgroundImage.value
-        else backgroundImage2.value = imgBitmap
+    fun setBackgroundImage2() {
+        backgroundImage2.value = backgroundImage.value
     }
 
     fun setOriginalBackgroundImage(imgBitmap: ImageBitmap?) {
@@ -269,11 +268,15 @@ class EditManager {
     }
 
     fun calcImageOffset(): Offset {
-        val drawArea = drawAreaSize.value
-        val bitmap = backgroundImage.value!!
-        val xOffset = (drawArea.width - bitmap.width) / 2f
-        val yOffset = (drawArea.height - bitmap.height) / 2f
-        return Offset(xOffset, yOffset)
+        var offset = Offset(0f, 0f)
+        if (backgroundImage.value != null) {
+            val drawArea = drawAreaSize.value
+            val bitmap = backgroundImage.value!!
+            val xOffset = (drawArea.width - bitmap.width) / 2f
+            val yOffset = (drawArea.height - bitmap.height) / 2f
+            offset = Offset(xOffset, yOffset)
+        }
+        return offset
     }
 
     fun resizeCroppedBitmap(

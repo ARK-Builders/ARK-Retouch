@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -130,7 +131,13 @@ class EditViewModel(
     }
 
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.drawAreaSize.value
+        val size =
+            if (editManager.backgroundImage.value != null)
+                IntSize(
+                    editManager.backgroundImage.value?.width!!,
+                    editManager.backgroundImage.value?.height!!
+                )
+            else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -143,7 +150,7 @@ class EditViewModel(
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
-                editManager.calcImageOffset(),
+                Offset(0f, 0f),
                 Paint()
             )
         }
@@ -267,7 +274,6 @@ private fun resize(
     } else {
         finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
     }
-
     return Bitmap
         .createScaledBitmap(bitmap, finalWidth, finalHeight, true)
         .asImageBitmap()
