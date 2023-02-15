@@ -1,6 +1,7 @@
 package space.taran.arkretouch.presentation.utils
 
 import android.Manifest
+import android.annotation.TargetApi
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -31,6 +32,7 @@ object PermissionsHelper {
     }
 }
 
+@TargetApi(30)
 private class AllFilesAccessContract : ActivityResultContract<String, Boolean>() {
     override fun createIntent(context: Context, input: String): Intent {
         return Intent(
