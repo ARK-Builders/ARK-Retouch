@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
@@ -59,6 +60,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
+import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -155,19 +157,34 @@ private fun Menus(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (viewModel.editManager.isRotateMode.value)
-                Icon(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            viewModel.rotateImage(-90F, true)
-                        },
-                    imageVector = ImageVector
-                        .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
-                    tint = MaterialTheme.colors.primary,
-                    contentDescription = null
-                )
+                Row {
+                    Icon(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                viewModel.rotateImage(-90F, true)
+                            },
+                        imageVector = ImageVector
+                            .vectorResource(R.drawable.ic_rotate_left),
+                        tint = MaterialTheme.colors.primary,
+                        contentDescription = null
+                    )
+                    Icon(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                viewModel.rotateImage(90F, true)
+                            },
+                        imageVector = ImageVector
+                            .vectorResource(R.drawable.ic_rotate_right),
+                        tint = MaterialTheme.colors.primary,
+                        contentDescription = null
+                    )
+                }
             EditMenuContainer(viewModel)
         }
     }
@@ -180,6 +197,7 @@ private fun DrawContainer(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Gray)
             .padding(bottom = 32.dp)
             .pointerInteropFilter { event ->
                 if (event.action == MotionEvent.ACTION_DOWN)
@@ -287,6 +305,9 @@ private fun BoxScope.TopMenu(
                 .clickable {
                     if (viewModel.editManager.isRotateMode.value) {
                         viewModel.apply {
+                            viewModel.rotateImage(
+                                applyRotation = true
+                            )
                             editManager.addRotation()
                             editManager.toggleRotateMode()
                             viewModel.menusVisible = true
@@ -512,10 +533,18 @@ private fun EditMenuContent(
                         editManager.apply {
                             toggleRotateMode()
                             if (isRotateMode.value) {
+                                val rotateGrid = RotateGrid()
                                 val imgBitmap = viewModel.getCombinedImageBitmap()
+                                rotateGrid
+                                    .init(
+                                        this,
+                                        imgBitmap,
+                                        calcImageOffset()
+                                    )
+                                rotationGrid = rotateGrid
                                 bitmapToRotate =
                                     imgBitmap.asAndroidBitmap()
-                                setBackgroundImage2(backgroundImage.value)
+                                setBackgroundImage2()
                                 backgroundImage.value = imgBitmap
                             } else editManager.cancelRotateMode()
                             viewModel.menusVisible = !editManager.isRotateMode.value

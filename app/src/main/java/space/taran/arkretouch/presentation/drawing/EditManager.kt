@@ -1,6 +1,7 @@
 package space.taran.arkretouch.presentation.drawing
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 import timber.log.Timber
 import java.util.Stack
 
@@ -40,6 +42,11 @@ class EditManager {
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     lateinit var bitmapToRotate: Bitmap
+    val rotatePreviewBitmap: Bitmap
+        get() = bitmapToRotate
+
+    lateinit var rotationGrid: RotateGrid
+    val rotateMatrix = Matrix()
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
 
@@ -102,6 +109,10 @@ class EditManager {
         resetRotation()
         keepRotatedPaths()
         updateRevised()
+    }
+
+    fun rotateGrid(angle: Float = 0f) {
+        rotationAngle.value += angle
     }
 
     private fun keepRotatedPaths() {
@@ -195,10 +206,8 @@ class EditManager {
         undoStack.add(DRAW)
     }
 
-    fun setBackgroundImage2(imgBitmap: ImageBitmap?) {
-        if (drawPaths.isNotEmpty())
-            backgroundImage2.value = backgroundImage.value
-        else backgroundImage2.value = imgBitmap
+    fun setBackgroundImage2() {
+        backgroundImage2.value = backgroundImage.value
     }
 
     fun setOriginalBackgroundImage(imgBitmap: ImageBitmap?) {

@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
+import space.taran.arkretouch.presentation.utils.getOriginalSized
 import space.taran.arkretouch.presentation.utils.rotate
 import timber.log.Timber
 import java.io.File
@@ -103,28 +105,39 @@ class EditViewModel(
         }
 
     fun rotateImage(
-        angle: Float,
-        isFixedAngle: Boolean = false
+        angle: Float = 0f,
+        isFixedAngle: Boolean = false,
+        applyRotation: Boolean = false
     ) {
         editManager.apply {
-            rotationAngle.value += angle
+            if (!applyRotation) {
+                rotationAngle.value += angle
+            }
             val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
             val oddModulus = horizontalAxisDetectorModulus % 2f
             val isOdd = oddModulus == 1f || oddModulus == -1f
             val shouldResize = isOdd && isFixedAngle
-            val bitmap = bitmapToRotate.rotate(
-                editManager.rotationAngle.value,
-                shouldResize,
-                resize = { bitmap, width, height ->
+            val bitmap = if (applyRotation) bitmapToRotate
+            else rotatePreviewBitmap
+            rotateMatrix.postRotate(rotationAngle.value)
+            val imgBitmap = bitmap.rotate(
+                rotationAngle.value,
+                false, // Resizing after rotation disabled deliberately
+                resize = { bitmap1, width, height ->
                     resize(
-                        bitmap.asImageBitmap(),
+                        bitmap1.asImageBitmap(),
                         width,
                         height
-                    )
-                        .asAndroidBitmap()
+                    ).asAndroidBitmap()
                 }
             )
-            backgroundImage.value = bitmap.asImageBitmap()
+            backgroundImage.value =
+                if (applyRotation) imgBitmap.getOriginalSized(
+                    rotationGrid.getCropParams()
+                ).asImageBitmap()
+                else imgBitmap.asImageBitmap()
+            if (!applyRotation)
+                rotationGrid.calcRotatedBitmapOffset()
         }
     }
 
@@ -162,7 +175,13 @@ class EditViewModel(
     }
 
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.drawAreaSize.value
+        val bitmap = editManager.backgroundImage.value
+        val size = if (bitmap != null)
+            IntSize(
+                bitmap.width,
+                bitmap.height
+            )
+        else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -175,7 +194,7 @@ class EditViewModel(
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
-                editManager.calcImageOffset(),
+                Offset(0f, 0f),
                 Paint()
             )
         }
