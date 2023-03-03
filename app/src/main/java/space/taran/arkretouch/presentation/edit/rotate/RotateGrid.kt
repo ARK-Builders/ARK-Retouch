@@ -32,10 +32,10 @@ class RotateGrid {
     init {
         paint.style = PaintingStyle.Stroke
         paint.strokeWidth = 8F
-        paint.color = Color.Black
+        paint.color = Color.LightGray
         linePaint.style = PaintingStyle.Stroke
         linePaint.strokeWidth = 4F
-        linePaint.color = Color.Black
+        linePaint.color = Color.LightGray
     }
 
     fun init(
@@ -149,13 +149,29 @@ class RotateGrid {
     }
 
     fun getCropParams(): CropParams {
-        val x = rect.left - rotatedBitmapOffset.x
-        val y = rect.top - rotatedBitmapOffset.y
+        var newWidth = rect.width.toInt()
+        var newHeight = rect.height.toInt()
+        val x = if (rect.left > rotatedBitmapOffset.x)
+            rect.left - rotatedBitmapOffset.x
+        else {
+            newWidth = (rect.width - 2 * (rotatedBitmapOffset.x - rect.left)).toInt()
+            0
+        }
+        val y = if (rect.top > rotatedBitmapOffset.y)
+            rect.top - rotatedBitmapOffset.y
+        else {
+            newHeight = (
+                rect.height - 2 * (
+                    rotatedBitmapOffset.y - rect.top
+                    )
+                ).toInt()
+            0
+        }
         return CropParams.create(
             x.toInt(),
             y.toInt(),
-            rect.width.toInt(),
-            rect.height.toInt()
+            newWidth,
+            newHeight
         )
     }
 
