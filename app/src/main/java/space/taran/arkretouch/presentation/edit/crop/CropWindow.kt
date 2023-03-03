@@ -58,7 +58,7 @@ class CropWindow {
     private var isInitialized = false
 
     init {
-        paint.color = Color.White
+        paint.color = Color.LightGray
         paint.style = PaintingStyle.Stroke
         paint.strokeWidth = 5F
     }

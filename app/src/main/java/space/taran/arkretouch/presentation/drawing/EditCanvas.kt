@@ -22,6 +22,7 @@ import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
 import space.taran.arkretouch.presentation.picker.toDp
+import timber.log.Timber
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
@@ -74,6 +75,10 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             .pointerInteropFilter { event ->
                 val eventX = event.x
                 val eventY = event.y
+                val toolType = event.getToolType(0)
+                Timber.tag("edit-canvas").d(
+                    "tool type: $toolType"
+                )
 
                 if (!editManager.isCropMode.value)
                     when (event.action) {
@@ -108,23 +113,39 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         }
                         else -> false
                     }
-                else when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        currentPoint.x = eventX
-                        currentPoint.y = eventY
-                        editManager.cropWindow.detectTouchedSide(
-                            Offset(eventX, eventY)
-                        )
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        val deltaX = computeDeltaX(currentPoint.x, eventX)
-                        val deltaY = computeDeltaY(currentPoint.y, eventY)
+                else {
+                    if (
+                        toolType != MotionEvent.TOOL_TYPE_STYLUS &&
+                        (
+                            event.action != MotionEvent.ACTION_HOVER_ENTER ||
+                                event.action != MotionEvent.ACTION_HOVER_MOVE ||
+                                event.action != MotionEvent.ACTION_HOVER_EXIT
+                            )
+                    ) {
+                        when (event.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                currentPoint.x = eventX
+                                currentPoint.y = eventY
+                                editManager.cropWindow.detectTouchedSide(
+                                    Offset(eventX, eventY)
+                                )
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                val deltaX = computeDeltaX(currentPoint.x, eventX)
+                                val deltaY = computeDeltaY(currentPoint.y, eventY)
 
-                        editManager.cropWindow.setDelta(Offset(deltaX, deltaY))
-                        currentPoint.x = eventX
-                        currentPoint.y = eventY
+                                editManager.cropWindow.setDelta(
+                                    Offset(
+                                        deltaX,
+                                        deltaY
+                                    )
+                                )
+                                currentPoint.x = eventX
+                                currentPoint.y = eventY
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
+                        }
                     }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
                 }
                 editManager.invalidatorTick.value++
                 true
