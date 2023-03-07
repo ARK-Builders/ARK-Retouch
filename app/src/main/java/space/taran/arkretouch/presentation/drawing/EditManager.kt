@@ -260,9 +260,13 @@ class EditManager {
 
     fun calcImageOffset(): Offset {
         val drawArea = drawAreaSize.value
-        val bitmap = backgroundImage.value!!
-        val xOffset = (drawArea.width - bitmap.width) / 2f
-        val yOffset = (drawArea.height - bitmap.height) / 2f
+        val bitmap = backgroundImage.value
+        var xOffset = 0f
+        var yOffset = 0f
+        if (bitmap != null) {
+            xOffset = (drawArea.width - bitmap.width) / 2f
+            yOffset = (drawArea.height - bitmap.height) / 2f
+        }
         return Offset(xOffset, yOffset)
     }
 
