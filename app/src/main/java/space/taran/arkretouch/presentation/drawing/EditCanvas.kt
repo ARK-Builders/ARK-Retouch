@@ -109,34 +109,31 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         else -> false
                     }
                 else {
-                    if (
-                        event.action != MotionEvent.ACTION_HOVER_ENTER ||
-                        event.action != MotionEvent.ACTION_HOVER_MOVE ||
-                        event.action != MotionEvent.ACTION_HOVER_EXIT
-                    ) {
-                        when (event.action) {
-                            MotionEvent.ACTION_DOWN -> {
-                                currentPoint.x = eventX
-                                currentPoint.y = eventY
-                                editManager.cropWindow.detectTouchedSide(
-                                    Offset(eventX, eventY)
-                                )
-                            }
-                            MotionEvent.ACTION_MOVE -> {
-                                val deltaX = computeDeltaX(currentPoint.x, eventX)
-                                val deltaY = computeDeltaY(currentPoint.y, eventY)
-
-                                editManager.cropWindow.setDelta(
-                                    Offset(
-                                        deltaX,
-                                        deltaY
-                                    )
-                                )
-                                currentPoint.x = eventX
-                                currentPoint.y = eventY
-                            }
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            currentPoint.x = eventX
+                            currentPoint.y = eventY
+                            editManager.cropWindow.detectTouchedSide(
+                                Offset(eventX, eventY)
+                            )
                         }
+                        MotionEvent.ACTION_MOVE -> {
+                            val deltaX = computeDeltaX(currentPoint.x, eventX)
+                            val deltaY = computeDeltaY(currentPoint.y, eventY)
+
+                            editManager.cropWindow.setDelta(
+                                Offset(
+                                    deltaX,
+                                    deltaY
+                                )
+                            )
+                            currentPoint.x = eventX
+                            currentPoint.y = eventY
+                        }
+                        MotionEvent.ACTION_HOVER_ENTER -> {}
+                        MotionEvent.ACTION_HOVER_MOVE -> {}
+                        MotionEvent.ACTION_HOVER_EXIT -> {}
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
                     }
                 }
                 editManager.invalidatorTick.value++
