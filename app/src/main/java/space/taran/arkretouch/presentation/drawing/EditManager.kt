@@ -1,7 +1,5 @@
 package space.taran.arkretouch.presentation.drawing
 
-import android.graphics.Bitmap
-import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -41,12 +39,7 @@ class EditManager {
     var backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
-    lateinit var bitmapToRotate: Bitmap
-    val rotatePreviewBitmap: Bitmap
-        get() = bitmapToRotate
-
-    lateinit var rotationGrid: RotateGrid
-    val rotateMatrix = Matrix()
+    val rotationGrid = RotateGrid()
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
 

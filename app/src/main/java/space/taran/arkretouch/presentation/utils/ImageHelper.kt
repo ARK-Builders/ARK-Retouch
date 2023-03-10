@@ -6,7 +6,7 @@ import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 
 fun Bitmap.rotate(
     angle: Float,
-    shouldResize: Boolean,
+    shouldFit: Boolean,
     resize: (Bitmap, Int, Int) -> Bitmap
 ): Bitmap {
     val matrix = Matrix()
@@ -23,21 +23,17 @@ fun Bitmap.rotate(
         matrix,
         true
     )
-    if (height > width || height == width) {
-        newWidth = (3 * source.width) - (2 * width)
-        newHeight = (newWidth / aspectRatio).toInt()
-    }
-    if (width > height) {
-        newHeight = (3 * source.height) - (2 * height)
-        newWidth = (newHeight * aspectRatio).toInt()
+    if (!shouldFit) {
+        if (height > width || height == width) {
+            newWidth = (3 * source.width) - (2 * width)
+            newHeight = (newWidth / aspectRatio).toInt()
+        }
+        if (width > height) {
+            newHeight = (3 * source.height) - (2 * height)
+            newWidth = (newHeight * aspectRatio).toInt()
+        }
     }
     source = resize(source, newWidth, newHeight)
-    /* if (shouldResize) {
-        val aspectRatio: Float = newWidth.toFloat() / newHeight.toFloat()
-        newHeight = newWidth
-        newWidth = (newHeight * aspectRatio).toInt()
-        source = resize(this, newWidth, newHeight)
-    }*/
     return source
 }
 

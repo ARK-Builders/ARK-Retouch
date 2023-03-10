@@ -58,6 +58,7 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
+    var shouldFit = false
 
     fun loadImage() {
         imagePath?.let {
@@ -112,17 +113,15 @@ class EditViewModel(
         editManager.apply {
             if (!applyRotation) {
                 rotationAngle.value += angle
+                val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
+                val oddModulus = horizontalAxisDetectorModulus % 2f
+                val isOdd = oddModulus == 1f || oddModulus == -1f
+                shouldFit = isOdd && isFixedAngle
             }
-            val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
-            val oddModulus = horizontalAxisDetectorModulus % 2f
-            val isOdd = oddModulus == 1f || oddModulus == -1f
-            val shouldResize = isOdd && isFixedAngle
-            val bitmap = if (applyRotation) bitmapToRotate
-            else rotatePreviewBitmap
-            rotateMatrix.postRotate(rotationAngle.value)
+            val bitmap = rotationGrid.getBitmap()
             val imgBitmap = bitmap.rotate(
                 rotationAngle.value,
-                false, // Resizing after rotation disabled deliberately
+                shouldFit,
                 resize = { bitmap1, width, height ->
                     resize(
                         bitmap1.asImageBitmap(),
@@ -131,14 +130,28 @@ class EditViewModel(
                     ).asAndroidBitmap()
                 }
             )
-            backgroundImage.value =
-                if (applyRotation) imgBitmap.getOriginalSized(
+            val result = if (applyRotation && !shouldFit)
+                imgBitmap.getOriginalSized(
                     rotationGrid.getCropParams()
                 ).asImageBitmap()
-                else imgBitmap.asImageBitmap()
+            else imgBitmap.asImageBitmap()
+            backgroundImage.value = if (applyRotation) resize(
+                result,
+                drawAreaSize.value.width,
+                drawAreaSize.value.height
+            )
+            else result
             if (!applyRotation)
                 rotationGrid.calcRotatedBitmapOffset()
         }
+    }
+
+    fun fitBitmapOnRotateGrid(
+        bitmap: ImageBitmap,
+        width: Int,
+        height: Int
+    ): ImageBitmap {
+        return resize(bitmap, width, height)
     }
 
     fun getImageUri(

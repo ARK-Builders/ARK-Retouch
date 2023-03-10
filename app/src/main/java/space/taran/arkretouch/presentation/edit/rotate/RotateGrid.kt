@@ -4,10 +4,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.rotate
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.drawing.EditManager
 
@@ -44,17 +44,33 @@ class RotateGrid {
         offset: Offset = Offset(
             0f,
             0f
-        )
+        ),
+        fitBitmap: (ImageBitmap, Int, Int) -> ImageBitmap
     ) {
+        clearLines()
         this.bitmap = bitmap
         this.editManager = editManager
         this.drawAreaSize = editManager.drawAreaSize.value
         this.offset = offset
-        left = offset.x
-        top = offset.y
+        left = HORIZONTAL_OFFSET
+        top = VERTICAL_OFFSET
+        right = drawAreaSize.width - HORIZONTAL_OFFSET
+        bottom = drawAreaSize.height - VERTICAL_OFFSET
+        calculatePivot()
+        create()
+        this.bitmap = fitBitmap(
+            bitmap,
+            rect.width.toInt(),
+            rect.height.toInt()
+        )
+        resizeByBitmap()
+    }
+
+    private fun resizeByBitmap() {
+        left = (drawAreaSize.width - bitmap.width).toFloat() / 2
+        top = (drawAreaSize.height - bitmap.height).toFloat() / 2
         right = left + bitmap.width
         bottom = top + bitmap.height
-        calculatePivot()
         create()
     }
 
@@ -65,6 +81,7 @@ class RotateGrid {
             right,
             bottom
         )
+        clearLines()
         createLines()
     }
 
@@ -139,7 +156,14 @@ class RotateGrid {
         }
     }
 
+    private fun clearLines() {
+        xLines.clear()
+        yLines.clear()
+    }
+
     fun get() = rect
+
+    fun getBitmap() = bitmap.asAndroidBitmap()
 
     fun draw(canvas: Canvas, angle: Float = 0f) {
         // canvas.rotate(angle, pivot.x, pivot.y)
@@ -206,5 +230,10 @@ class RotateGrid {
             fun create(x: Int, y: Int, width: Int, height: Int) =
                 CropParams(x, y, width, height)
         }
+    }
+
+    companion object {
+        const val HORIZONTAL_OFFSET = 100f
+        const val VERTICAL_OFFSET = 200f
     }
 }

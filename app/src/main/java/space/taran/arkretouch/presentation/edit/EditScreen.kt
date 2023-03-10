@@ -45,7 +45,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -59,7 +58,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
-import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -532,18 +530,21 @@ private fun EditMenuContent(
                         editManager.apply {
                             toggleRotateMode()
                             if (isRotateMode.value) {
-                                val rotateGrid = RotateGrid()
-                                val imgBitmap = viewModel.getCombinedImageBitmap()
-                                rotateGrid
+                                var imgBitmap = viewModel.getCombinedImageBitmap()
+                                setBackgroundImage2()
+                                rotationGrid
                                     .init(
                                         this,
                                         imgBitmap,
                                         calcImageOffset()
-                                    )
-                                rotationGrid = rotateGrid
-                                bitmapToRotate =
-                                    imgBitmap.asAndroidBitmap()
-                                setBackgroundImage2()
+                                    ) { bitmap, width, height ->
+                                        imgBitmap = viewModel.fitBitmapOnRotateGrid(
+                                            bitmap,
+                                            width,
+                                            height
+                                        )
+                                        imgBitmap
+                                    }
                                 backgroundImage.value = imgBitmap
                             } else editManager.cancelRotateMode()
                             viewModel.menusVisible = !editManager.isRotateMode.value
