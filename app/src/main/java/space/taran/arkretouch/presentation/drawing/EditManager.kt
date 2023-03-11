@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
+import timber.log.Timber
 import java.util.Stack
 
 class EditManager {
@@ -34,6 +36,11 @@ class EditManager {
     private val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
+    var backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
+    private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
+
+    val rotationGrid = RotateGrid()
+
     var drawAreaSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
@@ -51,29 +58,132 @@ class EditManager {
     private val _canRedo: MutableState<Boolean> = mutableStateOf(false)
     val canRedo: State<Boolean> = _canRedo
 
+    private val _isRotateMode = mutableStateOf(false)
+    val isRotateMode = _isRotateMode
+
+    val rotationAngle = mutableStateOf(0F)
+
+    private val rotations = Stack<ImageBitmap>()
+    private val redoRotations = Stack<ImageBitmap>()
+    private val rotatedStack = Stack<Stack<DrawPath>>()
+
+    private val undoStack = Stack<String>()
+    private val redoStack = Stack<String>()
+
     internal fun clearRedoPath() {
         redoPaths.clear()
     }
 
     fun updateRevised() {
-        _canUndo.value = drawPaths.isNotEmpty()
-        _canRedo.value = redoPaths.isNotEmpty()
+        _canUndo.value = undoStack.isNotEmpty()
+        _canRedo.value = redoStack.isNotEmpty()
+    }
+
+    private fun undoRotate() {
+        if (rotations.isNotEmpty()) {
+            redoRotations.push(backgroundImage.value)
+            backgroundImage.value = rotations.pop()
+            redrawRotatedPaths()
+        }
+    }
+
+    private fun redoRotate() {
+        if (redoRotations.isNotEmpty()) {
+            rotations.push(backgroundImage.value)
+            backgroundImage.value = redoRotations.pop()
+            keepRotatedPaths()
+        }
+    }
+
+    fun addRotation() {
+        if (canRedo.value) clearRedo()
+        rotations.add(backgroundImage2.value)
+        undoStack.add(ROTATE)
+        resetRotation()
+        keepRotatedPaths()
+        updateRevised()
+    }
+
+    fun rotateGrid(angle: Float = 0f) {
+        rotationAngle.value += angle
+    }
+
+    private fun keepRotatedPaths() {
+        val stack = Stack<DrawPath>()
+        if (drawPaths.isNotEmpty()) {
+            val size = drawPaths.size
+            for (i in 1..size) {
+                stack.push(drawPaths.pop())
+            }
+        }
+        rotatedStack.add(stack)
+    }
+
+    private fun redrawRotatedPaths() {
+        if (rotatedStack.isNotEmpty()) {
+            val paths = rotatedStack.pop()
+            if (paths.isNotEmpty()) {
+                val size = paths.size
+                for (i in 1..size) {
+                    drawPaths.push(paths.pop())
+                }
+            }
+        }
+    }
+
+    fun cancelRotateMode() {
+        backgroundImage.value = backgroundImage2.value
+        rotationAngle.value = 0f
+    }
+
+    private fun resetRotation() {
+        rotationAngle.value = 0f
+    }
+
+    private fun clearRotations() {
+        rotations.clear()
+        redoRotations.clear()
+    }
+
+    private fun undoDraw() {
+        if (drawPaths.isNotEmpty()) {
+            redoPaths.push(drawPaths.pop())
+        }
+    }
+
+    private fun redoDraw() {
+        if (redoPaths.isNotEmpty()) {
+            drawPaths.push(redoPaths.pop())
+        }
     }
 
     fun undo() {
         if (canUndo.value) {
-            redoPaths.push(drawPaths.pop())
-            invalidatorTick.value++
-            updateRevised()
+            val undoTask = undoStack.pop()
+            redoStack.push(undoTask)
+            Timber.tag("edit-manager").d("undoing $undoTask")
+            if (undoTask == ROTATE)
+                undoRotate()
+            if (undoTask == DRAW)
+                undoDraw()
         }
+        invalidatorTick.value++
+        updateRevised()
     }
 
     fun redo() {
         if (canRedo.value) {
-            drawPaths.push(redoPaths.pop())
-            invalidatorTick.value++
-            updateRevised()
+            val redoTask = redoStack.pop()
+            undoStack.push(redoTask)
+            Timber.tag("edit-manager").d("redoing $redoTask")
+            if (redoTask == ROTATE) {
+                redoRotate()
+            }
+            if (redoTask == DRAW)
+                redoDraw()
         }
+        invalidatorTick.value++
+        updateRevised()
     }
 
     fun addDrawPath(path: Path) {
@@ -85,6 +195,20 @@ class EditManager {
                 }
             )
         )
+        if (canRedo.value) clearRedo()
+        undoStack.add(DRAW)
+    }
+
+    fun setBackgroundImage2() {
+        backgroundImage2.value = backgroundImage.value
+    }
+
+    fun setOriginalBackgroundImage(imgBitmap: ImageBitmap?) {
+        originalBackgroundImage.value = imgBitmap
+    }
+
+    private fun restoreOriginalBackgroundImage() {
+        backgroundImage.value = originalBackgroundImage.value
     }
 
     fun setPaintColor(color: Color) {
@@ -92,15 +216,35 @@ class EditManager {
         _currentPaintColor.value = color
     }
 
-    fun clearPaths() {
+    private fun clearPaths() {
         drawPaths.clear()
         redoPaths.clear()
         invalidatorTick.value++
         updateRevised()
     }
 
+    fun clearEdits() {
+        clearPaths()
+        clearRotations()
+        undoStack.clear()
+        redoStack.clear()
+        restoreOriginalBackgroundImage()
+        updateRevised()
+    }
+
+    private fun clearRedo() {
+        redoPaths.clear()
+        redoRotations.clear()
+        redoStack.clear()
+        updateRevised()
+    }
+
     fun toggleEraseMode() {
         _isEraseMode.value = !isEraseMode.value
+    }
+
+    fun toggleRotateMode() {
+        _isRotateMode.value = !isRotateMode.value
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {
@@ -109,10 +253,19 @@ class EditManager {
 
     fun calcImageOffset(): Offset {
         val drawArea = drawAreaSize.value
-        val bitmap = backgroundImage.value!!
-        val xOffset = (drawArea.width - bitmap.width) / 2f
-        val yOffset = (drawArea.height - bitmap.height) / 2f
+        val bitmap = backgroundImage.value
+        var xOffset = 0f
+        var yOffset = 0f
+        if (bitmap != null) {
+            xOffset = (drawArea.width - bitmap.width) / 2f
+            yOffset = (drawArea.height - bitmap.height) / 2f
+        }
         return Offset(xOffset, yOffset)
+    }
+
+    companion object {
+        private const val DRAW = "draw"
+        private const val ROTATE = "rotate"
     }
 }
 
