@@ -160,7 +160,7 @@ private fun DrawContainer(
             }
             .onSizeChanged { newSize ->
                 if (newSize == IntSize.Zero) return@onSizeChanged
-                viewModel.editManager.drawAreaSize.value = newSize
+                viewModel.editManager.availableDrawAreaSize.value = newSize
                 viewModel.loadImage()
             },
         contentAlignment = Alignment.Center
@@ -414,6 +414,8 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable { editManager.clearPaths() },
+                        viewModel.gridVisible = true
+                               },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
                 tint = MaterialTheme.colors.primary,
                 contentDescription = null

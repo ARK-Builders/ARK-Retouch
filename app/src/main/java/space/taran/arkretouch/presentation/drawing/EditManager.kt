@@ -1,5 +1,6 @@
 package space.taran.arkretouch.presentation.drawing
 
+import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import java.util.Stack
 
@@ -34,7 +36,8 @@ class EditManager {
     private val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    var drawAreaSize = mutableStateOf(IntSize.Zero)
+    var availableDrawAreaSize = mutableStateOf(IntSize.Zero)
+    var drawArea = mutableStateOf<DrawArea?>(null)
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -107,11 +110,9 @@ class EditManager {
         drawPaint.value.strokeWidth = strokeWidth
     }
 
-    fun calcImageOffset(): Offset {
-        val drawArea = drawAreaSize.value
-        val bitmap = backgroundImage.value!!
-        val xOffset = (drawArea.width - bitmap.width) / 2f
-        val yOffset = (drawArea.height - bitmap.height) / 2f
+    fun calcImageOffset(possibleDrawArea: IntSize, backgroundImage: ImageBitmap): Offset {
+        val xOffset = (possibleDrawArea.width - backgroundImage.width) / 2f
+        val yOffset = (possibleDrawArea.height - backgroundImage.height) / 2f
         return Offset(xOffset, yOffset)
     }
 }

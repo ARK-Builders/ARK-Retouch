@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
+import space.taran.arkretouch.presentation.drawing.DrawArea
 import space.taran.arkretouch.presentation.drawing.EditManager
 import timber.log.Timber
 import java.io.File
@@ -71,7 +72,11 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
+            return
         }
+        val possibleDrawArea = editManager.availableDrawAreaSize.value
+        editManager.drawArea.value =
+            DrawArea(possibleDrawArea.width, possibleDrawArea.height, 0f, 0f)
     }
 
     fun saveImage(savePath: Path) =
@@ -130,20 +135,20 @@ class EditViewModel(
     }
 
     private fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.drawAreaSize.value
+        val drawArea = editManager.drawArea.value!!
         val drawBitmap = ImageBitmap(
-            size.width,
-            size.height,
+            drawArea.width,
+            drawArea.height,
             ImageBitmapConfig.Argb8888
         )
         val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
-            ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
+            ImageBitmap(drawArea.width, drawArea.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
-                editManager.calcImageOffset(),
+                Offset.Zero,
                 Paint()
             )
         }
@@ -208,9 +213,21 @@ private fun RequestBuilder<Bitmap>.loadInto(
             bitmap: Bitmap,
             transition: Transition<in Bitmap>?
         ) {
-            val areaSize = editManager.drawAreaSize.value
-            editManager.backgroundImage.value =
-                resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
+            val possibleDrawAreaSize = editManager.availableDrawAreaSize.value
+            val backgroundImage = resize(
+                bitmap.asImageBitmap(),
+                possibleDrawAreaSize.width,
+                possibleDrawAreaSize.height
+            )
+            val offset =
+                editManager.calcImageOffset(possibleDrawAreaSize, backgroundImage)
+            editManager.drawArea.value = DrawArea(
+                backgroundImage.width,
+                backgroundImage.height,
+                offset.x,
+                offset.y
+            )
+            editManager.backgroundImage.value = backgroundImage
         }
 
         override fun onLoadCleared(placeholder: Drawable?) {}
