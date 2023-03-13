@@ -118,6 +118,7 @@ class EditViewModel(
                 val isOdd = oddModulus == 1f || oddModulus == -1f
                 shouldFit = isOdd && isFixedAngle
             }
+            val isVerticalOrHorizontal = (rotationAngle.value % 90f) == 0f
             val bitmap = rotationGrid.getBitmap()
             val imgBitmap = bitmap.rotate(
                 rotationAngle.value,
@@ -141,8 +142,14 @@ class EditViewModel(
                 drawAreaSize.value.height
             )
             else result
-            if (!applyRotation)
+            if (!applyRotation) {
+                Timber.tag("edit-view-model").d(
+                    "is fixed: $isVerticalOrHorizontal angle: ${rotationAngle.value}"
+                )
+                if (isVerticalOrHorizontal)
+                    rotationGrid.resizeByBitmap(result)
                 rotationGrid.calcRotatedBitmapOffset()
+            }
         }
     }
 

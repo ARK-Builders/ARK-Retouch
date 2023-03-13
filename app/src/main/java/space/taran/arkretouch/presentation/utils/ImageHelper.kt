@@ -32,6 +32,11 @@ fun Bitmap.rotate(
             newHeight = (3 * source.height) - (2 * height)
             newWidth = (newHeight * aspectRatio).toInt()
         }
+    } else {
+        if (width > height) {
+            newHeight = width
+            newWidth = (newHeight * aspectRatio).toInt()
+        }
     }
     source = resize(source, newWidth, newHeight)
     return source

@@ -63,10 +63,10 @@ class RotateGrid {
             rect.width.toInt(),
             rect.height.toInt()
         )
-        resizeByBitmap()
+        resizeByBitmap(this.bitmap)
     }
 
-    private fun resizeByBitmap() {
+    fun resizeByBitmap(bitmap: ImageBitmap) {
         left = (drawAreaSize.width - bitmap.width).toFloat() / 2
         top = (drawAreaSize.height - bitmap.height).toFloat() / 2
         right = left + bitmap.width
