@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -68,4 +69,14 @@ fun Context.getActivity(): AppCompatActivity? = when (this) {
     is AppCompatActivity -> this
     is ContextWrapper -> baseContext.getActivity()
     else -> null
+}
+
+typealias Degrees = Float
+
+object ImageUtils {
+    fun getRotationAngleFromMotion(event: MotionEvent):
+        Degrees {
+        val xMotion = event.getX(0) - event.x
+        return xMotion
+    }
 }

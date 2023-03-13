@@ -35,6 +35,8 @@ import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
+import space.taran.arkretouch.presentation.utils.getOriginalSized
+import space.taran.arkretouch.presentation.utils.rotate
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -56,6 +58,7 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
+    var shouldFit = false
 
     fun loadImage() {
         imagePath?.let {
@@ -78,18 +81,13 @@ class EditViewModel(
     fun saveImage(savePath: Path) =
         viewModelScope.launch(Dispatchers.IO) {
             val combinedBitmap = getCombinedImageBitmap()
+
             savePath.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
             imageSaved = true
         }
-
-    fun confirmExit() = viewModelScope.launch {
-        exitConfirmed = true
-        delay(2_000)
-        exitConfirmed = false
-    }
 
     fun shareImage(context: Context) =
         viewModelScope.launch(Dispatchers.IO) {
@@ -107,15 +105,74 @@ class EditViewModel(
             }
         }
 
-    private fun getCachedImageUri(context: Context): Uri {
+    fun rotateImage(
+        angle: Float = 0f,
+        isFixedAngle: Boolean = false,
+        applyRotation: Boolean = false
+    ) {
+        editManager.apply {
+            if (!applyRotation) {
+                rotationAngle.value += angle
+                val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
+                val oddModulus = horizontalAxisDetectorModulus % 2f
+                val isOdd = oddModulus == 1f || oddModulus == -1f
+                shouldFit = isOdd && isFixedAngle
+            }
+            val bitmap = rotationGrid.getBitmap()
+            val imgBitmap = bitmap.rotate(
+                rotationAngle.value,
+                shouldFit,
+                resize = { bitmap1, width, height ->
+                    resize(
+                        bitmap1.asImageBitmap(),
+                        width,
+                        height
+                    ).asAndroidBitmap()
+                }
+            )
+            val result = if (applyRotation && !shouldFit)
+                imgBitmap.getOriginalSized(
+                    rotationGrid.getCropParams()
+                ).asImageBitmap()
+            else imgBitmap.asImageBitmap()
+            backgroundImage.value = if (applyRotation) resize(
+                result,
+                drawAreaSize.value.width,
+                drawAreaSize.value.height
+            )
+            else result
+            if (!applyRotation)
+                rotationGrid.calcRotatedBitmapOffset()
+        }
+    }
+
+    fun fitBitmapOnRotateGrid(
+        bitmap: ImageBitmap,
+        width: Int,
+        height: Int
+    ): ImageBitmap {
+        return resize(bitmap, width, height)
+    }
+
+    fun getImageUri(
+        context: Context = DIManager.component.app(),
+        bitmap: Bitmap? = null,
+        name: String = ""
+    ) = getCachedImageUri(context, bitmap, name)
+
+    private fun getCachedImageUri(
+        context: Context,
+        bitmap: Bitmap? = null,
+        name: String = ""
+    ): Uri {
         var uri: Uri? = null
         val imageCacheFolder = File(context.cacheDir, "images")
-        val combinedBitmap = getCombinedImageBitmap()
+        val imgBitmap = bitmap ?: getCombinedImageBitmap().asAndroidBitmap()
         try {
             imageCacheFolder.mkdirs()
-            val file = File(imageCacheFolder, "image_to_share.png")
+            val file = File(imageCacheFolder, "image$name.png")
             file.outputStream().use { out ->
-                combinedBitmap.asAndroidBitmap()
+                imgBitmap
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
             Timber.tag("Cached image path").d(file.path.toString())
@@ -131,13 +188,13 @@ class EditViewModel(
     }
 
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size =
-            if (editManager.backgroundImage.value != null)
-                IntSize(
-                    editManager.backgroundImage.value?.width!!,
-                    editManager.backgroundImage.value?.height!!
-                )
-            else editManager.drawAreaSize.value
+        val bitmap = editManager.backgroundImage.value
+        val size = if (bitmap != null)
+            IntSize(
+                bitmap.width,
+                bitmap.height
+            )
+        else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -159,6 +216,12 @@ class EditViewModel(
         }
         combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         return combinedBitmap
+    }
+
+    fun confirmExit() = viewModelScope.launch {
+        exitConfirmed = true
+        delay(2_000)
+        exitConfirmed = false
     }
 
     fun prepareBitmapToCrop() {
