@@ -143,9 +143,6 @@ class EditViewModel(
             )
             else result
             if (!applyRotation) {
-                Timber.tag("edit-view-model").d(
-                    "is fixed: $isVerticalOrHorizontal angle: ${rotationAngle.value}"
-                )
                 if (isVerticalOrHorizontal)
                     rotationGrid.resizeByBitmap(result)
                 rotationGrid.calcRotatedBitmapOffset()
