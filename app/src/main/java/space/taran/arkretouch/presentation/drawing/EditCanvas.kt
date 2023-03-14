@@ -34,7 +34,7 @@ fun EditCanvas(viewModel: EditViewModel) {
         Modifier.background(Color.White)
     ) {
         var bitmap: ImageBitmap? = null
-        if (!editManager.isRotateMode.value || !editManager.isCropMode.value)
+        if (!editManager.isRotateMode.value && !editManager.isCropMode.value)
             bitmap = editManager.backgroundImage.value
         val modifier = if (bitmap != null)
             Modifier
@@ -47,7 +47,10 @@ fun EditCanvas(viewModel: EditViewModel) {
             viewModel.editManager.backgroundImage.value?.let { imageBitmap ->
                 drawImage(
                     imageBitmap,
-                    topLeft = if (editManager.isRotateMode.value)
+                    topLeft = if (
+                        editManager.isRotateMode.value ||
+                        editManager.isCropMode.value
+                    )
                         editManager.calcImageOffset()
                     else
                         Offset(0f, 0f)

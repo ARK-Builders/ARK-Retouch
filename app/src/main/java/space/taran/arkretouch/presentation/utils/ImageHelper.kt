@@ -3,7 +3,6 @@ package space.taran.arkretouch.presentation.utils
 import android.graphics.Bitmap
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import android.graphics.Matrix
-import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 
 fun Bitmap.crop(cropParams: CropWindow.CropParams): Bitmap = Bitmap.createBitmap(
     this,
@@ -46,11 +45,5 @@ fun Bitmap.rotate(
     return source
 }
 
-fun Bitmap.getOriginalSized(cropParams: RotateGrid.CropParams): Bitmap =
-    Bitmap.createBitmap(
-        this,
-        cropParams.x,
-        cropParams.y,
-        cropParams.width,
-        cropParams.height
-    )
+fun Bitmap.getOriginalSized(cropParams: CropWindow.CropParams): Bitmap =
+    crop(cropParams)
