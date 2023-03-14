@@ -546,13 +546,36 @@ private fun EditMenuContent(
                                         imgBitmap
                                     }
                                 backgroundImage.value = imgBitmap
-                            } else editManager.cancelRotateMode()
-                            viewModel.menusVisible = !editManager.isRotateMode.value
+                            } else cancelRotateMode()
+                            viewModel.menusVisible = !isRotateMode.value
                         }
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
                 tint = if (editManager.isRotateMode.value)
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.apply {
+                            toggleResizeMode()
+                            if (isResizeMode.value) {
+                                val imgBitmap = viewModel.getCombinedImageBitmap()
+                                setBackgroundImage2()
+                            } else cancelResizeMode()
+                            viewModel.menusVisible = !isResizeMode.value
+                        }
+                    },
+                imageVector = ImageVector
+                    .vectorResource(R.drawable.ic_aspect_ratio),
+                tint = if (editManager.isResizeMode.value)
                     MaterialTheme.colors.primary
                 else
                     Color.Black,
