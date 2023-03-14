@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
-import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.atan2
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
@@ -90,11 +89,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                             )
                             val deltaX = eventX - currentPoint.x
                             val deltaY = eventY - currentPoint.y
-                            Timber
-                                .tag("edit-canvas")
-                                .d(
-                                    "angle: $degreesAngle"
-                                )
                             // TopLeft
                             if (
                                 eventY <
@@ -184,26 +178,34 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
                     }
                     editManager.isCropMode.value -> {
-                        when (event.action) {
-                            MotionEvent.ACTION_DOWN -> {
-                                currentPoint.x = eventX
-                                currentPoint.y = eventY
-                                editManager.cropWindow.detectTouchedSide(
-                                    Offset(eventX, eventY)
-                                )
-                            }
-                            MotionEvent.ACTION_MOVE -> {
-                                val deltaX = computeDeltaX(currentPoint.x, eventX)
-                                val deltaY = computeDeltaY(currentPoint.y, eventY)
-
-                                editManager.cropWindow.setDelta(
-                                    Offset(
-                                        deltaX,
-                                        deltaY
+                        if (
+                            event.action != MotionEvent.ACTION_HOVER_MOVE &&
+                            event.action != MotionEvent.ACTION_HOVER_ENTER &&
+                            event.action != MotionEvent.ACTION_HOVER_EXIT
+                        ) {
+                            when (event.action) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    currentPoint.x = eventX
+                                    currentPoint.y = eventY
+                                    editManager.cropWindow.detectTouchedSide(
+                                        Offset(eventX, eventY)
                                     )
-                                )
-                                currentPoint.x = eventX
-                                currentPoint.y = eventY
+                                }
+                                MotionEvent.ACTION_MOVE -> {
+                                    val deltaX =
+                                        computeDeltaX(currentPoint.x, eventX)
+                                    val deltaY =
+                                        computeDeltaY(currentPoint.y, eventY)
+
+                                    editManager.cropWindow.setDelta(
+                                        Offset(
+                                            deltaX,
+                                            deltaY
+                                        )
+                                    )
+                                    currentPoint.x = eventX
+                                    currentPoint.y = eventY
+                                }
                             }
                         }
                     }
