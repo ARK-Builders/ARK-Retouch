@@ -9,12 +9,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -33,7 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.drawing.DrawArea
+import space.taran.arkretouch.presentation.drawing.CaptureArea
 import space.taran.arkretouch.presentation.drawing.EditManager
 import timber.log.Timber
 import java.io.File
@@ -44,8 +45,9 @@ class EditViewModel(
     private val launchedFromIntent: Boolean,
     private val imagePath: Path?,
     private val imageUri: String?,
+    private val screenDensity: Float,
 ) : ViewModel() {
-    val editManager = EditManager()
+    val editManager = EditManager(screenDensity)
 
     var strokeSliderExpanded by mutableStateOf(false)
     var menusVisible by mutableStateOf(true)
@@ -75,8 +77,17 @@ class EditViewModel(
             return
         }
         val possibleDrawArea = editManager.availableDrawAreaSize.value
-        editManager.drawArea.value =
-            DrawArea(possibleDrawArea.width, possibleDrawArea.height, 0f, 0f)
+        editManager.captureArea.value =
+            CaptureArea(
+                0f,
+                0f,
+                possibleDrawArea.width.toFloat(),
+                possibleDrawArea.height.toFloat()
+            )
+        editManager.initialDrawAreaOffset = Offset(
+            editManager.captureArea.value!!.left,
+            editManager.captureArea.value!!.top
+        )
     }
 
     fun saveImage(savePath: Path) =
@@ -135,28 +146,48 @@ class EditViewModel(
     }
 
     private fun getCombinedImageBitmap(): ImageBitmap {
-        val drawArea = editManager.drawArea.value!!
+        val captureArea = editManager.captureArea.value!!
         val drawBitmap = ImageBitmap(
-            drawArea.width,
-            drawArea.height,
+            editManager.availableDrawAreaSize.value.width,
+            editManager.availableDrawAreaSize.value.height,
             ImageBitmapConfig.Argb8888
         )
         val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
-            ImageBitmap(drawArea.width, drawArea.height, ImageBitmapConfig.Argb8888)
+            ImageBitmap(
+                editManager.availableDrawAreaSize.value.width,
+                editManager.availableDrawAreaSize.value.height,
+                ImageBitmapConfig.Argb8888
+            )
         val combinedCanvas = Canvas(combinedBitmap)
+        combinedCanvas.nativeCanvas.setMatrix(editManager.editMatrix)
         editManager.backgroundImage.value?.let {
-            combinedCanvas.drawImage(
-                it,
-                Offset.Zero,
-                Paint()
+            combinedCanvas.nativeCanvas.drawBitmap(
+                it.asAndroidBitmap(),
+                editManager.initialDrawAreaOffset.x,
+                editManager.initialDrawAreaOffset.y,
+                null
             )
         }
+        drawCanvas.nativeCanvas.setMatrix(editManager.editMatrix)
         editManager.drawPaths.forEach {
             drawCanvas.drawPath(it.path, it.paint)
         }
-        combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
-        return combinedBitmap
+        combinedCanvas.nativeCanvas.setMatrix(null)
+        combinedCanvas.nativeCanvas.drawBitmap(
+            drawBitmap.asAndroidBitmap(),
+            0f,
+            0f,
+            null
+        )
+        val captureAreaBitmap = Bitmap.createBitmap(
+            combinedBitmap.asAndroidBitmap(),
+            captureArea.left.toInt(),
+            captureArea.top.toInt(),
+            captureArea.width.toInt(),
+            captureArea.height.toInt()
+        )
+        return captureAreaBitmap.asImageBitmap()
     }
 }
 
@@ -164,9 +195,15 @@ class EditViewModelFactory @AssistedInject constructor(
     @Assisted private val launchedFromIntent: Boolean,
     @Assisted private val imagePath: Path?,
     @Assisted private val imageUri: String?,
+    private val screenDensity: Float,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return EditViewModel(launchedFromIntent, imagePath, imageUri) as T
+        return EditViewModel(
+            launchedFromIntent,
+            imagePath,
+            imageUri,
+            screenDensity
+        ) as T
     }
 
     @AssistedFactory
@@ -221,17 +258,42 @@ private fun RequestBuilder<Bitmap>.loadInto(
             )
             val offset =
                 editManager.calcImageOffset(possibleDrawAreaSize, backgroundImage)
-            editManager.drawArea.value = DrawArea(
-                backgroundImage.width,
-                backgroundImage.height,
+            editManager.captureArea.value = CaptureArea(
                 offset.x,
-                offset.y
+                offset.y,
+                backgroundImage.width.toFloat(),
+                backgroundImage.height.toFloat()
+            )
+            editManager.initialDrawAreaOffset = Offset(
+                editManager.captureArea.value!!.left,
+                editManager.captureArea.value!!.top
             )
             editManager.backgroundImage.value = backgroundImage
         }
 
         override fun onLoadCleared(placeholder: Drawable?) {}
     })
+}
+
+fun resizeByMax(
+    actualWidth: Float,
+    actualHeight: Float,
+    maxWidth: Float,
+    maxHeight: Float
+): Size {
+    val bitmapRatio = actualWidth / actualHeight
+    val maxRatio = maxWidth / maxHeight
+
+    var finalWidth = maxWidth
+    var finalHeight = maxHeight
+
+    if (maxRatio > bitmapRatio) {
+        finalWidth = maxHeight * bitmapRatio
+    } else {
+        finalHeight = maxWidth / bitmapRatio
+    }
+
+    return Size(finalWidth, finalHeight)
 }
 
 private fun resize(

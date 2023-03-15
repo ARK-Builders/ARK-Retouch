@@ -8,7 +8,11 @@ import space.taran.arkretouch.presentation.edit.EditViewModelFactory
 import javax.inject.Singleton
 
 @Singleton
-@Component
+@Component(
+    modules = [
+        AppModule::class,
+    ]
+)
 interface AppComponent {
     fun editVMFactory(): EditViewModelFactory.Factory
     fun app(): Application

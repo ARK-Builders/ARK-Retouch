@@ -13,11 +13,11 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.presentation.edit.resizeByMax
 import java.util.Stack
 
-class EditManager {
+class EditManager(private val screenDensity: Float) {
     private val drawPaint: MutableState<Paint> = mutableStateOf(defaultPaint())
     private val erasePaint: Paint = Paint().apply {
         shader = null
@@ -35,11 +35,23 @@ class EditManager {
     val drawPaths = Stack<DrawPath>()
     private val redoPaths = Stack<DrawPath>()
 
+    val matrix: Matrix
+        get() = if (isCropMode.value) cropMatrix else editMatrix
+
+    val editMatrix = Matrix()
+    var cropMatrix = Matrix()
+
+    val cropWindowHelper = CropWindowHelper(this, screenDensity)
+
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
     var availableDrawAreaSize = mutableStateOf(IntSize.Zero)
-    var drawArea = mutableStateOf<DrawArea?>(null)
+    var captureArea = mutableStateOf<CaptureArea?>(null)
+    var initialDrawAreaOffset = Offset.Zero
 
     var invalidatorTick = mutableStateOf(0)
+    private val _isCropMode = mutableStateOf(false)
+    val isCropMode = _isCropMode
+    val isMovementNotRotateMode = mutableStateOf(true)
 
     private val _currentPaintColor: MutableState<Color> =
         mutableStateOf(drawPaint.value.color)
@@ -102,15 +114,58 @@ class EditManager {
         updateRevised()
     }
 
+    fun applyCrop() {
+        editMatrix.set(cropMatrix)
+        val (newWidth, newHeight) = resizeByMax(
+            captureArea.value!!.width,
+            captureArea.value!!.height,
+            availableDrawAreaSize.value.width.toFloat(),
+            availableDrawAreaSize.value.height.toFloat()
+        )
+        val centerX = availableDrawAreaSize.value.width / 2f
+        val centerY = availableDrawAreaSize.value.height / 2f
+        val centerCaptureAreaX = captureArea.value!!.left +
+            captureArea.value!!.width / 2
+        val centerCaptureAreaY = captureArea.value!!.top +
+            captureArea.value!!.height / 2
+        editMatrix.postTranslate(
+            centerX - centerCaptureAreaX,
+            centerY - centerCaptureAreaY
+        )
+        editMatrix.postScale(
+            newWidth / captureArea.value!!.width,
+            newHeight / captureArea.value!!.height,
+            centerX,
+            centerY
+        )
+        val xOffset = (availableDrawAreaSize.value.width - newWidth) / 2f
+        val yOffset = (availableDrawAreaSize.value.height - newHeight) / 2f
+        captureArea.value = CaptureArea(xOffset, yOffset, newWidth, newHeight)
+        cropMatrix = Matrix()
+        _isCropMode.value = false
+        invalidatorTick.value++
+    }
+
     fun toggleEraseMode() {
         _isEraseMode.value = !isEraseMode.value
+    }
+
+    fun toggleCropMode() {
+        _isCropMode.value = !isCropMode.value
+        if (isCropMode.value) {
+            cropMatrix.set(editMatrix)
+        }
+        invalidatorTick.value++
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {
         drawPaint.value.strokeWidth = strokeWidth
     }
 
-    fun calcImageOffset(possibleDrawArea: IntSize, backgroundImage: ImageBitmap): Offset {
+    fun calcImageOffset(
+        possibleDrawArea: IntSize,
+        backgroundImage: ImageBitmap
+    ): Offset {
         val xOffset = (possibleDrawArea.width - backgroundImage.width) / 2f
         val yOffset = (possibleDrawArea.height - backgroundImage.height) / 2f
         return Offset(xOffset, yOffset)

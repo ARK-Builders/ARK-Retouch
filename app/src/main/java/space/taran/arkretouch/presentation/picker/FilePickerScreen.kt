@@ -142,6 +142,18 @@ fun Int.toDp() = with(LocalDensity.current) {
 }
 
 @Composable
+fun Float.pxToDp() = with(LocalContext.current) {
+    val screenPixelDensity = this.resources.displayMetrics.density
+    (this@pxToDp / screenPixelDensity).dp
+}
+
+@Composable
+fun Int.pxToDp() = with(LocalContext.current) {
+    val screenPixelDensity = this.resources.displayMetrics.density
+    (this@pxToDp / screenPixelDensity).dp
+}
+
+@Composable
 fun Dp.toPx() = with(LocalDensity.current) {
     this@toPx.toPx()
 }

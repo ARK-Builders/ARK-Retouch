@@ -90,6 +90,11 @@ fun EditScreen(
 
     BackHandler {
         val editManager = viewModel.editManager
+        if (editManager.isCropMode.value) {
+            editManager.toggleCropMode()
+            return@BackHandler
+        }
+
         if (editManager.canUndo.value) {
             editManager.undo()
             return@BackHandler
@@ -305,6 +310,7 @@ private fun EditMenuContainer(viewModel: EditViewModel) {
             .fillMaxSize(),
         verticalArrangement = Arrangement.Bottom
     ) {
+        SecondaryEditMenuContent(viewModel)
         Box(
             Modifier
                 .fillMaxWidth()
@@ -328,13 +334,69 @@ private fun EditMenuContainer(viewModel: EditViewModel) {
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            EditMenuContent(viewModel)
+            PrimaryEditMenuContent(viewModel)
         }
     }
 }
 
 @Composable
-private fun EditMenuContent(
+private fun SecondaryEditMenuContent(viewModel: EditViewModel) {
+    val editManager = viewModel.editManager
+    if (!editManager.isCropMode.value)
+        return
+
+    Row() {
+        Row(Modifier.weight(3f)) {
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.isMovementNotRotateMode.value = true
+                    },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_hand),
+                tint = if (editManager.isMovementNotRotateMode.value) {
+                    MaterialTheme.colors.primary
+                } else {
+                    Color.White
+                },
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.isMovementNotRotateMode.value = false
+                    },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_rotate_mode),
+                tint = if (!editManager.isMovementNotRotateMode.value) {
+                    MaterialTheme.colors.primary
+                } else {
+                    Color.White
+                },
+                contentDescription = null
+            )
+        }
+
+        Icon(
+            modifier = Modifier
+                .weight(1f)
+                .padding(12.dp)
+                .size(40.dp)
+                .clip(CircleShape)
+                .clickable { editManager.applyCrop() },
+            imageVector = ImageVector.vectorResource(R.drawable.ic_done),
+            tint = MaterialTheme.colors.primary,
+            contentDescription = null
+        )
+    }
+}
+
+@Composable
+private fun PrimaryEditMenuContent(
     viewModel: EditViewModel
 ) {
     val colorDialogExpanded = remember { mutableStateOf(false) }
@@ -413,11 +475,12 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable { editManager.clearPaths() },
-                        viewModel.gridVisible = true
-                               },
-                imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
-                tint = MaterialTheme.colors.primary,
+                    .clickable { editManager.toggleCropMode() },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_crop_rotate),
+                tint = if (editManager.isCropMode.value)
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
                 contentDescription = null
             )
             Icon(
