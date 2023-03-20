@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.presentation.edit.resize.Resize
 import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 import java.util.Stack
 
@@ -61,9 +62,11 @@ class EditManager {
     val isRotateMode = _isRotateMode
 
     private val _isResizeMode = mutableStateOf(false)
-    val isResizeMode = _isRotateMode
+    val isResizeMode = _isResizeMode
 
-    val bitmapSize = mutableStateOf(IntSize.Zero)
+    val resize = Resize()
+    var bitmapWidth = 0
+    var bitmapHeight = 0
     val aspectRatio = mutableStateOf(1f)
 
     val rotationAngle = mutableStateOf(0F)

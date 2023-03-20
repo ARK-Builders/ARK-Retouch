@@ -154,6 +154,36 @@ class EditViewModel(
         return resize(bitmap, width, height)
     }
 
+    fun downResizeManually(width: Int = 0, height: Int = 0): IntSize {
+        var newWidth = width
+        var newHeight = height
+        if (width > 0) {
+            newHeight = (newWidth / editManager.aspectRatio.value).toInt()
+        }
+        if (height > 0) {
+            newWidth = (newHeight * editManager.aspectRatio.value).toInt()
+        }
+        if (newWidth > 0 && newHeight > 0)
+            editManager.apply {
+                val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
+                if (
+                    newWidth <= bitmapToResize.width &&
+                    newHeight <= bitmapToResize.height
+                ) {
+                    val imgBitmap = resize(
+                        bitmapToResize,
+                        newWidth,
+                        newHeight
+                    )
+                    backgroundImage.value = imgBitmap
+                }
+            }
+        return IntSize(
+            newWidth,
+            newHeight
+        )
+    }
+
     fun getImageUri(
         context: Context = DIManager.component.app(),
         bitmap: Bitmap? = null,

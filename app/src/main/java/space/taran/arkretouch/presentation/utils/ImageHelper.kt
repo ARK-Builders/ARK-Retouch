@@ -45,3 +45,18 @@ fun Bitmap.getOriginalSized(cropParams: RotateGrid.CropParams): Bitmap =
         cropParams.width,
         cropParams.height
     )
+fun Bitmap.resize(width: Int, height: Int): Bitmap {
+    val matrix = Matrix()
+    val sx = (width / this.width).toFloat()
+    val sy = (height / this.height).toFloat()
+    matrix.postScale(sx, sy)
+    return Bitmap.createBitmap(
+        this,
+        0,
+        0,
+        this.width,
+        this.height,
+        matrix,
+        true
+    )
+}

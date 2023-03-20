@@ -74,7 +74,10 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 val eventX = event.x
                 val eventY = event.y
 
-                if (!editManager.isRotateMode.value)
+                if (
+                    !editManager.isRotateMode.value &&
+                    !editManager.isResizeMode.value
+                )
                     when (event.action) {
                         MotionEvent.ACTION_DOWN -> {
                             path.reset()
@@ -107,7 +110,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         }
                         else -> false
                     }
-                else when (event.action) {
+                if (editManager.isRotateMode.value) when (event.action) {
                     MotionEvent.ACTION_MOVE -> {
                         val angle1 = atan2(currentPoint.y, currentPoint.x)
                         val angle2 = atan2(eventY, eventX)

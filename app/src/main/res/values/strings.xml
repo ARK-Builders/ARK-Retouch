@@ -12,4 +12,6 @@
     <string name="options">Options</string>
     <string name="share">Share</string>
     <string name="save">Save</string>
+    <string name="height">Height</string>
+    <string name="width">Width</string>
 </resources>
