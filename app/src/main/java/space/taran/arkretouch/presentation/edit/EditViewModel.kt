@@ -122,6 +122,7 @@ class EditViewModel(
             val bitmap = rotationGrid.getBitmap()
             val imgBitmap = bitmap.rotate(
                 rotationAngle.value,
+                matrix,
                 shouldFit,
                 resize = { bitmap1, width, height ->
                     resize(
@@ -157,12 +158,6 @@ class EditViewModel(
     ): ImageBitmap {
         return resize(bitmap, width, height)
     }
-
-    fun getImageUri(
-        context: Context = DIManager.component.app(),
-        bitmap: Bitmap? = null,
-        name: String = ""
-    ) = getCachedImageUri(context, bitmap, name)
 
     private fun getCachedImageUri(
         context: Context,

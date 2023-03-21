@@ -1,5 +1,6 @@
 package space.taran.arkretouch.presentation.drawing
 
+import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,8 @@ class EditManager {
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
     var backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
+
+    val matrix = Matrix()
 
     val rotationGrid = RotateGrid()
 
@@ -245,6 +248,7 @@ class EditManager {
 
     fun toggleRotateMode() {
         _isRotateMode.value = !isRotateMode.value
+        if (isRotateMode.value) invalidatorTick.value++
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {

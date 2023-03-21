@@ -12,17 +12,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
-import timber.log.Timber
-import kotlin.math.abs
 import kotlin.math.atan2
 
 @Composable
@@ -41,7 +40,7 @@ fun EditCanvas(viewModel: EditViewModel) {
                     bitmap.height.toDp()
                 )
         else Modifier.fillMaxSize()
-        Canvas(modifier) {
+        /* Canvas(modifier) {
             viewModel.editManager.backgroundImage.value?.let { imageBitmap ->
                 drawImage(
                     imageBitmap,
@@ -51,7 +50,7 @@ fun EditCanvas(viewModel: EditViewModel) {
                         Offset(0f, 0f)
                 )
             }
-        }
+        }*/
         EditDrawCanvas(modifier, viewModel)
     }
 }
@@ -109,92 +108,24 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     }
                 else when (event.action) {
                     MotionEvent.ACTION_MOVE -> {
-                        val angle1 = atan2(currentPoint.y, currentPoint.x)
-                        val angle2 = atan2(eventY, eventX)
-                        var degreesAngle = abs(
+                        val centerX = editManager.drawAreaSize.value.width / 2
+                        val centerY = editManager.drawAreaSize.value.height / 2
+                        val prevDX = currentPoint.x - centerX
+                        val prevDY = currentPoint.y - centerY
+                        val dx = eventX - centerX
+                        val dy = eventY - centerY
+                        val angle1 = atan2(prevDY, prevDX)
+                        val angle2 = atan2(dy, dx)
+                        val degreesAngle =
                             Math.toDegrees(
                                 (angle2 - angle1).toDouble()
                             )
-                        )
-                        val deltaX = eventX - currentPoint.x
-                        val deltaY = eventY - currentPoint.y
-                        Timber
-                            .tag("edit-canvas")
-                            .d(
-                                "angle: $degreesAngle"
-                            )
-                        // TopLeft
-                        if (
-                            eventY <
-                            (
-                                viewModel.editManager.drawAreaSize.value.height / 2
-                                ) &&
-                            eventX < (
-                                viewModel.editManager
-                                    .drawAreaSize.value.width / 2
-                                )
-                        ) {
-                            when {
-                                (deltaX < 0 && deltaY < 0) -> degreesAngle *= -1
-                                (deltaX > 0 && deltaY > 0) ->
-                                    // Convenient to show the differences
-                                    // in flipping the angle,
-                                    // a better way maybe suggested
-                                    degreesAngle *= 1
-                                (deltaX > 0 && deltaY < 0) -> degreesAngle *= 1
-                                (deltaX < 0 && deltaY > 0) -> degreesAngle *= -1
-                            }
-                        }
-                        // TopRight
-                        if (
-                            eventY < (
-                                viewModel.editManager.drawAreaSize.value.height / 2
-                                ) &&
-                            eventX > (
-                                viewModel.editManager.drawAreaSize.value.width / 2
-                                )
-                        ) {
-                            when {
-                                (deltaX > 0 && deltaY > 0) -> degreesAngle *= 1
-                                (deltaX < 0 && deltaY < 0) -> degreesAngle *= -1
-                                (deltaX < 0 && deltaY > 0) -> degreesAngle *= -1
-                                (deltaX > 0 && deltaY < 0) -> degreesAngle *= 1
-                            }
-                        }
-                        // BottomLeft
-                        if (
-                            eventY > (
-                                viewModel.editManager.drawAreaSize.value.height / 2
-                                ) &&
-                            eventX < (
-                                viewModel.editManager.drawAreaSize.value.width / 2
-                                )
-                        ) {
-                            when {
-                                (deltaX > 0 && deltaY > 0) -> degreesAngle *= -1
-                                (deltaX < 0 && deltaY < 0) -> degreesAngle *= 1
-                                (deltaX < 0 && deltaY > 0) -> degreesAngle *= 1
-                                (deltaX > 0 && deltaY < 0) -> degreesAngle *= -1
-                            }
-                        }
-                        // BottomRight
-                        if (
-                            eventY > (
-                                viewModel.editManager.drawAreaSize.value.height / 2
-                                ) &&
-                            eventX > (
-                                viewModel.editManager.drawAreaSize.value.width / 2
-                                )
-                        ) {
-                            when {
-                                (deltaX > 0 && deltaY > 0) -> degreesAngle *= -1
-                                (deltaX < 0 && deltaY < 0) -> degreesAngle *= 1
-                                (deltaX < 0 && deltaY > 0) -> degreesAngle *= 1
-                                (deltaX > 0 && deltaY < 0) -> degreesAngle *= -1
-                            }
-                        }
                         if (degreesAngle != 0.0)
-                            viewModel.rotateImage(degreesAngle.toFloat())
+                            editManager.matrix.postRotate(
+                                degreesAngle.toFloat(),
+                                centerX.toFloat(),
+                                centerY.toFloat()
+                            )
                         currentPoint.x = eventX
                         currentPoint.y = eventY
                     }
@@ -217,7 +148,22 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     canvas.drawPath(it.path, it.paint)
                 }
             else editManager.apply {
+                canvas.nativeCanvas.setMatrix(matrix)
                 rotationGrid.draw(canvas, rotationAngle.value)
+            }
+            editManager.backgroundImage.value?.let {
+                canvas.nativeCanvas.drawBitmap(
+                    it.asAndroidBitmap(),
+                    if (editManager.isRotateMode.value)
+                        editManager.calcImageOffset().x
+                    else
+                        0f,
+                    if (editManager.isRotateMode.value)
+                        editManager.calcImageOffset().y
+                    else
+                        0f,
+                    null
+                )
             }
         }
     }
