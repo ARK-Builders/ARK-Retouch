@@ -161,7 +161,10 @@ private fun Menus(
                             .size(40.dp)
                             .clip(CircleShape)
                             .clickable {
-                                viewModel.rotateImage(-90F, true)
+                                viewModel.editManager.apply {
+                                    rotate(-90f)
+                                    invalidatorTick.value++
+                                }
                             },
                         imageVector = ImageVector
                             .vectorResource(R.drawable.ic_rotate_left),
@@ -174,7 +177,10 @@ private fun Menus(
                             .size(40.dp)
                             .clip(CircleShape)
                             .clickable {
-                                viewModel.rotateImage(90F, true)
+                                viewModel.editManager.apply {
+                                    rotate(90f)
+                                    invalidatorTick.value++
+                                }
                             },
                         imageVector = ImageVector
                             .vectorResource(R.drawable.ic_rotate_right),
@@ -302,11 +308,7 @@ private fun BoxScope.TopMenu(
                 .clickable {
                     if (viewModel.editManager.isRotateMode.value) {
                         viewModel.apply {
-                            viewModel.rotateImage(
-                                applyRotation = true
-                            )
-                            editManager.addRotation()
-                            editManager.toggleRotateMode()
+                            viewModel.applyRotation()
                             viewModel.menusVisible = true
                             return@clickable
                         }

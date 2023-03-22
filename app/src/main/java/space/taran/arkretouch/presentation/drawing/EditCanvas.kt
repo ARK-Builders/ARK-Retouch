@@ -40,17 +40,27 @@ fun EditCanvas(viewModel: EditViewModel) {
                     bitmap.height.toDp()
                 )
         else Modifier.fillMaxSize()
-        /* Canvas(modifier) {
-            viewModel.editManager.backgroundImage.value?.let { imageBitmap ->
-                drawImage(
-                    imageBitmap,
-                    topLeft = if (editManager.isRotateMode.value)
-                        editManager.calcImageOffset()
-                    else
-                        Offset(0f, 0f)
-                )
+        Canvas(modifier) {
+            drawIntoCanvas { canvas ->
+                editManager.apply {
+                    invalidatorTick.value
+                    backgroundImage.value?.let {
+                        val matrix = matrix
+                        if (isRotateMode.value)
+                            canvas.nativeCanvas.setMatrix(rotationMatrix)
+                        else canvas.nativeCanvas.setMatrix(matrix)
+                        canvas.nativeCanvas.drawBitmap(
+                            it.asAndroidBitmap(),
+                            editManager.calcImageOffset().x,
+                            editManager.calcImageOffset().y,
+                            null
+                        )
+                    }
+                    if (isRotateMode.value)
+                        rotationGrid.draw(canvas)
+                }
             }
-        }*/
+        }
         EditDrawCanvas(modifier, viewModel)
     }
 }
@@ -121,11 +131,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                                 (angle2 - angle1).toDouble()
                             )
                         if (degreesAngle != 0.0)
-                            editManager.matrix.postRotate(
-                                degreesAngle.toFloat(),
-                                centerX.toFloat(),
-                                centerY.toFloat()
-                            )
+                            editManager.rotate(degreesAngle.toFloat())
                         currentPoint.x = eventX
                         currentPoint.y = eventY
                     }
@@ -143,27 +149,11 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         editManager.invalidatorTick.value
 
         drawIntoCanvas { canvas ->
-            if (!editManager.isRotateMode.value)
-                editManager.drawPaths.forEach {
-                    canvas.drawPath(it.path, it.paint)
-                }
-            else editManager.apply {
-                canvas.nativeCanvas.setMatrix(matrix)
-                rotationGrid.draw(canvas, rotationAngle.value)
-            }
-            editManager.backgroundImage.value?.let {
-                canvas.nativeCanvas.drawBitmap(
-                    it.asAndroidBitmap(),
-                    if (editManager.isRotateMode.value)
-                        editManager.calcImageOffset().x
-                    else
-                        0f,
-                    if (editManager.isRotateMode.value)
-                        editManager.calcImageOffset().y
-                    else
-                        0f,
-                    null
-                )
+            editManager.apply {
+                if (!isRotateMode.value)
+                    drawPaths.forEach {
+                        canvas.drawPath(it.path, it.paint)
+                    }
             }
         }
     }
