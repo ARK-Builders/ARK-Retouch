@@ -84,8 +84,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 val eventY = event.y
                 if (event.action == MotionEvent.ACTION_DOWN)
                     isTouched = true
-                if (event.action == MotionEvent.ACTION_UP)
-                    isTouched = false
                 when (true) {
                     editManager.isRotateMode.value -> when (event.action) {
                         MotionEvent.ACTION_MOVE -> {
@@ -212,6 +210,9 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                                     )
                                     currentPoint.x = eventX
                                     currentPoint.y = eventY
+                                }
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                    isTouched = false
                                 }
                             }
                         }
