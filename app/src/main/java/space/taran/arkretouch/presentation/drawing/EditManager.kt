@@ -8,13 +8,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
+import space.taran.arkretouch.presentation.utils.rotate
 import timber.log.Timber
 import java.util.Stack
 
@@ -40,7 +42,7 @@ class EditManager {
     var backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
-    val matrix = Matrix()
+    val rotationMatrix = Matrix()
 
     val rotationGrid = RotateGrid()
 
@@ -80,6 +82,21 @@ class EditManager {
     fun updateRevised() {
         _canUndo.value = undoStack.isNotEmpty()
         _canRedo.value = redoStack.isNotEmpty()
+    }
+
+    fun rotate(angle: Float) {
+        val centerX = drawAreaSize.value.width / 2
+        val centerY = drawAreaSize.value.height / 2
+        rotationMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+    }
+
+    fun applyRotation(resize: (ImageBitmap, Int, Int) -> ImageBitmap) {
+        val bitmap = rotationGrid.getBitmap().rotate(rotationMatrix)
+        backgroundImage.value = resize(
+            bitmap.asImageBitmap(),
+            drawAreaSize.value.width,
+            drawAreaSize.value.height
+        )
     }
 
     private fun undoRotate() {
@@ -248,7 +265,8 @@ class EditManager {
 
     fun toggleRotateMode() {
         _isRotateMode.value = !isRotateMode.value
-        if (isRotateMode.value) invalidatorTick.value++
+        rotationMatrix.reset()
+        invalidatorTick.value++
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {
