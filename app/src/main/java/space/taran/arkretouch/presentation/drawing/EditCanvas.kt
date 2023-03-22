@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -66,7 +69,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
-    val isTouched = mutableStateOf(false)
+    var isTouched by remember { mutableStateOf(false) }
 
     Canvas(
         modifier = modifier
@@ -79,6 +82,10 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             .pointerInteropFilter { event ->
                 val eventX = event.x
                 val eventY = event.y
+                if (event.action == MotionEvent.ACTION_DOWN)
+                    isTouched = true
+                if (event.action == MotionEvent.ACTION_UP)
+                    isTouched = false
                 when (true) {
                     editManager.isRotateMode.value -> when (event.action) {
                         MotionEvent.ACTION_MOVE -> {
@@ -181,7 +188,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     }
                     editManager.isCropMode.value -> {
                         if (
-                            isTouched.value
+                            isTouched
                         ) {
                             when (event.action) {
                                 MotionEvent.ACTION_DOWN -> {
@@ -190,7 +197,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                                     editManager.cropWindow.detectTouchedSide(
                                         Offset(eventX, eventY)
                                     )
-                                    isTouched.value = true
                                 }
                                 MotionEvent.ACTION_MOVE -> {
                                     val deltaX =
@@ -206,9 +212,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                                     )
                                     currentPoint.x = eventX
                                     currentPoint.y = eventY
-                                }
-                                MotionEvent.ACTION_UP -> {
-                                    isTouched.value = false
                                 }
                             }
                         }

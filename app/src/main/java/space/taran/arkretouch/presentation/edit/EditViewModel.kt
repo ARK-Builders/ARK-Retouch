@@ -231,12 +231,8 @@ class EditViewModel(
         }
     }
 
-    fun loadCroppedBitmap() {
-        editManager.apply {
-            resizeCroppedBitmap { bitmap, width, height ->
-                resize(bitmap, width, height)
-            }
-        }
+    fun applyCrop() {
+        editManager.applyCrop()
     }
 
     fun fitBitmapToCropWindow(

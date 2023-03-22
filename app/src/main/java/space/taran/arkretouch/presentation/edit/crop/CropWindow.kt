@@ -352,7 +352,7 @@ class CropWindow {
     companion object {
         private const val HORIZONTAL_OFFSET = 150F
         private const val VERTICAL_OFFSET = 220F
-        private const val SIDE_DETECTOR_TOLERANCE = 30
+        private const val SIDE_DETECTOR_TOLERANCE = 50
         private const val MIN_WIDTH = 150F
         private const val MIN_HEIGHT = 150F
 

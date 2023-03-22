@@ -319,8 +319,8 @@ private fun BoxScope.TopMenu(
             .clickable {
                 viewModel.editManager.apply {
                     if (isCropMode.value) {
+                        viewModel.applyCrop()
                         addCrop()
-                        viewModel.loadCroppedBitmap()
                         toggleCropMode()
                         cropWindow.close()
                         viewModel.menusVisible = true

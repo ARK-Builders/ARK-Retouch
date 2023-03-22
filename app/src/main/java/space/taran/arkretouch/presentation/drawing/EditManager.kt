@@ -95,6 +95,10 @@ class EditManager {
         }
     }
 
+    fun applyCrop() {
+        backgroundImage.value = crop().asImageBitmap()
+    }
+
     internal fun clearRedoPath() {
         redoPaths.clear()
     }
@@ -364,17 +368,6 @@ class EditManager {
             yOffset = (drawArea.height - bitmap.height) / 2f
         }
         return Offset(xOffset, yOffset)
-    }
-
-    fun resizeCroppedBitmap(
-        resize: (ImageBitmap, Int, Int) -> ImageBitmap
-    ) {
-        val drawArea = drawAreaSize.value
-        backgroundImage.value = resize(
-            crop().asImageBitmap(),
-            drawArea.width,
-            drawArea.height
-        )
     }
 
     private companion object {
