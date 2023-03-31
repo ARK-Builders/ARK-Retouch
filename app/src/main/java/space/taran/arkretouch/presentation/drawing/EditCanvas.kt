@@ -6,6 +6,7 @@ import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,9 +21,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.unit.dp
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.abs
@@ -39,28 +43,29 @@ fun EditCanvas(viewModel: EditViewModel) {
         var bitmap: ImageBitmap? = null
         if (!editManager.isRotateMode.value && !editManager.isCropMode.value)
             bitmap = editManager.backgroundImage.value
-        val modifier = if (bitmap != null)
+        val modifier = if (bitmap != null) {
+            editManager.zoom()
             Modifier
                 .size(
-                    bitmap.width.toDp(),
-                    bitmap.height.toDp()
+                    editManager.availableDrawAreaSize.width.toDp(),
+                    editManager.availableDrawAreaSize.height.toDp()
                 )
-        else Modifier.fillMaxSize()
-        Canvas(modifier) {
-            viewModel.editManager.backgroundImage.value?.let { imageBitmap ->
-                drawImage(
-                    imageBitmap,
-                    topLeft = if (
-                        editManager.isRotateMode.value ||
-                        editManager.isCropMode.value
-                    )
-                        editManager.calcImageOffset()
-                    else
-                        Offset(0f, 0f)
-                )
+        } else Modifier.fillMaxSize()
+        Canvas(modifier.border(2.dp, Color.Green)) {
+            drawIntoCanvas { canvas ->
+                viewModel.editManager.apply {
+                    backgroundImage.value?.let { imageBitmap ->
+                        canvas.nativeCanvas.setMatrix(cropMatrix)
+                        canvas.drawImage(
+                            imageBitmap,
+                            editManager.calcImageOffset(),
+                            Paint()
+                        )
+                    }
+                }
             }
         }
-        EditDrawCanvas(modifier, viewModel)
+        EditDrawCanvas(modifier.border(2.dp, Color.Red), viewModel)
     }
 }
 

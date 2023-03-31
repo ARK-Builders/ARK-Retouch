@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
@@ -154,12 +155,6 @@ class EditViewModel(
         return resize(bitmap, width, height)
     }
 
-    fun getImageUri(
-        context: Context = DIManager.component.app(),
-        bitmap: Bitmap? = null,
-        name: String = ""
-    ) = getCachedImageUri(context, bitmap, name)
-
     private fun getCachedImageUri(
         context: Context,
         bitmap: Bitmap? = null,
@@ -189,12 +184,12 @@ class EditViewModel(
 
     fun getCombinedImageBitmap(): ImageBitmap {
         val bitmap = editManager.backgroundImage.value
-        val size = if (bitmap != null)
-            IntSize(
-                bitmap.width,
-                bitmap.height
-            )
-        else editManager.drawAreaSize.value
+        val size = if (bitmap != null) {
+            with(editManager) {
+                zoom(availableDrawAreaSize)
+                availableDrawAreaSize
+            }
+        } else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -205,11 +200,17 @@ class EditViewModel(
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
         editManager.backgroundImage.value?.let {
+            combinedCanvas.nativeCanvas.setMatrix(editManager.cropMatrix)
             combinedCanvas.drawImage(
                 it,
-                Offset(0f, 0f),
+                Offset(
+                    (size.width - it.width) / 2f,
+                    (size.height - it.height) / 2f
+                ),
                 Paint()
             )
+            editManager.cropMatrix.reset()
+            combinedCanvas.nativeCanvas.setMatrix(editManager.cropMatrix)
         }
         editManager.drawPaths.forEach {
             drawCanvas.drawPath(it.path, it.paint)
@@ -222,13 +223,6 @@ class EditViewModel(
         exitConfirmed = true
         delay(2_000)
         exitConfirmed = false
-    }
-
-    fun prepareBitmapToCrop() {
-        editManager.apply {
-            backgroundImage.value =
-                cropWindow.getBitmap().asImageBitmap()
-        }
     }
 
     fun applyCrop() {
@@ -306,6 +300,10 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
                 setOriginalBackgroundImage(backgroundImage.value)
+                availableDrawAreaSize = IntSize(
+                    backgroundImage.value?.width!!,
+                    backgroundImage.value?.height!!
+                )
             }
         }
 

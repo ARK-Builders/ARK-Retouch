@@ -1,6 +1,7 @@
 package space.taran.arkretouch.presentation.drawing
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,8 @@ class EditManager {
 
     val cropWindow = CropWindow()
 
+    val cropMatrix = Matrix()
+
     val currentPaint: Paint
         get() = if (isEraseMode.value) {
             erasePaint
@@ -52,6 +55,7 @@ class EditManager {
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
+    var availableDrawAreaSize = IntSize.Zero
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -97,6 +101,31 @@ class EditManager {
 
     fun applyCrop() {
         backgroundImage.value = crop().asImageBitmap()
+        // zoomAfterCrop()
+    }
+
+    fun zoom(maxSize: IntSize = drawAreaSize.value) {
+        val bitmap = backgroundImage.value!!
+        val height = bitmap.height.toFloat()
+        val width = bitmap.width.toFloat()
+        var finalWidth = maxSize.width.toFloat()
+        var finalHeight = maxSize.height.toFloat()
+        val aspectRatio = width / height
+        val maxRatio = finalWidth / finalHeight
+        val px = finalWidth / 2f
+        val py = finalHeight / 2f
+        if (maxRatio > aspectRatio)
+            finalWidth = finalHeight * aspectRatio
+        else
+            finalHeight = finalWidth / aspectRatio
+        availableDrawAreaSize = IntSize(
+            finalWidth.toInt(),
+            finalHeight.toInt()
+        )
+        val sx = finalWidth / width
+        val sy = finalHeight / height
+        cropMatrix.reset()
+        cropMatrix.postScale(sx, sy, px, py)
     }
 
     internal fun clearRedoPath() {
@@ -348,6 +377,8 @@ class EditManager {
 
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
+        if (isCropMode.value)
+            cropMatrix.reset()
     }
 
     fun cancelCropMode() {
