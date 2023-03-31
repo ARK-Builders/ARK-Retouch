@@ -20,6 +20,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
@@ -39,25 +41,26 @@ fun EditCanvas(viewModel: EditViewModel) {
         var bitmap: ImageBitmap? = null
         if (!editManager.isRotateMode.value && !editManager.isCropMode.value)
             bitmap = editManager.backgroundImage.value
-        val modifier = if (bitmap != null)
+        val modifier = if (bitmap != null) {
+            editManager.zoom()
             Modifier
                 .size(
-                    bitmap.width.toDp(),
-                    bitmap.height.toDp()
+                    editManager.availableDrawAreaSize.width.toDp(),
+                    editManager.availableDrawAreaSize.height.toDp()
                 )
-        else Modifier.fillMaxSize()
+        } else Modifier.fillMaxSize()
         Canvas(modifier) {
-            viewModel.editManager.backgroundImage.value?.let { imageBitmap ->
-                drawImage(
-                    imageBitmap,
-                    topLeft = if (
-                        editManager.isRotateMode.value ||
-                        editManager.isCropMode.value
-                    )
-                        editManager.calcImageOffset()
-                    else
-                        Offset(0f, 0f)
-                )
+            drawIntoCanvas { canvas ->
+                viewModel.editManager.apply {
+                    backgroundImage.value?.let { imageBitmap ->
+                        canvas.nativeCanvas.setMatrix(cropMatrix)
+                        canvas.drawImage(
+                            imageBitmap,
+                            editManager.calcImageOffset(),
+                            Paint()
+                        )
+                    }
+                }
             }
         }
         EditDrawCanvas(modifier, viewModel)
@@ -251,6 +254,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 editManager.invalidatorTick.value++
                 true
             }
+
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
