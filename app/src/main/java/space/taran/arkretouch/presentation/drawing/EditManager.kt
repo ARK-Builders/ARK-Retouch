@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
@@ -42,11 +41,11 @@ class EditManager {
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
-    val rotationMatrix = Matrix()
 
     val rotationGrid = RotateGrid()
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
+    var availableDrawSize = drawAreaSize.value
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -74,6 +73,7 @@ class EditManager {
     private val rotatedStack = Stack<Stack<DrawPath>>()
     private val rotationAngles = Stack<Float>()
     private val redoRotationAngles = Stack<Float>()
+    val rotatedPaths = Stack<DrawPath>()
 
     private val undoStack = Stack<String>()
     private val redoStack = Stack<String>()
@@ -91,54 +91,43 @@ class EditManager {
         val centerX = drawAreaSize.value.width / 2
         val centerY = drawAreaSize.value.height / 2
         if (isRotateMode.value) rotationAngle.value += angle
-        rotationMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+        matrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
     }
 
-    fun applyRotation(resize: (ImageBitmap, Int, Int) -> ImageBitmap) {
-        val bitmap = rotationGrid.getBitmap()
-        matrix.set(rotationMatrix)
-        backgroundImage.value = resize(
-            bitmap.asImageBitmap(),
-            drawAreaSize.value.width,
-            drawAreaSize.value.height
-        )
-        addRotation()
+    fun applyRotation() {
         toggleRotateMode()
+        addRotation()
     }
 
     private fun undoRotate() {
-        if (rotations.isNotEmpty() && rotationAngles.isNotEmpty()) {
-            redoRotations.push(backgroundImage.value)
+        if (rotationAngles.isNotEmpty()) {
             redoRotationAngles.push(prevRotationAngle)
             prevRotationAngle = rotationAngles.pop()
-            rotationMatrix.reset()
+            Timber.tag("edit-manager").d(
+                prevRotationAngle.toString()
+            )
+            matrix.reset()
             rotate(prevRotationAngle)
-            matrix.set(rotationMatrix)
-            backgroundImage.value = rotations.pop()
-            redrawRotatedPaths()
         }
     }
 
     private fun redoRotate() {
-        if (redoRotations.isNotEmpty()) {
-            rotations.push(backgroundImage.value)
+        if (redoRotationAngles.isNotEmpty()) {
             rotationAngles.push(prevRotationAngle)
             prevRotationAngle = redoRotationAngles.pop()
-            rotationMatrix.reset()
+            Timber.tag("edit-manager").d(
+                prevRotationAngle.toString()
+            )
+            matrix.reset()
             rotate(prevRotationAngle)
-            matrix.set(rotationMatrix)
-            backgroundImage.value = redoRotations.pop()
-            keepRotatedPaths()
         }
     }
 
     private fun addRotation() {
         if (canRedo.value) clearRedo()
-        rotations.add(backgroundImage2.value)
         rotationAngles.add(prevRotationAngle)
         undoStack.add(ROTATE)
         prevRotationAngle = rotationAngle.value
-        keepRotatedPaths()
         updateRevised()
     }
 
@@ -149,6 +138,7 @@ class EditManager {
             for (i in 1..size) {
                 stack.push(drawPaths.pop())
             }
+            rotatedPaths.addAll(stack)
         }
         rotatedStack.add(stack)
     }
@@ -165,12 +155,6 @@ class EditManager {
         }
     }
 
-    fun cancelRotateMode() {
-        rotate(prevRotationAngle)
-        matrix.set(rotationMatrix)
-        backgroundImage.value = backgroundImage2.value
-    }
-
     private fun resetRotation() {
         rotationAngle.value = 0f
     }
@@ -180,7 +164,6 @@ class EditManager {
         redoRotations.clear()
         rotationAngles.clear()
         redoRotationAngles.clear()
-        rotationMatrix.reset()
         prevRotationAngle = 0f
         resetRotation()
     }
@@ -286,9 +269,6 @@ class EditManager {
 
     fun toggleRotateMode() {
         _isRotateMode.value = !isRotateMode.value
-        rotationMatrix.reset()
-        resetRotation()
-        invalidatorTick.value++
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {

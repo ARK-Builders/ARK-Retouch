@@ -103,12 +103,6 @@ class EditViewModel(
             }
         }
 
-    fun applyRotation() {
-        editManager.applyRotation { imageBitmap, width, height ->
-            resize(imageBitmap, width, height)
-        }
-    }
-
     fun fitBitmapOnRotateGrid(
         bitmap: ImageBitmap,
         width: Int,
@@ -162,15 +156,12 @@ class EditViewModel(
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
         editManager.backgroundImage.value?.let {
-            val matrix = editManager.matrix
-            combinedCanvas.nativeCanvas.setMatrix(matrix)
+            combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
             combinedCanvas.drawImage(
                 it,
                 Offset(0f, 0f),
                 Paint()
             )
-            matrix.reset()
-            combinedCanvas.nativeCanvas.setMatrix(matrix)
         }
         editManager.drawPaths.forEach {
             drawCanvas.drawPath(it.path, it.paint)
@@ -244,6 +235,10 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
                 setOriginalBackgroundImage(backgroundImage.value)
+                availableDrawSize = IntSize(
+                    backgroundImage.value?.width!!,
+                    backgroundImage.value?.height!!
+                )
             }
         }
 

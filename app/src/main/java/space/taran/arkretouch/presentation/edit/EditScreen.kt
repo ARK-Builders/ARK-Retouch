@@ -93,7 +93,6 @@ fun EditScreen(
         val editManager = viewModel.editManager
         if (editManager.isRotateMode.value) {
             editManager.toggleRotateMode()
-            editManager.cancelRotateMode()
             viewModel.menusVisible = true
             return@BackHandler
         }
@@ -272,7 +271,6 @@ private fun BoxScope.TopMenu(
                 if (viewModel.editManager.isRotateMode.value) {
                     viewModel.apply {
                         editManager.toggleRotateMode()
-                        editManager.cancelRotateMode()
                         menusVisible = true
                         return@clickable
                     }
@@ -306,11 +304,13 @@ private fun BoxScope.TopMenu(
                 .size(36.dp)
                 .clip(CircleShape)
                 .clickable {
-                    if (viewModel.editManager.isRotateMode.value) {
-                        viewModel.apply {
-                            viewModel.applyRotation()
-                            viewModel.menusVisible = true
-                            return@clickable
+                    viewModel.editManager.apply {
+                        if (isRotateMode.value) {
+                            viewModel.apply {
+                                applyRotation()
+                                viewModel.menusVisible = true
+                                return@clickable
+                            }
                         }
                     }
                     viewModel.showMoreOptionsPopup = true
@@ -531,24 +531,8 @@ private fun EditMenuContent(
                     .clickable {
                         editManager.apply {
                             toggleRotateMode()
-                            if (isRotateMode.value) {
-                                var imgBitmap = viewModel.getCombinedImageBitmap()
+                            if (isRotateMode.value)
                                 setBackgroundImage2()
-                                rotationGrid
-                                    .init(
-                                        this,
-                                        imgBitmap,
-                                        calcImageOffset()
-                                    ) { bitmap, width, height ->
-                                        imgBitmap = viewModel.fitBitmapOnRotateGrid(
-                                            bitmap,
-                                            width,
-                                            height
-                                        )
-                                        imgBitmap
-                                    }
-                                backgroundImage.value = imgBitmap
-                            } else editManager.cancelRotateMode()
                             viewModel.menusVisible = !editManager.isRotateMode.value
                         }
                     },
