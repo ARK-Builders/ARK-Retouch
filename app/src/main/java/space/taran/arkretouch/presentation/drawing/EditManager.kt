@@ -103,9 +103,6 @@ class EditManager {
         if (rotationAngles.isNotEmpty()) {
             redoRotationAngles.push(prevRotationAngle)
             prevRotationAngle = rotationAngles.pop()
-            Timber.tag("edit-manager").d(
-                prevRotationAngle.toString()
-            )
             matrix.reset()
             rotate(prevRotationAngle)
         }
@@ -115,9 +112,6 @@ class EditManager {
         if (redoRotationAngles.isNotEmpty()) {
             rotationAngles.push(prevRotationAngle)
             prevRotationAngle = redoRotationAngles.pop()
-            Timber.tag("edit-manager").d(
-                prevRotationAngle.toString()
-            )
             matrix.reset()
             rotate(prevRotationAngle)
         }
@@ -129,30 +123,6 @@ class EditManager {
         undoStack.add(ROTATE)
         prevRotationAngle = rotationAngle.value
         updateRevised()
-    }
-
-    private fun keepRotatedPaths() {
-        val stack = Stack<DrawPath>()
-        if (drawPaths.isNotEmpty()) {
-            val size = drawPaths.size
-            for (i in 1..size) {
-                stack.push(drawPaths.pop())
-            }
-            rotatedPaths.addAll(stack)
-        }
-        rotatedStack.add(stack)
-    }
-
-    private fun redrawRotatedPaths() {
-        if (rotatedStack.isNotEmpty()) {
-            val paths = rotatedStack.pop()
-            if (paths.isNotEmpty()) {
-                val size = paths.size
-                for (i in 1..size) {
-                    drawPaths.push(paths.pop())
-                }
-            }
-        }
     }
 
     private fun resetRotation() {
