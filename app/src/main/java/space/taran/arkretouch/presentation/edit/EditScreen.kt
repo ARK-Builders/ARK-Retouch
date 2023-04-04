@@ -320,9 +320,8 @@ private fun BoxScope.TopMenu(
                 viewModel.editManager.apply {
                     if (isCropMode.value) {
                         viewModel.applyCrop()
-                        addCrop()
+                        // addCrop()
                         toggleCropMode()
-                        cropWindow.close()
                         viewModel.menusVisible = true
                         return@clickable
                     }
@@ -594,9 +593,8 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !editManager.isCropMode.value
                             if (isCropMode.value) {
-                                val bitmap =
-                                    viewModel.getCombinedImageBitmap()
-                                        .asAndroidBitmap()
+                                val bitmap = backgroundImage.value
+                                    ?.asAndroidBitmap()!!
                                 setBackgroundImage2()
                                 viewModel.editManager.cropWindow.init(
                                     editManager,

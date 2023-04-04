@@ -6,19 +6,16 @@ import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.Paint
@@ -35,20 +32,21 @@ import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.comput
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
     val editManager = viewModel.editManager
+    val interactionSource = remember {
+        MutableInteractionSource()
+    }
     Box(
         Modifier.background(Color.White)
     ) {
-        var bitmap: ImageBitmap? = null
-        if (!editManager.isRotateMode.value && !editManager.isCropMode.value)
-            bitmap = editManager.backgroundImage.value
-        val modifier = if (bitmap != null) {
-            editManager.zoom()
-            Modifier
-                .size(
-                    editManager.availableDrawAreaSize.width.toDp(),
-                    editManager.availableDrawAreaSize.height.toDp()
-                )
-        } else Modifier.fillMaxSize()
+        val modifier = Modifier
+            .size(
+                editManager.availableDrawAreaSize.value.width.toDp(),
+                editManager.availableDrawAreaSize.value.height.toDp()
+            )
+            .hoverable(
+                interactionSource,
+                false
+            )
         Canvas(modifier) {
             drawIntoCanvas { canvas ->
                 viewModel.editManager.apply {
@@ -72,7 +70,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
-    var isTouched by remember { mutableStateOf(false) }
 
     Canvas(
         modifier = modifier
@@ -85,8 +82,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             .pointerInteropFilter { event ->
                 val eventX = event.x
                 val eventY = event.y
-                if (event.action == MotionEvent.ACTION_DOWN)
-                    isTouched = true
                 when (true) {
                     editManager.isRotateMode.value -> when (event.action) {
                         MotionEvent.ACTION_MOVE -> {
@@ -188,35 +183,28 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
                     }
                     editManager.isCropMode.value -> {
-                        if (
-                            isTouched
-                        ) {
-                            when (event.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    currentPoint.x = eventX
-                                    currentPoint.y = eventY
-                                    editManager.cropWindow.detectTouchedSide(
-                                        Offset(eventX, eventY)
-                                    )
-                                }
-                                MotionEvent.ACTION_MOVE -> {
-                                    val deltaX =
-                                        computeDeltaX(currentPoint.x, eventX)
-                                    val deltaY =
-                                        computeDeltaY(currentPoint.y, eventY)
+                        when (event.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                currentPoint.x = eventX
+                                currentPoint.y = eventY
+                                editManager.cropWindow.detectTouchedSide(
+                                    Offset(eventX, eventY)
+                                )
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                val deltaX =
+                                    computeDeltaX(currentPoint.x, eventX)
+                                val deltaY =
+                                    computeDeltaY(currentPoint.y, eventY)
 
-                                    editManager.cropWindow.setDelta(
-                                        Offset(
-                                            deltaX,
-                                            deltaY
-                                        )
+                                editManager.cropWindow.setDelta(
+                                    Offset(
+                                        deltaX,
+                                        deltaY
                                     )
-                                    currentPoint.x = eventX
-                                    currentPoint.y = eventY
-                                }
-                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                    isTouched = false
-                                }
+                                )
+                                currentPoint.x = eventX
+                                currentPoint.y = eventY
                             }
                         }
                     }
@@ -260,13 +248,13 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
+                canvas.nativeCanvas.setMatrix(cropMatrix)
                 if (isRotateMode.value) {
                     rotationGrid.draw(canvas, rotationAngle.value)
                     return@drawIntoCanvas
                 }
                 if (isCropMode.value) {
                     editManager.cropWindow.show(canvas)
-                    return@drawIntoCanvas
                 }
                 drawPaths.forEach {
                     canvas.drawPath(it.path, it.paint)

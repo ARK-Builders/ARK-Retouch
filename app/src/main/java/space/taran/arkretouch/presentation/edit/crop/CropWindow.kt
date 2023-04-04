@@ -86,14 +86,14 @@ class CropWindow {
         if (!isInitialized) {
             Timber.tag("crop-window").d("Initialising")
             this.bitmap = bitmap
-            this.drawAreaSize = editManager.drawAreaSize.value
+            this.drawAreaSize = editManager.availableDrawAreaSize.value
             create()
-            this.bitmap = fitBitmap(
+            /*this.bitmap = fitBitmap(
                 bitmap,
                 rect.width.toInt(),
                 rect.height.toInt()
-            )
-            this.offset = editManager.calcImageOffset()
+            )*/
+            this.offset = Offset.Zero // editManager.calcImageOffset()
             isInitialized = true
         }
     }

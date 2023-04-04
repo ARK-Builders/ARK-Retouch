@@ -186,8 +186,8 @@ class EditViewModel(
         val bitmap = editManager.backgroundImage.value
         val size = if (bitmap != null) {
             with(editManager) {
-                zoom(availableDrawAreaSize)
-                availableDrawAreaSize
+                zoom(availableDrawAreaSize.value)
+                availableDrawAreaSize.value
             }
         } else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
@@ -300,7 +300,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
                 setOriginalBackgroundImage(backgroundImage.value)
-                availableDrawAreaSize = IntSize(
+                availableDrawAreaSize.value = IntSize(
                     backgroundImage.value?.width!!,
                     backgroundImage.value?.height!!
                 )

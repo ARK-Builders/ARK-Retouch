@@ -11,11 +11,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
@@ -55,7 +56,7 @@ class EditManager {
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
-    var availableDrawAreaSize = IntSize.Zero
+    var availableDrawAreaSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -99,7 +100,42 @@ class EditManager {
         }
     }
 
+    private fun cropTwo() {
+        cropWindow.apply {
+            val params = getCropParams()
+            val width = params.width
+            val height = params.height
+            var maxWidth = drawAreaSize.value.width
+            var maxHeight = drawAreaSize.value.height
+            val aspectRatio = width.toFloat() / height.toFloat()
+            val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+            val px = maxWidth / 2
+            val py = maxHeight / 2
+            if (aspectRatio > maxRatio) maxHeight = (maxWidth / aspectRatio).toInt()
+            else maxWidth = (maxHeight * aspectRatio).toInt()
+            val sx = maxWidth / width
+            val sy = maxHeight / height
+            availableDrawAreaSize.value = IntSize(
+                maxWidth,
+                maxHeight
+            )
+            cropMatrix.reset()
+            cropMatrix.postScale(
+                sx.toFloat(),
+                sy.toFloat(),
+                px.toFloat(),
+                py.toFloat()
+            )
+        }
+        invalidatorTick.value++
+    }
+
+    fun applyOperation(operation: Operation) {
+        operation.apply()
+    }
+
     fun applyCrop() {
+        cropTwo()
         backgroundImage.value = crop().asImageBitmap()
         // zoomAfterCrop()
     }
@@ -118,7 +154,7 @@ class EditManager {
             finalWidth = finalHeight * aspectRatio
         else
             finalHeight = finalWidth / aspectRatio
-        availableDrawAreaSize = IntSize(
+        availableDrawAreaSize.value = IntSize(
             finalWidth.toInt(),
             finalHeight.toInt()
         )
@@ -379,6 +415,7 @@ class EditManager {
         _isCropMode.value = !isCropMode.value
         if (isCropMode.value)
             cropMatrix.reset()
+        if (!isCropMode.value) cropWindow.close()
     }
 
     fun cancelCropMode() {
