@@ -350,6 +350,8 @@ class EditManager {
 
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
+        if (availableDrawAreaSize.value == IntSize.Zero)
+            availableDrawAreaSize.value = drawAreaSize.value
         if (!isCropMode.value) cropWindow.close()
     }
 

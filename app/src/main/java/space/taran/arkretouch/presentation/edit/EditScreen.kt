@@ -104,7 +104,6 @@ fun EditScreen(
         if (editManager.isCropMode.value) {
             editManager.toggleCropMode()
             editManager.cancelCropMode()
-            editManager.cropWindow.close()
             viewModel.menusVisible = true
             return@BackHandler
         }
@@ -288,7 +287,6 @@ private fun BoxScope.TopMenu(
                     if (isCropMode.value) {
                         toggleCropMode()
                         cancelCropMode()
-                        cropWindow.close()
                         viewModel.menusVisible = true
                         return@clickable
                     }
