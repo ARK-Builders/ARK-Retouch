@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -166,6 +167,11 @@ class EditViewModel(
         if (newWidth > 0 && newHeight > 0)
             editManager.apply {
                 val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
+                Log.d(
+                    "edit-view-model",
+                    "bitmap to resize: $bitmapToResize," +
+                        " width: $newWidth, height: $newHeight"
+                )
                 if (
                     newWidth <= bitmapToResize.width &&
                     newHeight <= bitmapToResize.height

@@ -94,7 +94,7 @@ class EditManager {
     fun addResize() {
         if (canRedo.value) clearRedo()
         resizes.add(backgroundImage2.value)
-        redoStack.add(RESIZE)
+        undoStack.add(RESIZE)
         keepEditedPaths()
         updateRevised()
     }

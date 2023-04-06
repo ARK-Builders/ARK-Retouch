@@ -626,13 +626,13 @@ private fun EditMenuContent(
                             if (!isRotateMode.value) toggleResizeMode()
                             if (isResizeMode.value) {
                                 val imgBitmap = viewModel.getCombinedImageBitmap()
+                                setBackgroundImage2()
                                 resize.init(imgBitmap.asAndroidBitmap())
                                 backgroundImage.value = imgBitmap
                                 aspectRatio.value = imgBitmap.width.toFloat() /
                                     imgBitmap.height.toFloat()
                                 bitmapWidth = imgBitmap.width
                                 bitmapHeight = imgBitmap.height
-                                setBackgroundImage2()
                             }
                             viewModel.menusVisible = !isResizeMode.value
                         }

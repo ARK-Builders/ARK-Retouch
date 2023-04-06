@@ -215,12 +215,15 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         editManager.invalidatorTick.value
 
         drawIntoCanvas { canvas ->
-            if (!editManager.isRotateMode.value)
-                editManager.drawPaths.forEach {
+            editManager.apply {
+                if (isRotateMode.value) {
+                    rotationGrid.draw(canvas, rotationAngle.value)
+                    return@drawIntoCanvas
+                }
+                if (isResizeMode.value) return@drawIntoCanvas
+                drawPaths.forEach {
                     canvas.drawPath(it.path, it.paint)
                 }
-            else editManager.apply {
-                rotationGrid.draw(canvas, rotationAngle.value)
             }
         }
     }
