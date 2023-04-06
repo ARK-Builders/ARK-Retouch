@@ -10,13 +10,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.IntSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -184,12 +182,9 @@ class EditViewModel(
 
     fun getCombinedImageBitmap(): ImageBitmap {
         val bitmap = editManager.backgroundImage.value
-        val size = if (bitmap != null) {
-            with(editManager) {
-                zoom(availableDrawAreaSize.value)
-                availableDrawAreaSize.value
-            }
-        } else editManager.drawAreaSize.value
+        val size = if (bitmap != null)
+            editManager.availableDrawAreaSize.value
+        else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -200,7 +195,6 @@ class EditViewModel(
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
         editManager.backgroundImage.value?.let {
-            combinedCanvas.nativeCanvas.setMatrix(editManager.cropMatrix)
             combinedCanvas.drawImage(
                 it,
                 Offset(
@@ -209,8 +203,6 @@ class EditViewModel(
                 ),
                 Paint()
             )
-            editManager.cropMatrix.reset()
-            combinedCanvas.nativeCanvas.setMatrix(editManager.cropMatrix)
         }
         editManager.drawPaths.forEach {
             drawCanvas.drawPath(it.path, it.paint)
@@ -225,11 +217,11 @@ class EditViewModel(
         exitConfirmed = false
     }
 
-    fun applyCrop() {
-        editManager.applyCrop()
+    fun applyOperation(operation: Operation) {
+        editManager.applyOperation(operation)
     }
 
-    fun fitBitmapToCropWindow(
+    fun fitBitmap(
         imgBitmap: ImageBitmap,
         maxWidth: Int,
         maxHeight: Int
@@ -300,10 +292,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
                 setOriginalBackgroundImage(backgroundImage.value)
-                availableDrawAreaSize.value = IntSize(
-                    backgroundImage.value?.width!!,
-                    backgroundImage.value?.height!!
-                )
+                updateAvailableDrawArea()
             }
         }
 
@@ -311,7 +300,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
     })
 }
 
-private fun resize(
+fun resize(
     imageBitmap: ImageBitmap,
     maxWidth: Int,
     maxHeight: Int

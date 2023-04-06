@@ -61,6 +61,7 @@ import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
+import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -319,9 +320,9 @@ private fun BoxScope.TopMenu(
             .clickable {
                 viewModel.editManager.apply {
                     if (isCropMode.value) {
-                        viewModel.applyCrop()
-                        // addCrop()
-                        toggleCropMode()
+                        viewModel.applyOperation(
+                            CropOperation(viewModel.editManager)
+                        )
                         viewModel.menusVisible = true
                         return@clickable
                     }
@@ -593,14 +594,14 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !editManager.isCropMode.value
                             if (isCropMode.value) {
-                                val bitmap = backgroundImage.value
-                                    ?.asAndroidBitmap()!!
+                                val bitmap = viewModel.getCombinedImageBitmap()
+                                    .asAndroidBitmap()
                                 setBackgroundImage2()
                                 viewModel.editManager.cropWindow.init(
                                     editManager,
                                     bitmap,
                                     fitBitmap = { bitmap1, maxWidth, maxHeight ->
-                                        viewModel.fitBitmapToCropWindow(
+                                        viewModel.fitBitmap(
                                             bitmap1.asImageBitmap(),
                                             maxWidth,
                                             maxHeight

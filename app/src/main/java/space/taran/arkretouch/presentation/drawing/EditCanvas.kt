@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -38,11 +39,17 @@ fun EditCanvas(viewModel: EditViewModel) {
     Box(
         Modifier.background(Color.White)
     ) {
-        val modifier = Modifier
+        val modifier = if (!editManager.isCropMode.value) Modifier
             .size(
                 editManager.availableDrawAreaSize.value.width.toDp(),
                 editManager.availableDrawAreaSize.value.height.toDp()
             )
+            .hoverable(
+                interactionSource,
+                false
+            )
+        else Modifier
+            .fillMaxSize()
             .hoverable(
                 interactionSource,
                 false
@@ -255,6 +262,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 }
                 if (isCropMode.value) {
                     editManager.cropWindow.show(canvas)
+                    return@drawIntoCanvas
                 }
                 drawPaths.forEach {
                     canvas.drawPath(it.path, it.paint)

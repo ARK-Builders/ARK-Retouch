@@ -1,6 +1,5 @@
 package space.taran.arkretouch.presentation.drawing
 
-import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -11,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
@@ -20,7 +18,6 @@ import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.rotate.RotateGrid
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
-import space.taran.arkretouch.presentation.utils.crop
 import java.util.Stack
 
 class EditManager {
@@ -56,7 +53,7 @@ class EditManager {
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
-    var availableDrawAreaSize = mutableStateOf(IntSize.Zero)
+    val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -91,84 +88,22 @@ class EditManager {
     private val cropStack = Stack<ImageBitmap>()
     private val redoCropStack = Stack<ImageBitmap>()
 
-    private fun crop(): Bitmap {
-        keepCroppedPaths()
-        return with(cropWindow) {
-            getBitmap().crop(
-                getCropParams()
-            )
-        }
-    }
-
-    private fun cropTwo() {
-        cropWindow.apply {
-            val params = getCropParams()
-            val width = params.width
-            val height = params.height
-            var maxWidth = drawAreaSize.value.width
-            var maxHeight = drawAreaSize.value.height
-            val aspectRatio = width.toFloat() / height.toFloat()
-            val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
-            val px = maxWidth / 2
-            val py = maxHeight / 2
-            if (aspectRatio > maxRatio) maxHeight = (maxWidth / aspectRatio).toInt()
-            else maxWidth = (maxHeight * aspectRatio).toInt()
-            val sx = maxWidth / width
-            val sy = maxHeight / height
-            availableDrawAreaSize.value = IntSize(
-                maxWidth,
-                maxHeight
-            )
-            cropMatrix.reset()
-            cropMatrix.postScale(
-                sx.toFloat(),
-                sy.toFloat(),
-                px.toFloat(),
-                py.toFloat()
-            )
-        }
-        invalidatorTick.value++
-    }
-
     fun applyOperation(operation: Operation) {
         operation.apply()
     }
 
-    fun applyCrop() {
-        cropTwo()
-        backgroundImage.value = crop().asImageBitmap()
-        // zoomAfterCrop()
-    }
-
-    fun zoom(maxSize: IntSize = drawAreaSize.value) {
-        val bitmap = backgroundImage.value!!
-        val height = bitmap.height.toFloat()
-        val width = bitmap.width.toFloat()
-        var finalWidth = maxSize.width.toFloat()
-        var finalHeight = maxSize.height.toFloat()
-        val aspectRatio = width / height
-        val maxRatio = finalWidth / finalHeight
-        val px = finalWidth / 2f
-        val py = finalHeight / 2f
-        if (maxRatio > aspectRatio)
-            finalWidth = finalHeight * aspectRatio
-        else
-            finalHeight = finalWidth / aspectRatio
+    fun updateAvailableDrawArea() {
         availableDrawAreaSize.value = IntSize(
-            finalWidth.toInt(),
-            finalHeight.toInt()
+            backgroundImage.value?.width!!,
+            backgroundImage.value?.height!!
         )
-        val sx = finalWidth / width
-        val sy = finalHeight / height
-        cropMatrix.reset()
-        cropMatrix.postScale(sx, sy, px, py)
     }
 
     internal fun clearRedoPath() {
         redoPaths.clear()
     }
 
-    private fun keepCroppedPaths() {
+    fun keepCroppedPaths() {
         val stack = Stack<DrawPath>()
         if (drawPaths.isNotEmpty()) {
             val size = drawPaths.size
@@ -221,7 +156,7 @@ class EditManager {
         rotationAngle.value += angle
     }
 
-    private fun keepRotatedPaths() {
+    fun keepRotatedPaths() {
         val stack = Stack<DrawPath>()
         if (drawPaths.isNotEmpty()) {
             val size = drawPaths.size
@@ -281,6 +216,7 @@ class EditManager {
         if (cropStack.isNotEmpty()) {
             redoCropStack.push(backgroundImage.value)
             backgroundImage.value = cropStack.pop()
+            updateAvailableDrawArea()
             redrawCroppedPaths()
             updateRevised()
         }
@@ -290,6 +226,7 @@ class EditManager {
         if (redoCropStack.isNotEmpty()) {
             cropStack.push(backgroundImage.value)
             backgroundImage.value = redoCropStack.pop()
+            updateAvailableDrawArea()
             keepCroppedPaths()
             updateRevised()
         }
@@ -401,6 +338,7 @@ class EditManager {
 
     private fun restoreOriginalBackgroundImage() {
         backgroundImage.value = originalBackgroundImage.value
+        updateAvailableDrawArea()
     }
 
     fun toggleEraseMode() {
