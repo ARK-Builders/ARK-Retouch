@@ -18,11 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.abs
@@ -39,26 +39,29 @@ fun EditCanvas(viewModel: EditViewModel) {
     Box(
         Modifier.background(Color.White)
     ) {
-        val modifier = if (!editManager.isCropMode.value) Modifier
-            .size(
-                editManager.availableDrawAreaSize.value.width.toDp(),
-                editManager.availableDrawAreaSize.value.height.toDp()
-            )
-            .hoverable(
-                interactionSource,
-                false
-            )
-        else Modifier
+        var modifier = Modifier
             .fillMaxSize()
             .hoverable(
                 interactionSource,
                 false
             )
+        if (
+            !editManager.isCropMode.value &&
+            editManager.availableDrawAreaSize.value != IntSize.Zero
+        )
+            modifier = Modifier
+                .size(
+                    editManager.availableDrawAreaSize.value.width.toDp(),
+                    editManager.availableDrawAreaSize.value.height.toDp()
+                )
+                .hoverable(
+                    interactionSource,
+                    false
+                )
         Canvas(modifier) {
             drawIntoCanvas { canvas ->
                 viewModel.editManager.apply {
                     backgroundImage.value?.let { imageBitmap ->
-                        canvas.nativeCanvas.setMatrix(cropMatrix)
                         canvas.drawImage(
                             imageBitmap,
                             editManager.calcImageOffset(),
@@ -255,7 +258,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
-                canvas.nativeCanvas.setMatrix(cropMatrix)
                 if (isRotateMode.value) {
                     rotationGrid.draw(canvas, rotationAngle.value)
                     return@drawIntoCanvas

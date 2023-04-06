@@ -1,6 +1,5 @@
 package space.taran.arkretouch.presentation.drawing
 
-import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -30,8 +29,6 @@ class EditManager {
     }
 
     val cropWindow = CropWindow()
-
-    val cropMatrix = Matrix()
 
     val currentPaint: Paint
         get() = if (isEraseMode.value) {
@@ -93,10 +90,12 @@ class EditManager {
     }
 
     fun updateAvailableDrawArea() {
-        availableDrawAreaSize.value = IntSize(
-            backgroundImage.value?.width!!,
-            backgroundImage.value?.height!!
-        )
+        val bitmap = backgroundImage.value
+        if (bitmap != null)
+            availableDrawAreaSize.value = IntSize(
+                bitmap.width,
+                bitmap.height
+            )
     }
 
     internal fun clearRedoPath() {
@@ -351,8 +350,6 @@ class EditManager {
 
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
-        if (isCropMode.value)
-            cropMatrix.reset()
         if (!isCropMode.value) cropWindow.close()
     }
 
@@ -369,7 +366,9 @@ class EditManager {
         val bitmap = backgroundImage.value
         var xOffset = 0f
         var yOffset = 0f
-        if (bitmap != null) {
+        if (
+            bitmap != null && isCropMode.value
+        ) {
             xOffset = (drawArea.width - bitmap.width) / 2f
             yOffset = (drawArea.height - bitmap.height) / 2f
         }
