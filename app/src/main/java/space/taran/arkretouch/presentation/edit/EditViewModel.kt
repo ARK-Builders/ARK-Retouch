@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -40,6 +39,7 @@ import space.taran.arkretouch.presentation.utils.getOriginalSized
 import space.taran.arkretouch.presentation.utils.rotate
 import timber.log.Timber
 import java.io.File
+import java.lang.NullPointerException
 import java.nio.file.Path
 import kotlin.io.path.outputStream
 
@@ -158,32 +158,27 @@ class EditViewModel(
     fun downResizeManually(width: Int = 0, height: Int = 0): IntSize {
         var newWidth = width
         var newHeight = height
-        if (width > 0) {
-            newHeight = (newWidth / editManager.aspectRatio.value).toInt()
-        }
-        if (height > 0) {
+        if (width > 0) newHeight = (newWidth / editManager.aspectRatio.value).toInt()
+        if (height > 0)
             newWidth = (newHeight * editManager.aspectRatio.value).toInt()
-        }
-        if (newWidth > 0 && newHeight > 0)
-            editManager.apply {
-                val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
-                Log.d(
-                    "edit-view-model",
-                    "bitmap to resize: $bitmapToResize," +
-                        " width: $newWidth, height: $newHeight"
-                )
-                if (
-                    newWidth <= bitmapToResize.width &&
-                    newHeight <= bitmapToResize.height
-                ) {
+        if (newWidth > 0 && newHeight > 0) editManager.apply {
+            val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
+            if (
+                newWidth <= bitmapToResize.width &&
+                newHeight <= bitmapToResize.height
+            ) {
+                try {
                     val imgBitmap = resize(
                         bitmapToResize,
                         newWidth,
                         newHeight
                     )
                     backgroundImage.value = imgBitmap
+                } catch (e: NullPointerException) {
+                    e.printStackTrace()
                 }
             }
+        }
         return IntSize(
             newWidth,
             newHeight

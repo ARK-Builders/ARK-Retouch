@@ -42,6 +42,7 @@ fun ResizeInput(viewModel: EditViewModel) {
             value = width,
             onValueChange = {
                 width = it
+                if (width.isEmpty()) height = width
                 if (it.isNotEmpty() && it.isDigitsOnly()) {
                     height = viewModel.downResizeManually(width = it.toInt())
                         .height.toString()
@@ -70,6 +71,7 @@ fun ResizeInput(viewModel: EditViewModel) {
             value = height,
             onValueChange = {
                 height = it
+                if (height.isEmpty()) width = height
                 if (it.isNotEmpty() && it.isDigitsOnly()) {
                     width = viewModel.downResizeManually(height = it.toInt())
                         .width.toString()
