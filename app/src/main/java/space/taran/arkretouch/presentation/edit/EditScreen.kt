@@ -216,6 +216,7 @@ private fun DrawContainer(
             .onSizeChanged { newSize ->
                 if (newSize == IntSize.Zero) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
+                viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
             },
         contentAlignment = Alignment.Center

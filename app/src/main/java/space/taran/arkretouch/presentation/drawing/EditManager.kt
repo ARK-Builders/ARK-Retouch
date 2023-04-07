@@ -91,11 +91,14 @@ class EditManager {
 
     fun updateAvailableDrawArea() {
         val bitmap = backgroundImage.value
-        if (bitmap != null)
-            availableDrawAreaSize.value = IntSize(
-                bitmap.width,
-                bitmap.height
-            )
+        if (bitmap == null) {
+            availableDrawAreaSize.value = drawAreaSize.value
+            return
+        }
+        availableDrawAreaSize.value = IntSize(
+            bitmap.width,
+            bitmap.height
+        )
     }
 
     internal fun clearRedoPath() {
@@ -350,8 +353,6 @@ class EditManager {
 
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
-        if (availableDrawAreaSize.value == IntSize.Zero)
-            availableDrawAreaSize.value = drawAreaSize.value
         if (!isCropMode.value) cropWindow.close()
     }
 
