@@ -9,6 +9,12 @@
     <string name="open">Open</string>
     <string name="or">Or</string>
     <string name="new_">New</string>
+    <string name="crop">Crop</string>
+    <string name="ark_retouch_crop_free">Free</string>
+    <string name="ark_retouch_crop_square">Square</string>
+    <string name="ark_retouch_crop_9_16">9:16</string>
+    <string name="ark_retouch_crop_2_3">2:3</string>
+    <string name="ark_retouch_crop_4_5">4:5</string>
     <string name="options">Options</string>
     <string name="share">Share</string>
     <string name="save">Save</string>

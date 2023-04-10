@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.IntSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -154,12 +153,6 @@ class EditViewModel(
         return resize(bitmap, width, height)
     }
 
-    fun getImageUri(
-        context: Context = DIManager.component.app(),
-        bitmap: Bitmap? = null,
-        name: String = ""
-    ) = getCachedImageUri(context, bitmap, name)
-
     private fun getCachedImageUri(
         context: Context,
         bitmap: Bitmap? = null,
@@ -190,10 +183,7 @@ class EditViewModel(
     fun getCombinedImageBitmap(): ImageBitmap {
         val bitmap = editManager.backgroundImage.value
         val size = if (bitmap != null)
-            IntSize(
-                bitmap.width,
-                bitmap.height
-            )
+            editManager.availableDrawAreaSize.value
         else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
@@ -207,7 +197,10 @@ class EditViewModel(
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
-                Offset(0f, 0f),
+                Offset(
+                    (size.width - it.width) / 2f,
+                    (size.height - it.height) / 2f
+                ),
                 Paint()
             )
         }
@@ -222,6 +215,22 @@ class EditViewModel(
         exitConfirmed = true
         delay(2_000)
         exitConfirmed = false
+    }
+
+    fun applyOperation(operation: Operation) {
+        editManager.applyOperation(operation)
+    }
+
+    fun fitBitmap(
+        imgBitmap: ImageBitmap,
+        maxWidth: Int,
+        maxHeight: Int
+    ): Bitmap {
+        editManager.apply {
+            val img = resize(imgBitmap, maxWidth, maxHeight).asAndroidBitmap()
+            backgroundImage.value = img.asImageBitmap()
+            return img
+        }
     }
 }
 
@@ -283,6 +292,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
                 setOriginalBackgroundImage(backgroundImage.value)
+                updateAvailableDrawArea()
             }
         }
 
@@ -290,7 +300,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
     })
 }
 
-private fun resize(
+fun resize(
     imageBitmap: ImageBitmap,
     maxWidth: Int,
     maxHeight: Int
@@ -310,7 +320,6 @@ private fun resize(
     } else {
         finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
     }
-
     return Bitmap
         .createScaledBitmap(bitmap, finalWidth, finalHeight, true)
         .asImageBitmap()

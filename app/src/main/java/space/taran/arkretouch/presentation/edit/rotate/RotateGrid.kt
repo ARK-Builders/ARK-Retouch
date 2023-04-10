@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.drawing.EditManager
+import space.taran.arkretouch.presentation.edit.crop.CropWindow
 
 class RotateGrid {
 
@@ -172,7 +173,7 @@ class RotateGrid {
         drawLines(canvas)
     }
 
-    fun getCropParams(): CropParams {
+    fun getCropParams(): CropWindow.CropParams {
         var newWidth = rect.width.toInt()
         var newHeight = rect.height.toInt()
         val x = if (rect.left > rotatedBitmapOffset.x)
@@ -191,7 +192,7 @@ class RotateGrid {
                 ).toInt()
             0
         }
-        return CropParams.create(
+        return CropWindow.CropParams.create(
             x.toInt(),
             y.toInt(),
             newWidth,
@@ -217,18 +218,6 @@ class RotateGrid {
             right = left + newWidth
             bottom = top + newHeight
             create()
-        }
-    }
-
-    class CropParams private constructor(
-        val x: Int,
-        val y: Int,
-        val width: Int,
-        val height: Int
-    ) {
-        companion object {
-            fun create(x: Int, y: Int, width: Int, height: Int) =
-                CropParams(x, y, width, height)
         }
     }
 
