@@ -8,21 +8,25 @@ import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
+import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
+import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
@@ -30,14 +34,15 @@ fun EditCanvas(viewModel: EditViewModel) {
     Box(
         Modifier.background(Color.White)
     ) {
-        val bitmap = editManager.backgroundImage.value
-        val modifier = if (bitmap != null) {
-            Modifier
-                .size(
-                    bitmap.width.toDp(),
-                    bitmap.height.toDp()
-                )
-        } else Modifier.fillMaxSize()
+        val modifier = if (
+            !editManager.isCropMode.value &&
+            editManager.availableDrawAreaSize.value != IntSize.Zero
+        ) Modifier
+            .size(
+                editManager.availableDrawAreaSize.value.width.toDp(),
+                editManager.availableDrawAreaSize.value.height.toDp()
+            )
+        else Modifier.fillMaxSize()
         EditCanvasImage(modifier, editManager)
         EditDrawCanvas(modifier, viewModel)
     }
@@ -51,11 +56,12 @@ fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
                 invalidatorTick.value
                 backgroundImage.value?.let {
                     canvas.nativeCanvas.setMatrix(matrix)
-                    canvas.nativeCanvas.drawBitmap(
-                        it.asAndroidBitmap(),
-                        editManager.calcImageOffset().x,
-                        editManager.calcImageOffset().y,
-                        null
+                    if (isCropMode.value || isRotateMode.value)
+                        canvas.nativeCanvas.setMatrix(editMatrix)
+                    canvas.drawImage(
+                        it,
+                        calcImageOffset(),
+                        Paint()
                     )
                 }
             }
@@ -150,19 +156,54 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 val mappedX = mappedXY[0]
                 val mappedY = mappedXY[1]
 
-                if (!editManager.isRotateMode.value)
-                    handleDrawEvent(event.action, mappedX, mappedY)
-                else handleRotateEvent(event.action, eventX, eventY)
+                when (true) {
+                    editManager.isRotateMode.value -> handleRotateEvent(
+                        event.action,
+                        eventX,
+                        eventY
+                    )
+                    editManager.isCropMode.value ->
+                        when (event.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                currentPoint.x = eventX
+                                currentPoint.y = eventY
+                                editManager.cropWindow.detectTouchedSide(
+                                    Offset(eventX, eventY)
+                                )
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                val deltaX =
+                                    computeDeltaX(currentPoint.x, eventX)
+                                val deltaY =
+                                    computeDeltaY(currentPoint.y, eventY)
+
+                                editManager.cropWindow.setDelta(
+                                    Offset(
+                                        deltaX,
+                                        deltaY
+                                    )
+                                )
+                                currentPoint.x = eventX
+                                currentPoint.y = eventY
+                            }
+                        }
+                    else -> handleDrawEvent(event.action, mappedX, mappedY)
+                }
                 editManager.invalidatorTick.value++
                 true
             }
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
-
         drawIntoCanvas { canvas ->
             editManager.apply {
                 canvas.nativeCanvas.setMatrix(matrix)
+                if (isCropMode.value || isRotateMode.value)
+                    canvas.nativeCanvas.setMatrix(editMatrix)
+                if (isCropMode.value) {
+                    editManager.cropWindow.show(canvas)
+                    return@drawIntoCanvas
+                }
                 drawPaths.forEach {
                     canvas.drawPath(it.path, it.paint)
                 }
