@@ -102,14 +102,6 @@ class EditViewModel(
             }
         }
 
-    fun fitBitmapOnRotateGrid(
-        bitmap: ImageBitmap,
-        width: Int,
-        height: Int
-    ): ImageBitmap {
-        return resize(bitmap, width, height)
-    }
-
     private fun getCachedImageUri(
         context: Context,
         bitmap: Bitmap? = null,
@@ -176,15 +168,12 @@ class EditViewModel(
         editManager.applyOperation(operation)
     }
 
-    fun fitBitmap(
-        imgBitmap: ImageBitmap,
-        maxWidth: Int,
-        maxHeight: Int
-    ): Bitmap {
+    fun fitBitmap(imgBitmap: ImageBitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         editManager.apply {
-            val img = resize(imgBitmap, maxWidth, maxHeight).asAndroidBitmap()
-            backgroundImage.value = img.asImageBitmap()
-            return img
+            val img = resize(imgBitmap, maxWidth, maxHeight)
+            updateAvailableDrawArea(img)
+            backgroundImage.value = img
+            return img.asAndroidBitmap()
         }
     }
 }
@@ -244,10 +233,14 @@ private fun RequestBuilder<Bitmap>.loadInto(
         ) {
             val areaSize = editManager.drawAreaSize.value
             editManager.apply {
-                backgroundImage.value =
-                    resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
-                setOriginalBackgroundImage(backgroundImage.value)
-                updateAvailableDrawArea()
+                val image = resize(
+                    bitmap.asImageBitmap(),
+                    areaSize.width,
+                    areaSize.height
+                )
+                updateAvailableDrawArea(image)
+                backgroundImage.value = image
+                setOriginalBackgroundImage(image)
             }
         }
 

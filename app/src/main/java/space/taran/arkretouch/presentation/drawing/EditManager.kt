@@ -91,8 +91,7 @@ class EditManager {
         operation.apply()
     }
 
-    fun updateAvailableDrawArea() {
-        val bitmap = backgroundImage.value
+    fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
             availableDrawAreaSize.value = drawAreaSize.value
             return
@@ -125,21 +124,14 @@ class EditManager {
     }
 
     fun rotate(angle: Float) {
-        val centerX = drawAreaSize.value.width / 2
-        val centerY = drawAreaSize.value.height / 2
+        val centerX = availableDrawAreaSize.value.width / 2
+        val centerY = availableDrawAreaSize.value.height / 2
         if (isRotateMode.value) {
             rotationAngle.value += angle
             editMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
             return
         }
         matrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
-    }
-
-    fun applyRotation() {
-        toggleRotateMode()
-        matrix.set(editMatrix)
-        editMatrix.reset()
-        addRotation()
     }
 
     private fun undoRotate() {
@@ -160,7 +152,7 @@ class EditManager {
         }
     }
 
-    private fun addRotation() {
+    fun addRotation() {
         if (canRedo.value) clearRedo()
         rotationAngles.add(prevRotationAngle)
         undoStack.add(ROTATE)
@@ -168,8 +160,13 @@ class EditManager {
         updateRevised()
     }
 
-    private fun resetRotation() {
+    fun addAngle() {
+        rotationAngles.add(prevRotationAngle)
+    }
+
+    fun resetRotation() {
         rotationAngle.value = 0f
+        prevRotationAngle = 0f
     }
 
     private fun clearRotations() {
@@ -177,7 +174,6 @@ class EditManager {
         redoRotations.clear()
         rotationAngles.clear()
         redoRotationAngles.clear()
-        prevRotationAngle = 0f
         resetRotation()
     }
 
@@ -202,9 +198,15 @@ class EditManager {
 
     private fun undoCrop() {
         if (cropStack.isNotEmpty()) {
+            val image = cropStack.pop()
             redoCropStack.push(backgroundImage.value)
-            backgroundImage.value = cropStack.pop()
-            updateAvailableDrawArea()
+            updateAvailableDrawArea(image)
+            if (rotationAngles.isNotEmpty()) {
+                matrix.reset()
+                prevRotationAngle = rotationAngles.pop()
+                rotate(prevRotationAngle)
+            }
+            backgroundImage.value = image
             redrawCroppedPaths()
             updateRevised()
         }
@@ -212,9 +214,13 @@ class EditManager {
 
     private fun redoCrop() {
         if (redoCropStack.isNotEmpty()) {
+            val image = redoCropStack.pop()
+            addAngle()
+            resetRotation()
+            matrix.reset()
             cropStack.push(backgroundImage.value)
-            backgroundImage.value = redoCropStack.pop()
-            updateAvailableDrawArea()
+            updateAvailableDrawArea(image)
+            backgroundImage.value = image
             keepCroppedPaths()
             updateRevised()
         }
@@ -353,9 +359,11 @@ class EditManager {
 
     fun cancelCropMode() {
         backgroundImage.value = backgroundImage2.value
+        updateAvailableDrawArea()
     }
 
     fun cancelRotateMode() {
+        rotationAngle.value = prevRotationAngle
         editMatrix.reset()
     }
 
@@ -376,8 +384,8 @@ class EditManager {
     }
 
     private companion object {
-        const val DRAW = "draw"
-        const val CROP = "crop"
+        private const val DRAW = "draw"
+        private const val CROP = "crop"
         private const val ROTATE = "rotate"
     }
 }

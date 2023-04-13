@@ -62,6 +62,7 @@ import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
+import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -285,7 +286,7 @@ private fun BoxScope.TopMenu(
                 viewModel.editManager.apply {
                     if (isRotateMode.value) {
                         toggleRotateMode()
-                        // cancelRotateMode()
+                        cancelRotateMode()
                         viewModel.menusVisible = true
                         return@clickable
                     }
@@ -326,15 +327,11 @@ private fun BoxScope.TopMenu(
                 .clip(CircleShape)
                 .clickable {
                     viewModel.editManager.apply {
-                        if (isRotateMode.value) viewModel.apply {
-                            applyRotation()
-                            viewModel.menusVisible = true
-                            return@clickable
-                        }
-                        if (isCropMode.value) {
-                            viewModel.applyOperation(
-                                CropOperation(viewModel.editManager)
-                            )
+                        if (isCropMode.value || isRotateMode.value) {
+                            var operation: Operation? = null
+                            if (isRotateMode.value) operation = RotateOperation(this)
+                            if (isCropMode.value) operation = CropOperation(this)
+                            viewModel.applyOperation(operation!!)
                             viewModel.menusVisible = true
                             return@clickable
                         }
@@ -596,7 +593,8 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !editManager.isCropMode.value
                             if (isCropMode.value) {
-                                val bitmap = viewModel.getCombinedImageBitmap()
+                                val bitmap = viewModel
+                                    .getCombinedImageBitmap()
                                     .asAndroidBitmap()
                                 setBackgroundImage2()
                                 viewModel.editManager.cropWindow.init(
@@ -637,7 +635,9 @@ private fun EditMenuContent(
                                 setBackgroundImage2()
                                 viewModel.menusVisible =
                                     !editManager.isRotateMode.value
+                                return@clickable
                             }
+                            cancelRotateMode()
                         }
                     },
                 imageVector = ImageVector
