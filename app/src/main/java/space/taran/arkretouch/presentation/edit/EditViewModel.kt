@@ -143,8 +143,8 @@ class EditViewModel(
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
+        combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
         editManager.backgroundImage.value?.let {
-            combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
             combinedCanvas.drawImage(
                 it,
                 Offset.Zero,
@@ -171,7 +171,6 @@ class EditViewModel(
     fun fitBitmap(imgBitmap: ImageBitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         editManager.apply {
             val img = resize(imgBitmap, maxWidth, maxHeight)
-            updateAvailableDrawArea(img)
             backgroundImage.value = img
             return img.asAndroidBitmap()
         }

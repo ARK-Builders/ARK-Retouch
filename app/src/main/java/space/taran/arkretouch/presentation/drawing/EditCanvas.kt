@@ -51,7 +51,14 @@ fun EditCanvas(viewModel: EditViewModel) {
 
 @Composable
 fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
-    Canvas(modifier) {
+    val imageModifier = with(editManager) {
+        if (isCropMode.value) Modifier.size(
+            backgroundImage.value?.width?.toDp()!!,
+            backgroundImage.value?.height?.toDp()!!
+        )
+        else modifier
+    }
+    Canvas(imageModifier) {
         editManager.apply {
             invalidatorTick.value
             var matrix = matrix
