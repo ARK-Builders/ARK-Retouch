@@ -3,5 +3,7 @@
 
     <style name="Theme.ARKRetouch" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">@color/gray</item>
+        <item name="actionBarTheme">@style/ThemeOverlay.AppCompat.Dark</item>
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.AppCompat.Dark</item>
     </style>
 </resources>

@@ -12,17 +12,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -59,6 +60,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
+import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
+import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
@@ -99,6 +102,12 @@ fun EditScreen(
             viewModel.menusVisible = true
             return@BackHandler
         }
+        if (editManager.isCropMode.value) {
+            editManager.toggleCropMode()
+            editManager.cancelCropMode()
+            viewModel.menusVisible = true
+            return@BackHandler
+        }
         if (editManager.isResizeMode.value) {
             editManager.toggleResizeMode()
             editManager.cancelResizeMode()
@@ -127,6 +136,7 @@ fun EditScreen(
     DrawContainer(
         viewModel
     )
+
     Menus(
         imagePath,
         fragmentManager,
@@ -160,38 +170,9 @@ private fun Menus(
                 .height(IntrinsicSize.Min),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (viewModel.editManager.isRotateMode.value)
-                Row {
-                    Icon(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                viewModel.rotateImage(-90F, true)
-                            },
-                        imageVector = ImageVector
-                            .vectorResource(R.drawable.ic_rotate_left),
-                        tint = MaterialTheme.colors.primary,
-                        contentDescription = null
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                viewModel.rotateImage(90F, true)
-                            },
-                        imageVector = ImageVector
-                            .vectorResource(R.drawable.ic_rotate_right),
-                        tint = MaterialTheme.colors.primary,
-                        contentDescription = null
-                    )
-                }
             if (viewModel.editManager.isResizeMode.value)
                 ResizeInput(viewModel)
-            EditMenuContainer(viewModel)
+            EditMenuContainer(viewModel, navigateBack)
         }
     }
 }
@@ -203,8 +184,8 @@ private fun DrawContainer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Gray)
             .padding(bottom = 32.dp)
+            .background(Color.Gray)
             .pointerInteropFilter { event ->
                 if (event.action == MotionEvent.ACTION_DOWN)
                     viewModel.strokeSliderExpanded = false
@@ -213,6 +194,7 @@ private fun DrawContainer(
             .onSizeChanged { newSize ->
                 if (newSize == IntSize.Zero) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
+                viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
             },
         contentAlignment = Alignment.Center
@@ -262,10 +244,10 @@ private fun BoxScope.TopMenu(
     if (
         !viewModel.menusVisible &&
         !viewModel.editManager.isRotateMode.value &&
-        !viewModel.editManager.isResizeMode.value
+        !viewModel.editManager.isResizeMode.value &&
+        !viewModel.editManager.isCropMode.value
     )
         return
-
     Icon(
         modifier = Modifier
             .align(Alignment.TopStart)
@@ -273,12 +255,31 @@ private fun BoxScope.TopMenu(
             .size(36.dp)
             .clip(CircleShape)
             .clickable {
-                if (viewModel.editManager.isRotateMode.value) {
-                    viewModel.apply {
-                        editManager.toggleRotateMode()
-                        editManager.cancelRotateMode()
-                        menusVisible = true
+                viewModel.editManager.apply {
+                    if (isRotateMode.value) {
+                        toggleRotateMode()
+                        cancelRotateMode()
+                        viewModel.menusVisible = true
                         return@clickable
+                    }
+                    if (isCropMode.value) {
+                        toggleCropMode()
+                        cancelCropMode()
+                        viewModel.menusVisible = true
+                        return@clickable
+                    }
+                    if (
+                        !viewModel.editManager.canUndo.value
+                    ) {
+                        if (launchedFromIntent) {
+                            context
+                                .getActivity()
+                                ?.finish()
+                        } else {
+                            navigateBack()
+                        }
+                    } else {
+                        viewModel.showExitDialog = true
                     }
                 }
                 if (viewModel.editManager.isResizeMode.value) {
@@ -307,27 +308,20 @@ private fun BoxScope.TopMenu(
         tint = MaterialTheme.colors.primary,
         contentDescription = null
     )
-
-    Row(
-        Modifier
+    Icon(
+        modifier = Modifier
             .align(Alignment.TopEnd)
-    ) {
-        Icon(
-            modifier = Modifier
-                .padding(8.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable {
-                    if (viewModel.editManager.isRotateMode.value) {
-                        viewModel.apply {
-                            viewModel.rotateImage(
-                                applyRotation = true
-                            )
-                            editManager.addRotation()
-                            editManager.toggleRotateMode()
-                            viewModel.menusVisible = true
-                            return@clickable
-                        }
+            .padding(8.dp)
+            .size(36.dp)
+            .clip(CircleShape)
+            .clickable {
+                viewModel.editManager.apply {
+                    if (isCropMode.value) {
+                        viewModel.applyOperation(
+                            CropOperation(viewModel.editManager)
+                        )
+                        viewModel.menusVisible = true
+                        return@clickable
                     }
                     if (viewModel.editManager.isResizeMode.value) {
                         viewModel.editManager.apply {
@@ -337,19 +331,19 @@ private fun BoxScope.TopMenu(
                             return@clickable
                         }
                     }
-                    viewModel.showMoreOptionsPopup = true
-                },
-            imageVector = if (
-                viewModel.editManager.isRotateMode.value ||
-                viewModel.editManager.isResizeMode.value
-            )
-                ImageVector.vectorResource(R.drawable.ic_check)
-            else
-                ImageVector.vectorResource(R.drawable.ic_more_vert),
-            tint = MaterialTheme.colors.primary,
-            contentDescription = null
+                }
+                viewModel.showMoreOptionsPopup = true
+            },
+        imageVector = if (
+            viewModel.editManager.isCropMode.value ||
+            viewModel.editManager.isRotateMode.value ||
+            viewModel.editManager.isResizeMode.value
         )
-    }
+            ImageVector.vectorResource(R.drawable.ic_check)
+        else ImageVector.vectorResource(R.drawable.ic_more_vert),
+        tint = MaterialTheme.colors.primary,
+        contentDescription = null
+    )
 }
 
 @Composable
@@ -398,12 +392,17 @@ private fun StrokeWidthPopup(
 }
 
 @Composable
-private fun EditMenuContainer(viewModel: EditViewModel) {
+private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize(),
         verticalArrangement = Arrangement.Bottom
     ) {
+        CropAspectRatiosMenu(
+            isVisible = viewModel.editManager.isCropMode.value,
+            viewModel.editManager.cropWindow
+        )
+
         Box(
             Modifier
                 .fillMaxWidth()
@@ -427,14 +426,15 @@ private fun EditMenuContainer(viewModel: EditViewModel) {
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            EditMenuContent(viewModel)
+            EditMenuContent(viewModel, navigateBack)
         }
     }
 }
 
 @Composable
 private fun EditMenuContent(
-    viewModel: EditViewModel
+    viewModel: EditViewModel,
+    navigateBack: () -> Unit
 ) {
     val colorDialogExpanded = remember { mutableStateOf(false) }
     val editManager = viewModel.editManager
@@ -461,15 +461,16 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value
-                        )
-                            editManager.undo()
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value
+                        ) editManager.undo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (
                     editManager.canUndo.value &&
                     !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value
+                    !editManager.isResizeMode.value &&
+                    !editManager.isCropMode.value
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
@@ -481,15 +482,18 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value
-                        )
-                            editManager.redo()
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value
+                        ) editManager.redo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
                 tint = if (
                     editManager.canRedo.value &&
-                    !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value
+                    (
+                        !editManager.isRotateMode.value &&
+                            !editManager.isCropMode.value &&
+                            !editManager.isResizeMode.value
+                        )
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
@@ -502,7 +506,8 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value
                         )
                             colorDialogExpanded.value = true
                     }
@@ -520,6 +525,7 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
+                            !editManager.isCropMode.value &&
                             !editManager.isResizeMode.value
                         )
                             viewModel.strokeSliderExpanded =
@@ -528,9 +534,9 @@ private fun EditMenuContent(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_line_weight),
                 tint = if (
                     !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value
-                )
-                    MaterialTheme.colors.primary
+                    !editManager.isResizeMode.value &&
+                    !editManager.isCropMode.value
+                ) editManager.currentPaintColor.value
                 else Color.Black,
                 contentDescription = null
             )
@@ -542,14 +548,16 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value
                         )
                             editManager.clearEdits()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
                 tint = if (
                     !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value
+                    !editManager.isResizeMode.value &&
+                    !editManager.isCropMode.value
                 )
                     MaterialTheme.colors.primary
                 else Color.Black,
@@ -563,7 +571,8 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value
                         )
                             editManager.toggleEraseMode()
                     },
@@ -572,6 +581,47 @@ private fun EditMenuContent(
                     editManager.isEraseMode.value &&
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value
+                )
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.apply {
+                            if (!isRotateMode.value || !isResizeMode.value)
+                                toggleCropMode()
+                            else return@clickable
+                            viewModel.menusVisible = !editManager.isCropMode.value
+                            if (isCropMode.value) {
+                                val bitmap = viewModel.getCombinedImageBitmap()
+                                    .asAndroidBitmap()
+                                setBackgroundImage2()
+                                viewModel.editManager.cropWindow.init(
+                                    editManager,
+                                    bitmap,
+                                    fitBitmap = { bitmap1, maxWidth, maxHeight ->
+                                        viewModel.fitBitmap(
+                                            bitmap1.asImageBitmap(),
+                                            maxWidth,
+                                            maxHeight
+                                        )
+                                    }
+                                )
+                                return@clickable
+                            }
+                            editManager.cancelCropMode()
+                            editManager.cropWindow.close()
+                        }
+                    },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
+                tint = if (
+                    editManager.isCropMode.value
                 ) MaterialTheme.colors.primary
                 else
                     Color.Black,
@@ -584,46 +634,9 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (isRotateMode.value) cancelRotateMode()
-                            if (!isResizeMode.value) toggleRotateMode()
-                            if (isRotateMode.value) {
-                                var imgBitmap = viewModel.getCombinedImageBitmap()
-                                setBackgroundImage2()
-                                rotationGrid
-                                    .init(
-                                        this,
-                                        imgBitmap,
-                                        calcImageOffset()
-                                    ) { bitmap, width, height ->
-                                        imgBitmap = viewModel.fitBitmapOnRotateGrid(
-                                            bitmap,
-                                            width,
-                                            height
-                                        )
-                                        imgBitmap
-                                    }
-                                backgroundImage.value = imgBitmap
-                            }
-                            viewModel.menusVisible = !isRotateMode.value
-                        }
-                    },
-                imageVector = ImageVector
-                    .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
-                tint = if (editManager.isRotateMode.value)
-                    MaterialTheme.colors.primary
-                else
-                    Color.Black,
-                contentDescription = null
-            )
-            Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        editManager.apply {
                             if (isResizeMode.value) cancelResizeMode()
-                            if (!isRotateMode.value) toggleResizeMode()
+                            if (!isRotateMode.value || !isCropMode.value)
+                                toggleResizeMode()
                             if (isResizeMode.value) {
                                 val imgBitmap = viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()

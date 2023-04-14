@@ -80,7 +80,7 @@ fun MainScreen(
                         NavHelper.parseEditArgs(
                             path?.toString(),
                             uri = null,
-                            launchedFromIntent = false
+                            launchedFromIntent = false,
                         )
                     )
                 }
@@ -102,7 +102,7 @@ fun MainScreen(
                 navArgument("launchedFromIntent") {
                     type = NavType.BoolType
                     defaultValue = launchedFromIntent
-                }
+                },
             )
         ) { entry ->
             EditScreen(
@@ -110,7 +110,7 @@ fun MainScreen(
                 entry.arguments?.getString("uri"),
                 fragmentManager,
                 navigateBack = { navController.popBackStack() },
-                entry.arguments?.getBoolean("launchedFromIntent")!!
+                entry.arguments?.getBoolean("launchedFromIntent")!!,
             )
         }
     }
@@ -125,7 +125,7 @@ private object NavHelper {
     fun parseEditArgs(
         path: String?,
         uri: String?,
-        launchedFromIntent: Boolean
+        launchedFromIntent: Boolean,
     ): String {
         val screen = if (path != null) {
             "edit?path=$path&launchedFromIntent=$launchedFromIntent"

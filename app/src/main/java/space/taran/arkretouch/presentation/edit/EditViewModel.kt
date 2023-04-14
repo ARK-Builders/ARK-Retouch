@@ -35,8 +35,6 @@ import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.utils.getOriginalSized
-import space.taran.arkretouch.presentation.utils.rotate
 import timber.log.Timber
 import java.io.File
 import java.lang.NullPointerException
@@ -59,7 +57,6 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
-    var shouldFit = false
 
     fun loadImage() {
         imagePath?.let {
@@ -106,78 +103,33 @@ class EditViewModel(
             }
         }
 
-    fun rotateImage(
-        angle: Float = 0f,
-        isFixedAngle: Boolean = false,
-        applyRotation: Boolean = false
-    ) {
-        editManager.apply {
-            if (!applyRotation) {
-                rotationAngle.value += angle
-                val horizontalAxisDetectorModulus = (rotationAngle.value / 90f) % 2f
-                val oddModulus = horizontalAxisDetectorModulus % 2f
-                val isOdd = oddModulus == 1f || oddModulus == -1f
-                shouldFit = isOdd && isFixedAngle
-            }
-            val bitmap = rotationGrid.getBitmap()
-            val imgBitmap = bitmap.rotate(
-                rotationAngle.value,
-                shouldFit,
-                resize = { bitmap1, width, height ->
-                    resize(
-                        bitmap1.asImageBitmap(),
-                        width,
-                        height
-                    ).asAndroidBitmap()
-                }
-            )
-            val result = if (applyRotation && !shouldFit)
-                imgBitmap.getOriginalSized(
-                    rotationGrid.getCropParams()
-                ).asImageBitmap()
-            else imgBitmap.asImageBitmap()
-            backgroundImage.value = if (applyRotation) resize(
-                result,
-                drawAreaSize.value.width,
-                drawAreaSize.value.height
-            )
-            else result
-            if (!applyRotation)
-                rotationGrid.calcRotatedBitmapOffset()
-        }
-    }
-
-    fun fitBitmapOnRotateGrid(
-        bitmap: ImageBitmap,
-        width: Int,
-        height: Int
-    ): ImageBitmap {
-        return resize(bitmap, width, height)
-    }
-
     fun downResizeManually(width: Int = 0, height: Int = 0): IntSize {
         var newWidth = width
         var newHeight = height
-        if (width > 0) newHeight = (newWidth / editManager.aspectRatio.value).toInt()
-        if (height > 0)
-            newWidth = (newHeight * editManager.aspectRatio.value).toInt()
-        if (newWidth > 0 && newHeight > 0) editManager.apply {
-            val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
-            if (
-                newWidth <= bitmapToResize.width &&
-                newHeight <= bitmapToResize.height
-            ) {
-                try {
+        try {
+            if (width > 0) newHeight = (
+                newWidth /
+                    editManager.aspectRatio.value
+                ).toInt()
+            if (height > 0)
+                newWidth = (newHeight * editManager.aspectRatio.value).toInt()
+            if (newWidth > 0 && newHeight > 0) editManager.apply {
+                val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
+                if (
+                    newWidth <= bitmapToResize.width &&
+                    newHeight <= bitmapToResize.height
+                ) {
                     val imgBitmap = resize(
                         bitmapToResize,
                         newWidth,
                         newHeight
                     )
                     backgroundImage.value = imgBitmap
-                } catch (e: NullPointerException) {
-                    e.printStackTrace()
                 }
             }
+            editManager.updateAvailableDrawArea()
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
         }
         return IntSize(
             newWidth,
@@ -221,10 +173,7 @@ class EditViewModel(
     fun getCombinedImageBitmap(): ImageBitmap {
         val bitmap = editManager.backgroundImage.value
         val size = if (bitmap != null)
-            IntSize(
-                bitmap.width,
-                bitmap.height
-            )
+            editManager.availableDrawAreaSize.value
         else editManager.drawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
@@ -238,7 +187,7 @@ class EditViewModel(
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
-                Offset(0f, 0f),
+                Offset.Zero,
                 Paint()
             )
         }
@@ -253,6 +202,23 @@ class EditViewModel(
         exitConfirmed = true
         delay(2_000)
         exitConfirmed = false
+    }
+
+    fun applyOperation(operation: Operation) {
+        editManager.applyOperation(operation)
+    }
+
+    fun fitBitmap(
+        imgBitmap: ImageBitmap,
+        maxWidth: Int,
+        maxHeight: Int
+    ): Bitmap {
+        editManager.apply {
+            val img = resize(imgBitmap, maxWidth, maxHeight)
+            updateAvailableDrawArea(img)
+            backgroundImage.value = img
+            return img.asAndroidBitmap()
+        }
     }
 }
 
@@ -314,6 +280,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 backgroundImage.value =
                     resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
                 setOriginalBackgroundImage(backgroundImage.value)
+                updateAvailableDrawArea()
             }
         }
 
@@ -321,7 +288,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
     })
 }
 
-private fun resize(
+fun resize(
     imageBitmap: ImageBitmap,
     maxWidth: Int,
     maxHeight: Int
@@ -341,7 +308,6 @@ private fun resize(
     } else {
         finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
     }
-
     return Bitmap
         .createScaledBitmap(bitmap, finalWidth, finalHeight, true)
         .asImageBitmap()
