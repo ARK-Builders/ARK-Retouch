@@ -62,6 +62,7 @@ import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
+import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -157,44 +158,48 @@ private fun Menus(
                 navigateBack
             )
         }
-        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .height(IntrinsicSize.Min),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (viewModel.editManager.isRotateMode.value)
-                    Row {
-                        Icon(
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .clickable {
-                                    viewModel.rotateImage(-90F, true)
-                                },
-                            imageVector = ImageVector
-                                .vectorResource(R.drawable.ic_rotate_left),
-                            tint = MaterialTheme.colors.primary,
-                            contentDescription = null
-                        )
-                        Icon(
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .clickable {
-                                    viewModel.rotateImage(90F, true)
-                                },
-                            imageVector = ImageVector
-                                .vectorResource(R.drawable.ic_rotate_right),
-                            tint = MaterialTheme.colors.primary,
-                            contentDescription = null
-                        )
-                    }
-                EditMenuContainer(viewModel, navigateBack)
-            }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .height(IntrinsicSize.Min),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (viewModel.editManager.isRotateMode.value)
+                Row {
+                    Icon(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                viewModel.editManager.apply {
+                                    rotate(-90f)
+                                    invalidatorTick.value++
+                                }
+                            },
+                        imageVector = ImageVector
+                            .vectorResource(R.drawable.ic_rotate_left),
+                        tint = MaterialTheme.colors.primary,
+                        contentDescription = null
+                    )
+                    Icon(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                viewModel.editManager.apply {
+                                    rotate(90f)
+                                    invalidatorTick.value++
+                                }
+                            },
+                        imageVector = ImageVector
+                            .vectorResource(R.drawable.ic_rotate_right),
+                        tint = MaterialTheme.colors.primary,
+                        contentDescription = null
+                    )
+                }
+            EditMenuContainer(viewModel, navigateBack)
         }
     }
 }
@@ -310,44 +315,39 @@ private fun BoxScope.TopMenu(
         tint = MaterialTheme.colors.primary,
         contentDescription = null
     )
-    Icon(
-        modifier = Modifier
+
+    Row(
+        Modifier
             .align(Alignment.TopEnd)
-            .padding(8.dp)
-            .size(36.dp)
-            .clip(CircleShape)
-            .clickable {
-                viewModel.editManager.apply {
-                    if (isCropMode.value) {
-                        viewModel.applyOperation(
-                            CropOperation(viewModel.editManager)
-                        )
-                        viewModel.menusVisible = true
-                        return@clickable
-                    }
-                    if (viewModel.editManager.isRotateMode.value) {
-                        viewModel.apply {
-                            viewModel.rotateImage(
-                                applyRotation = true
-                            )
-                            editManager.addRotation()
-                            editManager.toggleRotateMode()
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(8.dp)
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable {
+                    viewModel.editManager.apply {
+                        if (isCropMode.value || isRotateMode.value) {
+                            var operation: Operation? = null
+                            if (isRotateMode.value) operation = RotateOperation(this)
+                            if (isCropMode.value) operation = CropOperation(this)
+                            viewModel.applyOperation(operation!!)
                             viewModel.menusVisible = true
                             return@clickable
                         }
                     }
-                }
-                viewModel.showMoreOptionsPopup = true
-            },
-        imageVector = if (
-            viewModel.editManager.isCropMode.value ||
-            viewModel.editManager.isRotateMode.value
+                    viewModel.showMoreOptionsPopup = true
+                },
+            imageVector = if (
+                viewModel.editManager.isCropMode.value ||
+                viewModel.editManager.isRotateMode.value
+            )
+                ImageVector.vectorResource(R.drawable.ic_check)
+            else ImageVector.vectorResource(R.drawable.ic_more_vert),
+            tint = MaterialTheme.colors.primary,
+            contentDescription = null
         )
-            ImageVector.vectorResource(R.drawable.ic_check)
-        else ImageVector.vectorResource(R.drawable.ic_more_vert),
-        tint = MaterialTheme.colors.primary,
-        contentDescription = null
-    )
+    }
 }
 
 @Composable
@@ -593,7 +593,8 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !editManager.isCropMode.value
                             if (isCropMode.value) {
-                                val bitmap = viewModel.getCombinedImageBitmap()
+                                val bitmap = viewModel
+                                    .getCombinedImageBitmap()
                                     .asAndroidBitmap()
                                 setBackgroundImage2()
                                 viewModel.editManager.cropWindow.init(
@@ -631,24 +632,12 @@ private fun EditMenuContent(
                             if (!isCropMode.value) toggleRotateMode()
                             else return@clickable
                             if (isRotateMode.value) {
-                                var imgBitmap = viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()
-                                rotationGrid
-                                    .init(
-                                        this,
-                                        imgBitmap,
-                                        calcImageOffset()
-                                    ) { bitmap, width, height ->
-                                        imgBitmap = viewModel.fitBitmapOnRotateGrid(
-                                            bitmap,
-                                            width,
-                                            height
-                                        )
-                                        imgBitmap
-                                    }
-                                backgroundImage.value = imgBitmap
-                            } else editManager.cancelRotateMode()
-                            viewModel.menusVisible = !editManager.isRotateMode.value
+                                viewModel.menusVisible =
+                                    !editManager.isRotateMode.value
+                                return@clickable
+                            }
+                            cancelRotateMode()
                         }
                     },
                 imageVector = ImageVector

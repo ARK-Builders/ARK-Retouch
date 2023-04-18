@@ -13,14 +13,18 @@ class CropOperation(
     override fun apply() {
         editManager.apply {
             cropWindow.apply {
-                backgroundImage.value = resize(
+                val image = resize(
                     getBitmap().crop(getCropParams()).asImageBitmap(),
                     availableDrawAreaSize.value.width,
                     availableDrawAreaSize.value.height
                 )
-                updateAvailableDrawArea()
+                updateAvailableDrawArea(image)
+                backgroundImage.value = image
                 keepCroppedPaths()
                 addCrop()
+                addAngle()
+                resetRotation()
+                matrix.reset()
                 toggleCropMode()
             }
         }

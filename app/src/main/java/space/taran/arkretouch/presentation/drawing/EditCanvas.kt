@@ -2,30 +2,30 @@
 
 package space.taran.arkretouch.presentation.drawing
 
+import android.graphics.Matrix
 import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.IntSize
+import androidx.core.graphics.values
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
-import kotlin.math.abs
 import kotlin.math.atan2
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
@@ -33,45 +33,47 @@ import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.comput
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
     val editManager = viewModel.editManager
-    val interactionSource = remember {
-        MutableInteractionSource()
-    }
     Box(
-        Modifier.background(Color.White)
+        Modifier.background(Color.White),
+        contentAlignment = Alignment.Center
     ) {
-        var modifier = Modifier
-            .fillMaxSize()
-            .hoverable(
-                interactionSource,
-                false
-            )
-        if (
-            !editManager.isCropMode.value &&
+        val modifier = if (
             editManager.availableDrawAreaSize.value != IntSize.Zero
+        ) Modifier.size(
+            editManager.availableDrawAreaSize.value.width.toDp(),
+            editManager.availableDrawAreaSize.value.height.toDp()
         )
-            modifier = Modifier
-                .size(
-                    editManager.availableDrawAreaSize.value.width.toDp(),
-                    editManager.availableDrawAreaSize.value.height.toDp()
-                )
-                .hoverable(
-                    interactionSource,
-                    false
-                )
-        Canvas(modifier) {
+        else Modifier.fillMaxSize()
+        EditCanvasImage(modifier, editManager)
+        EditDrawCanvas(modifier, viewModel)
+    }
+}
+
+@Composable
+fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
+    val imageModifier = with(editManager) {
+        if (isCropMode.value) Modifier.size(
+            backgroundImage.value?.width?.toDp()!!,
+            backgroundImage.value?.height?.toDp()!!
+        )
+        else modifier
+    }
+    Canvas(imageModifier) {
+        editManager.apply {
+            invalidatorTick.value
+            var matrix = matrix
             drawIntoCanvas { canvas ->
-                viewModel.editManager.apply {
-                    backgroundImage.value?.let { imageBitmap ->
-                        canvas.drawImage(
-                            imageBitmap,
-                            editManager.calcImageOffset(),
-                            Paint()
-                        )
-                    }
+                if (isCropMode.value || isRotateMode.value)
+                    matrix = editMatrix
+                backgroundImage.value?.let {
+                    canvas.nativeCanvas.drawBitmap(
+                        it.asAndroidBitmap(),
+                        matrix,
+                        null
+                    )
                 }
             }
         }
-        EditDrawCanvas(modifier, viewModel)
     }
 }
 
@@ -80,9 +82,101 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
+    val drawModifier = if (editManager.isCropMode.value) Modifier.fillMaxSize()
+    else modifier
+
+    fun handleDrawEvent(action: Int, eventX: Float, eventY: Float) {
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                path.reset()
+                path.moveTo(eventX, eventY)
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+                editManager.addDrawPath(path)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                path.quadraticBezierTo(
+                    currentPoint.x,
+                    currentPoint.y,
+                    (eventX + currentPoint.x) / 2,
+                    (eventY + currentPoint.y) / 2
+                )
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+                // draw a dot
+                if (eventX == currentPoint.x &&
+                    eventY == currentPoint.y
+                ) {
+                    path.lineTo(currentPoint.x, currentPoint.y)
+                }
+
+                editManager.clearRedoPath()
+                editManager.updateRevised()
+                path = Path()
+            }
+            else -> {}
+        }
+    }
+
+    fun handleRotateEvent(action: Int, eventX: Float, eventY: Float) {
+        when (action) {
+            MotionEvent.ACTION_MOVE -> {
+                val centerX = editManager.availableDrawAreaSize.value.width / 2
+                val centerY = editManager.availableDrawAreaSize.value.height / 2
+                val prevDX = currentPoint.x - centerX
+                val prevDY = currentPoint.y - centerY
+                val dx = eventX - centerX
+                val dy = eventY - centerY
+                val angle1 = atan2(prevDY, prevDX)
+                val angle2 = atan2(dy, dx)
+                val degreesAngle =
+                    Math.toDegrees(
+                        (angle2 - angle1).toDouble()
+                    )
+                if (degreesAngle != 0.0)
+                    editManager.rotate(degreesAngle.toFloat())
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_DOWN -> {
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
+        }
+    }
+
+    fun handleCropEvent(action: Int, eventX: Float, eventY: Float) {
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+                editManager.cropWindow.detectTouchedSide(
+                    Offset(eventX, eventY)
+                )
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val deltaX =
+                    computeDeltaX(currentPoint.x, eventX)
+                val deltaY =
+                    computeDeltaY(currentPoint.y, eventY)
+
+                editManager.cropWindow.setDelta(
+                    Offset(
+                        deltaX,
+                        deltaY
+                    )
+                )
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+        }
+    }
 
     Canvas(
-        modifier = modifier
+        modifier = drawModifier
             // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
             // https://stackoverflow.com/questions/65653560/jetpack-compose-applying-porterduffmode-to-image
             // Provide a slight opacity to for compositing into an
@@ -92,176 +186,37 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             .pointerInteropFilter { event ->
                 val eventX = event.x
                 val eventY = event.y
-                when (true) {
-                    editManager.isRotateMode.value -> when (event.action) {
-                        MotionEvent.ACTION_MOVE -> {
-                            val angle1 = atan2(currentPoint.y, currentPoint.x)
-                            val angle2 = atan2(eventY, eventX)
-                            var degreesAngle = abs(
-                                Math.toDegrees(
-                                    (angle2 - angle1).toDouble()
-                                )
-                            )
-                            val deltaX = eventX - currentPoint.x
-                            val deltaY = eventY - currentPoint.y
-                            // TopLeft
-                            if (
-                                eventY <
-                                (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.height / 2
-                                    ) &&
-                                eventX < (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.width / 2
-                                    )
-                            ) {
-                                when {
-                                    (deltaX < 0 && deltaY < 0) -> degreesAngle *= -1
-                                    (deltaX > 0 && deltaY > 0) ->
-                                        // Convenient to show the differences
-                                        // in flipping the angle,
-                                        // a better way maybe suggested
-                                        degreesAngle *= 1
-                                    (deltaX > 0 && deltaY < 0) -> degreesAngle *= 1
-                                    (deltaX < 0 && deltaY > 0) -> degreesAngle *= -1
-                                }
-                            }
-                            // TopRight
-                            if (
-                                eventY < (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.height / 2
-                                    ) &&
-                                eventX > (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.width / 2
-                                    )
-                            ) {
-                                when {
-                                    (deltaX > 0 && deltaY > 0) -> degreesAngle *= 1
-                                    (deltaX < 0 && deltaY < 0) -> degreesAngle *= -1
-                                    (deltaX < 0 && deltaY > 0) -> degreesAngle *= -1
-                                    (deltaX > 0 && deltaY < 0) -> degreesAngle *= 1
-                                }
-                            }
-                            // BottomLeft
-                            if (
-                                eventY > (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.height / 2
-                                    ) &&
-                                eventX < (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.width / 2
-                                    )
-                            ) {
-                                when {
-                                    (deltaX > 0 && deltaY > 0) -> degreesAngle *= -1
-                                    (deltaX < 0 && deltaY < 0) -> degreesAngle *= 1
-                                    (deltaX < 0 && deltaY > 0) -> degreesAngle *= 1
-                                    (deltaX > 0 && deltaY < 0) -> degreesAngle *= -1
-                                }
-                            }
-                            // BottomRight
-                            if (
-                                eventY > (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.height / 2
-                                    ) &&
-                                eventX > (
-                                    viewModel.editManager
-                                        .drawAreaSize.value.width / 2
-                                    )
-                            ) {
-                                when {
-                                    (deltaX > 0 && deltaY > 0) -> degreesAngle *= -1
-                                    (deltaX < 0 && deltaY < 0) -> degreesAngle *= 1
-                                    (deltaX < 0 && deltaY > 0) -> degreesAngle *= 1
-                                    (deltaX > 0 && deltaY < 0) -> degreesAngle *= -1
-                                }
-                            }
-                            if (degreesAngle != 0.0)
-                                viewModel.rotateImage(degreesAngle.toFloat())
-                            currentPoint.x = eventX
-                            currentPoint.y = eventY
-                        }
-                        MotionEvent.ACTION_DOWN -> {
-                            currentPoint.x = eventX
-                            currentPoint.y = eventY
-                        }
-                        MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
-                    }
-                    editManager.isCropMode.value -> {
-                        when (event.action) {
-                            MotionEvent.ACTION_DOWN -> {
-                                currentPoint.x = eventX
-                                currentPoint.y = eventY
-                                editManager.cropWindow.detectTouchedSide(
-                                    Offset(eventX, eventY)
-                                )
-                            }
-                            MotionEvent.ACTION_MOVE -> {
-                                val deltaX =
-                                    computeDeltaX(currentPoint.x, eventX)
-                                val deltaY =
-                                    computeDeltaY(currentPoint.y, eventY)
+                val tmpMatrix = Matrix()
+                editManager.matrix.invert(tmpMatrix)
+                val mappedXY = floatArrayOf(event.x, event.y)
+                tmpMatrix.mapPoints(mappedXY)
+                val mappedX = mappedXY[0]
+                val mappedY = mappedXY[1]
 
-                                editManager.cropWindow.setDelta(
-                                    Offset(
-                                        deltaX,
-                                        deltaY
-                                    )
-                                )
-                                currentPoint.x = eventX
-                                currentPoint.y = eventY
-                            }
-                        }
-                    }
-                    else -> when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            path.reset()
-                            path.moveTo(eventX, eventY)
-                            currentPoint.x = eventX
-                            currentPoint.y = eventY
-                            editManager.addDrawPath(path)
-                        }
-                        MotionEvent.ACTION_MOVE -> {
-                            path.quadraticBezierTo(
-                                currentPoint.x,
-                                currentPoint.y,
-                                (eventX + currentPoint.x) / 2,
-                                (eventY + currentPoint.y) / 2
-                            )
-                            currentPoint.x = eventX
-                            currentPoint.y = eventY
-                        }
-                        MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
-                            // draw a dot
-                            if (eventX == currentPoint.x &&
-                                eventY == currentPoint.y
-                            ) {
-                                path.lineTo(currentPoint.x, currentPoint.y)
-                            }
-                            editManager.clearRedoPath()
-                            editManager.updateRevised()
-                            path = Path()
-                        }
-                    }
+                when (true) {
+                    editManager.isRotateMode.value -> handleRotateEvent(
+                        event.action,
+                        eventX,
+                        eventY
+                    )
+                    editManager.isCropMode.value -> handleCropEvent(
+                        event.action,
+                        eventX,
+                        eventY
+                    )
+                    else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++
                 true
             }
-
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
-                if (isRotateMode.value) {
-                    rotationGrid.draw(canvas, rotationAngle.value)
-                    return@drawIntoCanvas
-                }
+                canvas.nativeCanvas.setMatrix(matrix)
+                if (isCropMode.value || isRotateMode.value)
+                    canvas.nativeCanvas.setMatrix(editMatrix)
                 if (isCropMode.value) {
                     editManager.cropWindow.show(canvas)
                     return@drawIntoCanvas
@@ -272,4 +227,8 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             }
         }
     }
+}
+
+fun Matrix.asComposeMatrix(): androidx.compose.ui.graphics.Matrix {
+    return androidx.compose.ui.graphics.Matrix(this.values())
 }

@@ -1,5 +1,6 @@
 package space.taran.arkretouch.presentation.edit.rotate
 
+import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -14,7 +15,8 @@ import space.taran.arkretouch.presentation.edit.crop.CropWindow
 
 class RotateGrid {
 
-    private lateinit var bitmap: ImageBitmap
+    private lateinit var imageBitmap: ImageBitmap
+    private lateinit var bitmap: Bitmap
     private var drawAreaSize = IntSize.Zero
     private lateinit var rect: Rect
     private var xLines = mutableListOf<Pair<Offset, Offset>>()
@@ -49,7 +51,8 @@ class RotateGrid {
         fitBitmap: (ImageBitmap, Int, Int) -> ImageBitmap
     ) {
         clearLines()
-        this.bitmap = bitmap
+        this.imageBitmap = bitmap
+        this.bitmap = bitmap.asAndroidBitmap()
         this.editManager = editManager
         this.drawAreaSize = editManager.drawAreaSize.value
         this.offset = offset
@@ -59,15 +62,15 @@ class RotateGrid {
         bottom = drawAreaSize.height - VERTICAL_OFFSET
         calculatePivot()
         create()
-        this.bitmap = fitBitmap(
+        this.imageBitmap = fitBitmap(
             bitmap,
             rect.width.toInt(),
             rect.height.toInt()
         )
-        resizeByBitmap()
+        resizeByBitmap(imageBitmap)
     }
 
-    private fun resizeByBitmap() {
+    private fun resizeByBitmap(bitmap: ImageBitmap) {
         left = (drawAreaSize.width - bitmap.width).toFloat() / 2
         top = (drawAreaSize.height - bitmap.height).toFloat() / 2
         right = left + bitmap.width
@@ -164,11 +167,9 @@ class RotateGrid {
 
     fun get() = rect
 
-    fun getBitmap() = bitmap.asAndroidBitmap()
+    fun getBitmap() = bitmap
 
-    fun draw(canvas: Canvas, angle: Float = 0f) {
-        // canvas.rotate(angle, pivot.x, pivot.y)
-        // resize()
+    fun draw(canvas: Canvas) {
         canvas.drawRect(rect, paint)
         drawLines(canvas)
     }
