@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.IntSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -38,7 +37,6 @@ import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
 import timber.log.Timber
 import java.io.File
-import java.lang.NullPointerException
 import java.nio.file.Path
 import kotlin.io.path.outputStream
 
@@ -104,39 +102,8 @@ class EditViewModel(
             }
         }
 
-    fun downResizeManually(width: Int = 0, height: Int = 0): IntSize {
-        var newWidth = width
-        var newHeight = height
-        try {
-            if (width > 0) newHeight = (
-                newWidth /
-                    editManager.aspectRatio.value
-                ).toInt()
-            if (height > 0)
-                newWidth = (newHeight * editManager.aspectRatio.value).toInt()
-            if (newWidth > 0 && newHeight > 0) editManager.apply {
-                val bitmapToResize = editManager.resize.getBitmap().asImageBitmap()
-                if (
-                    newWidth <= bitmapToResize.width &&
-                    newHeight <= bitmapToResize.height
-                ) {
-                    val imgBitmap = resize(
-                        bitmapToResize,
-                        newWidth,
-                        newHeight
-                    )
-                    backgroundImage.value = imgBitmap
-                }
-            }
-            editManager.updateAvailableDrawArea()
-        } catch (e: NullPointerException) {
-            e.printStackTrace()
-        }
-        return IntSize(
-            newWidth,
-            newHeight
-        )
-    }
+    fun resizeDown(width: Int = 0, height: Int = 0) =
+        editManager.resizeDown(width, height)
 
     fun getImageUri(
         context: Context = DIManager.component.app(),

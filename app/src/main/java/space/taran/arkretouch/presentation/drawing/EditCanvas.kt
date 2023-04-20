@@ -62,7 +62,7 @@ fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
             invalidatorTick.value
             var matrix = matrix
             drawIntoCanvas { canvas ->
-                if (isCropMode.value || isRotateMode.value)
+                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
                     matrix = editMatrix
                 backgroundImage.value?.let {
                     canvas.nativeCanvas.drawBitmap(
@@ -213,9 +213,10 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
+                var matrix = this.matrix
+                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                    matrix = editMatrix
                 canvas.nativeCanvas.setMatrix(matrix)
-                if (isCropMode.value || isRotateMode.value)
-                    canvas.nativeCanvas.setMatrix(editMatrix)
                 if (isResizeMode.value) return@drawIntoCanvas
                 if (isCropMode.value) {
                     editManager.cropWindow.show(canvas)

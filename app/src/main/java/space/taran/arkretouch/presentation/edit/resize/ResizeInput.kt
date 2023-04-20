@@ -26,13 +26,13 @@ fun ResizeInput(viewModel: EditViewModel) {
 
     var width by remember {
         mutableStateOf(
-            viewModel.editManager.bitmapWidth.toString()
+            viewModel.editManager.availableDrawAreaSize.value.width.toString()
         )
     }
 
     var height by remember {
         mutableStateOf(
-            viewModel.editManager.bitmapHeight.toString()
+            viewModel.editManager.availableDrawAreaSize.value.height.toString()
         )
     }
 
@@ -44,7 +44,7 @@ fun ResizeInput(viewModel: EditViewModel) {
                 width = it
                 if (width.isEmpty()) height = width
                 if (it.isNotEmpty() && it.isDigitsOnly()) {
-                    height = viewModel.downResizeManually(width = it.toInt())
+                    height = viewModel.resizeDown(width = it.toInt())
                         .height.toString()
                 }
             },
@@ -73,7 +73,7 @@ fun ResizeInput(viewModel: EditViewModel) {
                 height = it
                 if (height.isEmpty()) width = height
                 if (it.isNotEmpty() && it.isDigitsOnly()) {
-                    width = viewModel.downResizeManually(height = it.toInt())
+                    width = viewModel.resizeDown(height = it.toInt())
                         .width.toString()
                 }
             },

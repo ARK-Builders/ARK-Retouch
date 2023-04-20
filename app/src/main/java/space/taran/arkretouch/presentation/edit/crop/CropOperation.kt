@@ -20,11 +20,9 @@ class CropOperation(
                 )
                 updateAvailableDrawArea(image)
                 backgroundImage.value = image
-                keepCroppedPaths()
+                keepEditedPaths()
                 addCrop()
-                addAngle()
-                resetRotation()
-                matrix.reset()
+                saveRotationAfterOtherOperation()
                 toggleCropMode()
             }
         }

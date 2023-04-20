@@ -63,7 +63,6 @@ import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
-import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
@@ -367,7 +366,7 @@ private fun BoxScope.TopMenu(
                                         RotateOperation(this)
                                     isCropMode.value ->
                                         CropOperation(this)
-                                    else -> ResizeOperation(this)
+                                    else -> resizeOperation
                                 }
                             viewModel.applyOperation(operation)
                             viewModel.menusVisible = true
@@ -710,12 +709,8 @@ private fun EditMenuContent(
                             if (isResizeMode.value) {
                                 val imgBitmap = viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()
-                                resize.init(imgBitmap.asAndroidBitmap())
+                                resizeOperation.init(imgBitmap.asAndroidBitmap())
                                 backgroundImage.value = imgBitmap
-                                aspectRatio.value = imgBitmap.width.toFloat() /
-                                    imgBitmap.height.toFloat()
-                                bitmapWidth = imgBitmap.width
-                                bitmapHeight = imgBitmap.height
                             }
                             viewModel.menusVisible = !isResizeMode.value
                         }
