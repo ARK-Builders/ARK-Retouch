@@ -63,6 +63,8 @@ import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
+import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
+import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -170,6 +172,41 @@ private fun Menus(
                 .height(IntrinsicSize.Min),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (viewModel.editManager.isRotateMode.value)
+                Row {
+                    Icon(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                viewModel.editManager.apply {
+                                    rotate(-90f)
+                                    invalidatorTick.value++
+                                }
+                            },
+                        imageVector = ImageVector
+                            .vectorResource(R.drawable.ic_rotate_left),
+                        tint = MaterialTheme.colors.primary,
+                        contentDescription = null
+                    )
+                    Icon(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                viewModel.editManager.apply {
+                                    rotate(90f)
+                                    invalidatorTick.value++
+                                }
+                            },
+                        imageVector = ImageVector
+                            .vectorResource(R.drawable.ic_rotate_right),
+                        tint = MaterialTheme.colors.primary,
+                        contentDescription = null
+                    )
+                }
             if (viewModel.editManager.isResizeMode.value)
                 ResizeInput(viewModel)
             EditMenuContainer(viewModel, navigateBack)
@@ -308,42 +345,48 @@ private fun BoxScope.TopMenu(
         tint = MaterialTheme.colors.primary,
         contentDescription = null
     )
-    Icon(
-        modifier = Modifier
+
+    Row(
+        Modifier
             .align(Alignment.TopEnd)
-            .padding(8.dp)
-            .size(36.dp)
-            .clip(CircleShape)
-            .clickable {
-                viewModel.editManager.apply {
-                    if (isCropMode.value) {
-                        viewModel.applyOperation(
-                            CropOperation(viewModel.editManager)
-                        )
-                        viewModel.menusVisible = true
-                        return@clickable
-                    }
-                    if (viewModel.editManager.isResizeMode.value) {
-                        viewModel.editManager.apply {
-                            addResize()
-                            toggleResizeMode()
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(8.dp)
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable {
+                    viewModel.editManager.apply {
+                        if (
+                            isCropMode.value || isRotateMode.value ||
+                            isResizeMode.value
+                        ) {
+                            val operation: Operation =
+                                when (true) {
+                                    isRotateMode.value ->
+                                        RotateOperation(this)
+                                    isCropMode.value ->
+                                        CropOperation(this)
+                                    else -> ResizeOperation(this)
+                                }
+                            viewModel.applyOperation(operation)
                             viewModel.menusVisible = true
                             return@clickable
                         }
                     }
-                }
-                viewModel.showMoreOptionsPopup = true
-            },
-        imageVector = if (
-            viewModel.editManager.isCropMode.value ||
-            viewModel.editManager.isRotateMode.value ||
-            viewModel.editManager.isResizeMode.value
+                    viewModel.showMoreOptionsPopup = true
+                },
+            imageVector = if (
+                viewModel.editManager.isCropMode.value ||
+                viewModel.editManager.isRotateMode.value ||
+                viewModel.editManager.isResizeMode.value
+            )
+                ImageVector.vectorResource(R.drawable.ic_check)
+            else ImageVector.vectorResource(R.drawable.ic_more_vert),
+            tint = MaterialTheme.colors.primary,
+            contentDescription = null
         )
-            ImageVector.vectorResource(R.drawable.ic_check)
-        else ImageVector.vectorResource(R.drawable.ic_more_vert),
-        tint = MaterialTheme.colors.primary,
-        contentDescription = null
-    )
+    }
 }
 
 @Composable
@@ -599,7 +642,8 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !editManager.isCropMode.value
                             if (isCropMode.value) {
-                                val bitmap = viewModel.getCombinedImageBitmap()
+                                val bitmap = viewModel
+                                    .getCombinedImageBitmap()
                                     .asAndroidBitmap()
                                 setBackgroundImage2()
                                 viewModel.editManager.cropWindow.init(
@@ -623,6 +667,32 @@ private fun EditMenuContent(
                 tint = if (
                     editManager.isCropMode.value
                 ) MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.apply {
+                            if (!isCropMode.value) toggleRotateMode()
+                            else return@clickable
+                            if (isRotateMode.value) {
+                                setBackgroundImage2()
+                                viewModel.menusVisible =
+                                    !editManager.isRotateMode.value
+                                return@clickable
+                            }
+                            cancelRotateMode()
+                        }
+                    },
+                imageVector = ImageVector
+                    .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
+                tint = if (editManager.isRotateMode.value)
+                    MaterialTheme.colors.primary
                 else
                     Color.Black,
                 contentDescription = null

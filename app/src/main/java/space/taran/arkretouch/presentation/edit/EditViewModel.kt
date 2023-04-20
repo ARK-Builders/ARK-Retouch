@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
@@ -184,6 +185,7 @@ class EditViewModel(
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
+        combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
@@ -208,11 +210,7 @@ class EditViewModel(
         editManager.applyOperation(operation)
     }
 
-    fun fitBitmap(
-        imgBitmap: ImageBitmap,
-        maxWidth: Int,
-        maxHeight: Int
-    ): Bitmap {
+    fun fitBitmap(imgBitmap: ImageBitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         editManager.apply {
             val img = resize(imgBitmap, maxWidth, maxHeight)
             updateAvailableDrawArea(img)
@@ -277,10 +275,14 @@ private fun RequestBuilder<Bitmap>.loadInto(
         ) {
             val areaSize = editManager.drawAreaSize.value
             editManager.apply {
-                backgroundImage.value =
-                    resize(bitmap.asImageBitmap(), areaSize.width, areaSize.height)
-                setOriginalBackgroundImage(backgroundImage.value)
-                updateAvailableDrawArea()
+                val image = resize(
+                    bitmap.asImageBitmap(),
+                    areaSize.width,
+                    areaSize.height
+                )
+                updateAvailableDrawArea(image)
+                backgroundImage.value = image
+                setOriginalBackgroundImage(image)
             }
         }
 
