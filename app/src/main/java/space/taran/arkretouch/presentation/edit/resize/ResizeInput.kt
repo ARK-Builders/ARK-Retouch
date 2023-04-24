@@ -147,7 +147,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         showHint = false
                         if (height.isEmpty()) width = height
                         if (height.isNotEmpty() && height.isDigitsOnly()) {
-                            width = editManager.resizeDown(height = width.toInt())
+                            width = editManager.resizeDown(height = height.toInt())
                                 .width.toString()
                         }
                     },
