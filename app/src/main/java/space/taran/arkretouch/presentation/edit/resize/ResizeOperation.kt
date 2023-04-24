@@ -22,6 +22,10 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
         }
     }
 
+    override fun undo() {}
+
+    override fun redo() {}
+
     fun init(bitmap: Bitmap) {
         this.bitmap = bitmap
         aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()

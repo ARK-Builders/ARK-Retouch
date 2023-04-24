@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
+import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 
 fun Bitmap.crop(cropParams: CropWindow.CropParams): Bitmap = Bitmap.createBitmap(
     this,
@@ -25,4 +26,8 @@ fun Bitmap.resize(scale: ResizeOperation.Scale): Bitmap {
         matrix,
         true
     )
+}
+
+fun Matrix.rotate(angle: Float, center: RotateOperation.Center) {
+    this.postRotate(angle, center.x, center.y)
 }

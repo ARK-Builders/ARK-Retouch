@@ -18,6 +18,7 @@ import space.taran.arkretouch.presentation.edit.Operation
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
+import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import java.util.Stack
 
 class EditManager {
@@ -32,6 +33,7 @@ class EditManager {
     val cropWindow = CropWindow()
 
     val resizeOperation = ResizeOperation(this)
+    val rotateOperation = RotateOperation(this)
 
     val currentPaint: Paint
         get() = if (isEraseMode.value) {
@@ -53,6 +55,16 @@ class EditManager {
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
+    val originalDrawAreaSize: IntSize
+        get() {
+            val bitmap = originalBackgroundImage.value
+            return if (bitmap != null)
+                IntSize(
+                    bitmap.width,
+                    bitmap.height
+                )
+            else drawAreaSize.value
+        }
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -109,13 +121,6 @@ class EditManager {
         )
     }
 
-    fun updateAvailableDrawArea(width: Int, height: Int) {
-        availableDrawAreaSize.value = IntSize(
-            width,
-            height
-        )
-    }
-
     internal fun clearRedoPath() {
         redoPaths.clear()
     }
@@ -125,7 +130,7 @@ class EditManager {
         _canRedo.value = redoStack.isNotEmpty()
     }
 
-    fun resizeDown(width: Int, height: Int) =
+    fun resizeDown(width: Int = 0, height: Int = 0) =
         resizeOperation.resizeDown(width, height) {
             backgroundImage.value = it
         }
@@ -135,10 +140,20 @@ class EditManager {
         val centerY = availableDrawAreaSize.value.height / 2
         if (isRotateMode.value) {
             rotationAngle.value += angle
-            editMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+            rotateOperation.rotate(
+                editMatrix,
+                angle,
+                centerX.toFloat(),
+                centerY.toFloat()
+            )
             return
         }
-        matrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+        rotateOperation.rotate(
+            matrix,
+            angle,
+            centerX.toFloat(),
+            centerY.toFloat()
+        )
     }
 
     private fun undoRotate() {
@@ -267,6 +282,10 @@ class EditManager {
             updateRevised()
             return
         }
+    }
+
+    private fun undo(operation: Operation) {
+        operation.undo()
     }
 
     fun undo() {

@@ -102,9 +102,6 @@ class EditViewModel(
             }
         }
 
-    fun resizeDown(width: Int = 0, height: Int = 0) =
-        editManager.resizeDown(width, height)
-
     fun getImageUri(
         context: Context = DIManager.component.app(),
         bitmap: Bitmap? = null,

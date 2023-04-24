@@ -27,4 +27,8 @@ class CropOperation(
             }
         }
     }
+
+    override fun undo() {}
+
+    override fun redo() {}
 }

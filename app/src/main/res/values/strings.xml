@@ -20,4 +20,7 @@
     <string name="save">Save</string>
     <string name="height">Height</string>
     <string name="width">Width</string>
+    <string name="digits_only">Input digits only</string>
+    <string name="width_too_large">Width should be less than %d</string>
+    <string name="height_too_large">Height should be less than %d</string>
 </resources>

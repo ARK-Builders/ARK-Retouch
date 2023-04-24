@@ -63,7 +63,6 @@ import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
-import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -206,8 +205,6 @@ private fun Menus(
                         contentDescription = null
                     )
                 }
-            if (viewModel.editManager.isResizeMode.value)
-                ResizeInput(viewModel)
             EditMenuContainer(viewModel, navigateBack)
         }
     }
@@ -362,10 +359,8 @@ private fun BoxScope.TopMenu(
                         ) {
                             val operation: Operation =
                                 when (true) {
-                                    isRotateMode.value ->
-                                        RotateOperation(this)
-                                    isCropMode.value ->
-                                        CropOperation(this)
+                                    isRotateMode.value -> rotateOperation
+                                    isCropMode.value -> CropOperation(this)
                                     else -> resizeOperation
                                 }
                             viewModel.applyOperation(operation)
@@ -443,6 +438,10 @@ private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit
         CropAspectRatiosMenu(
             isVisible = viewModel.editManager.isCropMode.value,
             viewModel.editManager.cropWindow
+        )
+        ResizeInput(
+            isVisible = viewModel.editManager.isResizeMode.value,
+            viewModel.editManager
         )
 
         Box(
@@ -636,7 +635,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (!isRotateMode.value || !isResizeMode.value)
+                            if (!isRotateMode.value && !isResizeMode.value)
                                 toggleCropMode()
                             else return@clickable
                             viewModel.menusVisible = !editManager.isCropMode.value
@@ -677,7 +676,8 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (!isCropMode.value) toggleRotateMode()
+                            if (!isCropMode.value && !isResizeMode.value)
+                                toggleRotateMode()
                             else return@clickable
                             if (isRotateMode.value) {
                                 setBackgroundImage2()
@@ -703,15 +703,17 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (isResizeMode.value) cancelResizeMode()
-                            if (!isRotateMode.value || !isCropMode.value)
+                            if (!isRotateMode.value && !isCropMode.value)
                                 toggleResizeMode()
+                            else return@clickable
                             if (isResizeMode.value) {
                                 val imgBitmap = viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()
                                 resizeOperation.init(imgBitmap.asAndroidBitmap())
                                 backgroundImage.value = imgBitmap
+                                return@clickable
                             }
+                            cancelResizeMode()
                             viewModel.menusVisible = !isResizeMode.value
                         }
                     },
