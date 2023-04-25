@@ -6,7 +6,10 @@ import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,6 +38,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -154,8 +159,15 @@ private fun Menus(
     launchedFromIntent: Boolean,
     navigateBack: () -> Unit,
 ) {
-    Box(Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        Modifier
+            .fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+        ) {
             TopMenu(
                 imagePath,
                 fragmentManager,
@@ -205,6 +217,7 @@ private fun Menus(
                         contentDescription = null
                     )
                 }
+
             EditMenuContainer(viewModel, navigateBack)
         }
     }
@@ -226,6 +239,13 @@ private fun DrawContainer(
             }
             .onSizeChanged { newSize ->
                 if (newSize == IntSize.Zero) return@onSizeChanged
+                if (
+                    viewModel.editManager.isResizeMode.value ||
+                    viewModel.editManager.resizeOperation.isApplied()
+                ) {
+                    viewModel.editManager.resizeOperation.resetApply()
+                    return@onSizeChanged
+                }
                 viewModel.editManager.drawAreaSize.value = newSize
                 viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
@@ -468,6 +488,10 @@ private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
             EditMenuContent(viewModel, navigateBack)
+            EditMenuFlowHint(
+                viewModel.bottomButtonsScrollIsAtStart.value,
+                viewModel.bottomButtonsScrollIsAtEnd.value
+            )
         }
     }
 }
@@ -478,10 +502,10 @@ private fun EditMenuContent(
     navigateBack: () -> Unit
 ) {
     val colorDialogExpanded = remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
     val editManager = viewModel.editManager
     Column(
         Modifier
-            .wrapContentHeight()
             .fillMaxWidth()
             .background(Gray)
     ) {
@@ -492,7 +516,7 @@ private fun EditMenuContent(
                 .wrapContentHeight()
                 .fillMaxWidth()
                 .padding(start = 10.dp, end = 10.dp)
-                .horizontalScroll(rememberScrollState())
+                .horizontalScroll(scrollState)
         ) {
             Icon(
                 modifier = Modifier
@@ -572,7 +596,8 @@ private fun EditMenuContent(
                             viewModel.strokeSliderExpanded =
                                 !viewModel.strokeSliderExpanded
                     },
-                imageVector = ImageVector.vectorResource(R.drawable.ic_line_weight),
+                imageVector =
+                ImageVector.vectorResource(R.drawable.ic_line_weight),
                 tint = if (
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
@@ -638,7 +663,8 @@ private fun EditMenuContent(
                             if (!isRotateMode.value && !isResizeMode.value)
                                 toggleCropMode()
                             else return@clickable
-                            viewModel.menusVisible = !editManager.isCropMode.value
+                            viewModel.menusVisible =
+                                !editManager.isCropMode.value
                             if (isCropMode.value) {
                                 val bitmap = viewModel
                                     .getCombinedImageBitmap()
@@ -706,15 +732,16 @@ private fun EditMenuContent(
                             if (!isRotateMode.value && !isCropMode.value)
                                 toggleResizeMode()
                             else return@clickable
+                            viewModel.menusVisible = !isResizeMode.value
                             if (isResizeMode.value) {
-                                val imgBitmap = viewModel.getCombinedImageBitmap()
+                                val imgBitmap =
+                                    viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()
                                 resizeOperation.init(imgBitmap.asAndroidBitmap())
                                 backgroundImage.value = imgBitmap
                                 return@clickable
                             }
                             cancelResizeMode()
-                            viewModel.menusVisible = !isResizeMode.value
                         }
                     },
                 imageVector = ImageVector
@@ -724,6 +751,48 @@ private fun EditMenuContent(
                 else
                     Color.Black,
                 contentDescription = null
+            )
+        }
+    }
+    viewModel.bottomButtonsScrollIsAtStart.value = scrollState.value == 0
+    viewModel.bottomButtonsScrollIsAtEnd.value =
+        scrollState.value == scrollState.maxValue
+}
+
+@Composable
+fun EditMenuFlowHint(
+    scrollIsAtStart: Boolean = true,
+    scrollIsAtEnd: Boolean = false
+) {
+    Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = scrollIsAtEnd || (!scrollIsAtStart && !scrollIsAtEnd),
+            enter = fadeIn(tween(durationMillis = 1000)),
+            exit = fadeOut((tween(durationMillis = 1000))),
+            modifier = Modifier.align(Alignment.BottomStart)
+        ) {
+            Icon(
+                Icons.Filled.KeyboardArrowLeft,
+                contentDescription = null,
+                Modifier
+                    .background(Gray)
+                    .padding(top = 16.dp, bottom = 16.dp)
+                    .size(32.dp)
+            )
+        }
+        AnimatedVisibility(
+            visible = scrollIsAtStart || (!scrollIsAtStart && !scrollIsAtEnd),
+            enter = fadeIn(tween(durationMillis = 1000)),
+            exit = fadeOut((tween(durationMillis = 1000))),
+            modifier = Modifier.align(Alignment.BottomEnd)
+        ) {
+            Icon(
+                Icons.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                Modifier
+                    .background(Gray)
+                    .padding(top = 16.dp, bottom = 16.dp)
+                    .size(32.dp)
             )
         }
     }

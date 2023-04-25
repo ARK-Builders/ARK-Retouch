@@ -56,6 +56,8 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
+    val bottomButtonsScrollIsAtStart = mutableStateOf(true)
+    val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
 
     fun loadImage() {
         imagePath?.let {

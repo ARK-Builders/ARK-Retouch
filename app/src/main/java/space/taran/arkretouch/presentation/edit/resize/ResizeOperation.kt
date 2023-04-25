@@ -1,6 +1,7 @@
 package space.taran.arkretouch.presentation.edit.resize
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntSize
@@ -13,12 +14,14 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
 
     private lateinit var bitmap: Bitmap
     private var aspectRatio = 1f
+    private val isApplied = mutableStateOf(false)
 
     override fun apply() {
         editManager.apply {
             addResize()
             saveRotationAfterOtherOperation()
             toggleResizeMode()
+            isApplied.value = true
         }
     }
 
@@ -29,7 +32,12 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
     fun init(bitmap: Bitmap) {
         this.bitmap = bitmap
         aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+        isApplied.value = false
     }
+
+    fun isApplied() = isApplied.value
+
+    fun resetApply() { isApplied.value = false }
 
     fun resizeDown(
         width: Int,
