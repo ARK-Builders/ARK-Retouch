@@ -25,9 +25,29 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
         }
     }
 
-    override fun undo() {}
+    override fun undo() {
+        editManager.apply {
+            if (resizes.isNotEmpty()) {
+                redoResize.push(backgroundImage.value)
+                backgroundImage.value = resizes.pop()
+                updateAvailableDrawArea()
+                restoreRotationAfterUndoOtherOperation()
+                redrawEditedPaths()
+            }
+        }
+    }
 
-    override fun redo() {}
+    override fun redo() {
+        editManager.apply {
+            if (redoResize.isNotEmpty()) {
+                resizes.push(backgroundImage.value)
+                saveRotationAfterOtherOperation()
+                backgroundImage.value = redoResize.pop()
+                updateAvailableDrawArea()
+                keepEditedPaths()
+            }
+        }
+    }
 
     fun init(bitmap: Bitmap) {
         this.bitmap = bitmap

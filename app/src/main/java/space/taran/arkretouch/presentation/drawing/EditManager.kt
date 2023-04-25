@@ -15,8 +15,10 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.Operation
+import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
+import space.taran.arkretouch.presentation.edit.draw.DrawOperation
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import java.util.Stack
@@ -32,8 +34,10 @@ class EditManager {
 
     val cropWindow = CropWindow()
 
+    val drawOperation = DrawOperation(this)
     val resizeOperation = ResizeOperation(this)
     val rotateOperation = RotateOperation(this)
+    val cropOperation = CropOperation(this)
 
     val currentPaint: Paint
         get() = if (isEraseMode.value) {
@@ -43,7 +47,7 @@ class EditManager {
         }
 
     val drawPaths = Stack<DrawPath>()
-    private val redoPaths = Stack<DrawPath>()
+    val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
 
@@ -88,14 +92,14 @@ class EditManager {
     val isResizeMode = _isResizeMode
 
     val rotationAngle = mutableStateOf(0F)
-    private var prevRotationAngle = 0f
+    var prevRotationAngle = 0f
 
     private val editedPaths = Stack<Stack<DrawPath>>()
 
-    private val redoResize = Stack<ImageBitmap>()
-    private val resizes = Stack<ImageBitmap>()
-    private val rotationAngles = Stack<Float>()
-    private val redoRotationAngles = Stack<Float>()
+    val redoResize = Stack<ImageBitmap>()
+    val resizes = Stack<ImageBitmap>()
+    val rotationAngles = Stack<Float>()
+    val redoRotationAngles = Stack<Float>()
 
     private val undoStack = Stack<String>()
     private val redoStack = Stack<String>()
@@ -103,11 +107,19 @@ class EditManager {
     private val _isCropMode = mutableStateOf(false)
     val isCropMode = _isCropMode
 
-    private val cropStack = Stack<ImageBitmap>()
-    private val redoCropStack = Stack<ImageBitmap>()
+    val cropStack = Stack<ImageBitmap>()
+    val redoCropStack = Stack<ImageBitmap>()
 
     fun applyOperation(operation: Operation) {
         operation.apply()
+    }
+
+    private fun undoOperation(operation: Operation) {
+        operation.undo()
+    }
+
+    private fun redoOperation(operation: Operation) {
+        operation.redo()
     }
 
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
@@ -225,7 +237,7 @@ class EditManager {
         editedPaths.add(stack)
     }
 
-    private fun redrawEditedPaths() {
+    fun redrawEditedPaths() {
         if (editedPaths.isNotEmpty()) {
             val paths = editedPaths.pop()
             if (paths.isNotEmpty()) {
@@ -284,8 +296,11 @@ class EditManager {
         }
     }
 
-    private fun undo(operation: Operation) {
-        operation.undo()
+    fun operationByTask(task: String) = when (task) {
+        ROTATE -> rotateOperation
+        RESIZE -> resizeOperation
+        CROP -> cropOperation
+        else -> drawOperation
     }
 
     fun undo() {
@@ -293,14 +308,7 @@ class EditManager {
             val undoTask = undoStack.pop()
             redoStack.push(undoTask)
             Timber.tag("edit-manager").d("undoing $undoTask")
-            if (undoTask == ROTATE)
-                undoRotate()
-            if (undoTask == DRAW)
-                undoDraw()
-            if (undoTask == RESIZE)
-                undoResize()
-            if (undoTask == CROP)
-                undoCrop()
+            undoOperation(operationByTask(undoTask))
         }
         invalidatorTick.value++
         updateRevised()
@@ -311,16 +319,7 @@ class EditManager {
             val redoTask = redoStack.pop()
             undoStack.push(redoTask)
             Timber.tag("edit-manager").d("redoing $redoTask")
-            if (redoTask == ROTATE) {
-                redoRotate()
-            }
-            if (redoTask == DRAW)
-                redoDraw()
-            if (redoTask == RESIZE)
-                redoResize()
-            if (redoTask == CROP) {
-                redoCrop()
-            }
+            redoOperation(operationByTask(redoTask))
             invalidatorTick.value++
             updateRevised()
         }
@@ -332,7 +331,7 @@ class EditManager {
         matrix.reset()
     }
 
-    private fun restoreRotationAfterUndoOtherOperation() {
+    fun restoreRotationAfterUndoOtherOperation() {
         if (rotationAngles.isNotEmpty()) {
             matrix.reset()
             prevRotationAngle = rotationAngles.pop()

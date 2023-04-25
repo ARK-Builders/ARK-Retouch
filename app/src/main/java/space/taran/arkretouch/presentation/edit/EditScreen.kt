@@ -380,7 +380,7 @@ private fun BoxScope.TopMenu(
                             val operation: Operation =
                                 when (true) {
                                     isRotateMode.value -> rotateOperation
-                                    isCropMode.value -> CropOperation(this)
+                                    isCropMode.value -> cropOperation
                                     else -> resizeOperation
                                 }
                             viewModel.applyOperation(operation)

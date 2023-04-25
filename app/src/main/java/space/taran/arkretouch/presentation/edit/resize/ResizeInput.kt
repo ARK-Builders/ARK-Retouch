@@ -17,6 +17,7 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -28,7 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
@@ -65,21 +66,18 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
             mutableStateOf(false)
         }
 
-        val scope = MainScope()
+        val scope = rememberCoroutineScope()
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Hint(
                 hint,
-                showHint
-            )
-            if (showHint) {
-                scope.launch {
-                    delay(1000)
-                    showHint = false
+                isVisible = {
+                    showHint = delayHide(scope)
+                    showHint
                 }
-            }
+            )
             Row {
                 TextField(
                     modifier = Modifier.fillMaxWidth(0.5f),
@@ -174,10 +172,18 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
     }
 }
 
+fun delayHide(scope: CoroutineScope): Boolean {
+    scope.launch {
+        delay(1000)
+    }
+    return false
+}
+
 @Composable
-fun Hint(text: String, isVisible: Boolean) {
+fun Hint(text: String, isVisible: () -> Boolean) {
+
     AnimatedVisibility(
-        visible = isVisible,
+        visible = isVisible(),
         enter = fadeIn(),
         exit = fadeOut(tween(durationMillis = 500)),
         modifier = Modifier
