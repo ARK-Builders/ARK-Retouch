@@ -58,6 +58,8 @@ class EditManager {
     private val _currentPaintColor: MutableState<Color> =
         mutableStateOf(drawPaint.value.color)
     val currentPaintColor: State<Color> = _currentPaintColor
+    private val _oldColors = mutableListOf<Color>()
+    val oldColors: List<Color> = _oldColors
 
     private val _isEraseMode: MutableState<Boolean> = mutableStateOf(false)
     val isEraseMode: State<Boolean> = _isEraseMode
@@ -297,6 +299,12 @@ class EditManager {
     fun setPaintColor(color: Color) {
         drawPaint.value.color = color
         _currentPaintColor.value = color
+        if (
+            oldColors.isEmpty() ||
+            (oldColors.isNotEmpty() && oldColors.last() != color)
+        ) {
+            _oldColors.add(color)
+        }
     }
 
     private fun clearPaths() {

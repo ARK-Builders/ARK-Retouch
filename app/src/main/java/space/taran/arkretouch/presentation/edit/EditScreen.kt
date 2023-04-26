@@ -516,6 +516,7 @@ private fun EditMenuContent(
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
                 initialColor = editManager.currentPaintColor.value,
+                oldColors = editManager.oldColors,
                 onColorChanged = { editManager.setPaintColor(it) },
             )
             Icon(

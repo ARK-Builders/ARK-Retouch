@@ -1,19 +1,32 @@
 package space.taran.arkretouch.presentation.edit
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -34,6 +47,7 @@ import com.godaddy.android.colorpicker.HsvColor
 fun ColorPickerDialog(
     isVisible: MutableState<Boolean>,
     initialColor: Color,
+    oldColors: List<Color>,
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
@@ -51,6 +65,38 @@ fun ColorPickerDialog(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+                val state = rememberLazyListState()
+
+                LazyRow(
+                    Modifier
+                        .align(Alignment.Center),
+                    state = state
+                ) {
+                    items(oldColors) { color ->
+                        Box(
+                            Modifier
+                                .padding(
+                                    start = 5.dp,
+                                    end = 5.dp,
+                                    top = 12.dp,
+                                    bottom = 12.dp
+                                )
+                                .size(25.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                    }
+                }
+                OldColorsFlowHint(
+                    { enableScroll(state) },
+                    { checkScroll(state).first },
+                    { checkScroll(state).second }
+                )
+            }
             ClassicColorPicker(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -61,7 +107,9 @@ fun ColorPickerDialog(
                 }
             )
             TextButton(
-                modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth(),
                 onClick = {
                     onColorChanged(currentColor.toColor())
                     isVisible.value = false
@@ -85,5 +133,68 @@ fun ColorPickerDialog(
                 }
             }
         }
+    }
+}
+
+fun enableScroll(state: LazyListState): Boolean {
+    return state.layoutInfo.totalItemsCount != state.layoutInfo.visibleItemsInfo.size
+}
+
+fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
+    var scrollIsAtStart = true
+    var scrollIsAtEnd = false
+    if (enableScroll(state)) {
+        val totalItems = state.layoutInfo.totalItemsCount
+        val visibleItems = state.layoutInfo.visibleItemsInfo.size
+        val itemSize =
+            state.layoutInfo.visibleItemsInfo.firstOrNull()?.size
+                ?: 0
+        val rowSize = itemSize * totalItems
+        val visibleRowSize = itemSize * visibleItems
+        val scrollValue = state.firstVisibleItemIndex * itemSize
+        val maxScrollValue = rowSize - visibleRowSize
+        scrollIsAtStart = scrollValue == 0
+        scrollIsAtEnd = scrollValue == maxScrollValue
+    }
+    return scrollIsAtStart to scrollIsAtEnd
+}
+
+@Composable
+fun BoxScope.OldColorsFlowHint(
+    scrollIsEnabled: () -> Boolean,
+    scrollIsAtStart: () -> Boolean,
+    scrollIsAtEnd: () -> Boolean
+) {
+    AnimatedVisibility(
+        visible = scrollIsEnabled() && (
+            scrollIsAtEnd() || (!scrollIsAtStart() && !scrollIsAtEnd())
+            ),
+        enter = fadeIn(tween(500)),
+        exit = fadeOut(tween(500)),
+        modifier = Modifier
+            .background(Color.White)
+            .align(Alignment.CenterStart)
+    ) {
+        Icon(
+            Icons.Filled.KeyboardArrowLeft,
+            contentDescription = null,
+            Modifier.size(32.dp)
+        )
+    }
+    AnimatedVisibility(
+        visible = scrollIsEnabled() && (
+            scrollIsAtStart() || (!scrollIsAtStart() && !scrollIsAtEnd())
+            ),
+        enter = fadeIn(tween(500)),
+        exit = fadeOut(tween(500)),
+        modifier = Modifier
+            .background(Color.White)
+            .align(Alignment.CenterEnd)
+    ) {
+        Icon(
+            Icons.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            Modifier.size(32.dp)
+        )
     }
 }
