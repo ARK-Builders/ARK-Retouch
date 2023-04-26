@@ -4,7 +4,6 @@ import android.graphics.Matrix
 import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.utils.rotate
-import java.util.Stack
 
 class RotateOperation(private val editManager: EditManager) : Operation {
 
