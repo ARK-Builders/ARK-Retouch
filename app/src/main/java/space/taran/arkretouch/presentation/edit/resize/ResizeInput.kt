@@ -74,7 +74,9 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
             Hint(
                 hint,
                 isVisible = {
-                    showHint = delayHide(scope)
+                    delayHidingHint(it) {
+                        showHint = false
+                    }
                     showHint
                 }
             )
@@ -83,21 +85,21 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                     modifier = Modifier.fillMaxWidth(0.5f),
                     value = width,
                     onValueChange = {
-                        width = it
                         if (
-                            width.isNotEmpty() &&
-                            width.isDigitsOnly() &&
-                            width.toInt() > editManager.originalDrawAreaSize.width
+                            it.isNotEmpty() &&
+                            it.isDigitsOnly() &&
+                            it.toInt() > editManager.originalDrawAreaSize.width
                         ) {
                             hint = widthHint
                             showHint = true
                             return@TextField
                         }
-                        if (width.isNotEmpty() && !width.isDigitsOnly()) {
+                        if (it.isNotEmpty() && !it.isDigitsOnly()) {
                             hint = digitsHint
                             showHint = true
                             return@TextField
                         }
+                        width = it
                         showHint = false
                         if (width.isEmpty()) height = width
                         if (width.isNotEmpty() && width.isDigitsOnly()) {
@@ -127,21 +129,21 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                     modifier = Modifier.fillMaxWidth(),
                     value = height,
                     onValueChange = {
-                        height = it
                         if (
-                            height.isNotEmpty() &&
-                            height.isDigitsOnly() &&
-                            height.toInt() > editManager.originalDrawAreaSize.height
+                            it.isNotEmpty() &&
+                            it.isDigitsOnly() &&
+                            it.toInt() > editManager.originalDrawAreaSize.height
                         ) {
                             hint = heightHint
                             showHint = true
                             return@TextField
                         }
-                        if (height.isNotEmpty() && !height.isDigitsOnly()) {
+                        if (it.isNotEmpty() && !it.isDigitsOnly()) {
                             hint = digitsHint
                             showHint = true
                             return@TextField
                         }
+                        height = it
                         showHint = false
                         if (height.isEmpty()) width = height
                         if (height.isNotEmpty() && height.isDigitsOnly()) {
@@ -172,20 +174,20 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
     }
 }
 
-fun delayHide(scope: CoroutineScope): Boolean {
+fun delayHidingHint(scope: CoroutineScope, hide: () -> Unit) {
     scope.launch {
         delay(1000)
+        hide()
     }
-    return false
 }
 
 @Composable
-fun Hint(text: String, isVisible: () -> Boolean) {
-
+fun Hint(text: String, isVisible: (CoroutineScope) -> Boolean) {
+    val scope = rememberCoroutineScope()
     AnimatedVisibility(
-        visible = isVisible(),
+        visible = isVisible(scope),
         enter = fadeIn(),
-        exit = fadeOut(tween(durationMillis = 500)),
+        exit = fadeOut(tween(durationMillis = 500, delayMillis = 1000)),
         modifier = Modifier
             .background(Color.LightGray, RoundedCornerShape(10))
     ) {
