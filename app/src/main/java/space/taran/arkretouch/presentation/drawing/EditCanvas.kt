@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.IntSize
-import androidx.core.graphics.values
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
@@ -63,7 +62,7 @@ fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
             invalidatorTick.value
             var matrix = matrix
             drawIntoCanvas { canvas ->
-                if (isCropMode.value || isRotateMode.value)
+                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
                     matrix = editMatrix
                 backgroundImage.value?.let {
                     canvas.nativeCanvas.drawBitmap(
@@ -92,7 +91,9 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 path.moveTo(eventX, eventY)
                 currentPoint.x = eventX
                 currentPoint.y = eventY
-                editManager.addDrawPath(path)
+                editManager.apply {
+                    applyOperation(drawOperation.draw(path))
+                }
             }
             MotionEvent.ACTION_MOVE -> {
                 path.quadraticBezierTo(
@@ -214,9 +215,11 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
+                var matrix = this.matrix
+                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                    matrix = editMatrix
                 canvas.nativeCanvas.setMatrix(matrix)
-                if (isCropMode.value || isRotateMode.value)
-                    canvas.nativeCanvas.setMatrix(editMatrix)
+                if (isResizeMode.value) return@drawIntoCanvas
                 if (isCropMode.value) {
                     editManager.cropWindow.show(canvas)
                     return@drawIntoCanvas
@@ -227,8 +230,4 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             }
         }
     }
-}
-
-fun Matrix.asComposeMatrix(): androidx.compose.ui.graphics.Matrix {
-    return androidx.compose.ui.graphics.Matrix(this.values())
 }

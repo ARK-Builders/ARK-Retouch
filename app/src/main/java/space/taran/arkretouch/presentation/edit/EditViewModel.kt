@@ -56,6 +56,8 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var exitConfirmed = false
         private set
+    val bottomButtonsScrollIsAtStart = mutableStateOf(true)
+    val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
 
     fun loadImage() {
         imagePath?.let {
@@ -101,6 +103,12 @@ class EditViewModel(
                 )
             }
         }
+
+    fun getImageUri(
+        context: Context = DIManager.component.app(),
+        bitmap: Bitmap? = null,
+        name: String = ""
+    ) = getCachedImageUri(context, bitmap, name)
 
     private fun getCachedImageUri(
         context: Context,
@@ -171,6 +179,7 @@ class EditViewModel(
     fun fitBitmap(imgBitmap: ImageBitmap, maxWidth: Int, maxHeight: Int): Bitmap {
         editManager.apply {
             val img = resize(imgBitmap, maxWidth, maxHeight)
+            updateAvailableDrawArea(img)
             backgroundImage.value = img
             return img.asAndroidBitmap()
         }
