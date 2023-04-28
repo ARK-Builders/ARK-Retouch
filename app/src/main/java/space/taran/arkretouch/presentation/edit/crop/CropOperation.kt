@@ -20,12 +20,38 @@ class CropOperation(
                 )
                 updateAvailableDrawArea(image)
                 backgroundImage.value = image
-                keepCroppedPaths()
+                keepEditedPaths()
                 addCrop()
-                addAngle()
-                resetRotation()
-                matrix.reset()
+                saveRotationAfterOtherOperation()
                 toggleCropMode()
+            }
+        }
+    }
+
+    override fun undo() {
+        editManager.apply {
+            if (cropStack.isNotEmpty()) {
+                val image = cropStack.pop()
+                redoCropStack.push(backgroundImage.value)
+                updateAvailableDrawArea(image)
+                restoreRotationAfterUndoOtherOperation()
+                backgroundImage.value = image
+                redrawEditedPaths()
+                updateRevised()
+            }
+        }
+    }
+
+    override fun redo() {
+        editManager.apply {
+            if (redoCropStack.isNotEmpty()) {
+                val image = redoCropStack.pop()
+                saveRotationAfterOtherOperation()
+                cropStack.push(backgroundImage.value)
+                updateAvailableDrawArea(image)
+                backgroundImage.value = image
+                keepEditedPaths()
+                updateRevised()
             }
         }
     }

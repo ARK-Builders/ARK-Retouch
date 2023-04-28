@@ -15,8 +15,12 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.Operation
+import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
+import space.taran.arkretouch.presentation.edit.draw.DrawOperation
+import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
+import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import java.util.Stack
 
 class EditManager {
@@ -30,6 +34,11 @@ class EditManager {
 
     val cropWindow = CropWindow()
 
+    val drawOperation = DrawOperation(this)
+    val resizeOperation = ResizeOperation(this)
+    val rotateOperation = RotateOperation(this)
+    val cropOperation = CropOperation(this)
+
     val currentPaint: Paint
         get() = if (isEraseMode.value) {
             erasePaint
@@ -38,11 +47,10 @@ class EditManager {
         }
 
     val drawPaths = Stack<DrawPath>()
-    private val redoPaths = Stack<DrawPath>()
-
-    private val croppedPathsStack = Stack<Stack<DrawPath>>()
+    val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
+
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
@@ -51,7 +59,16 @@ class EditManager {
 
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
-    val backgroundSize = mutableStateOf(IntSize.Zero)
+    val originalDrawAreaSize: IntSize
+        get() {
+            val bitmap = originalBackgroundImage.value
+            return if (bitmap != null)
+                IntSize(
+                    bitmap.width,
+                    bitmap.height
+                )
+            else drawAreaSize.value
+        }
 
     var invalidatorTick = mutableStateOf(0)
 
@@ -73,13 +90,18 @@ class EditManager {
     private val _isRotateMode = mutableStateOf(false)
     val isRotateMode = _isRotateMode
 
-    val rotationAngle = mutableStateOf(0F)
-    private var prevRotationAngle = 0f
+    private val _isResizeMode = mutableStateOf(false)
+    val isResizeMode = _isResizeMode
 
-    private val rotations = Stack<ImageBitmap>()
-    private val redoRotations = Stack<ImageBitmap>()
-    private val rotationAngles = Stack<Float>()
-    private val redoRotationAngles = Stack<Float>()
+    val rotationAngle = mutableStateOf(0F)
+    var prevRotationAngle = 0f
+
+    private val editedPaths = Stack<Stack<DrawPath>>()
+
+    val redoResize = Stack<ImageBitmap>()
+    val resizes = Stack<ImageBitmap>()
+    val rotationAngles = Stack<Float>()
+    val redoRotationAngles = Stack<Float>()
 
     private val undoStack = Stack<String>()
     private val redoStack = Stack<String>()
@@ -87,11 +109,19 @@ class EditManager {
     private val _isCropMode = mutableStateOf(false)
     val isCropMode = _isCropMode
 
-    private val cropStack = Stack<ImageBitmap>()
-    private val redoCropStack = Stack<ImageBitmap>()
+    val cropStack = Stack<ImageBitmap>()
+    val redoCropStack = Stack<ImageBitmap>()
 
     fun applyOperation(operation: Operation) {
         operation.apply()
+    }
+
+    private fun undoOperation(operation: Operation) {
+        operation.undo()
+    }
+
+    private fun redoOperation(operation: Operation) {
+        operation.redo()
     }
 
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
@@ -109,50 +139,35 @@ class EditManager {
         redoPaths.clear()
     }
 
-    fun keepCroppedPaths() {
-        val stack = Stack<DrawPath>()
-        if (drawPaths.isNotEmpty()) {
-            val size = drawPaths.size
-            for (i in 1..size) {
-                stack.push(drawPaths.pop())
-            }
-        }
-        croppedPathsStack.add(stack)
-        updateRevised()
-    }
-
     fun updateRevised() {
         _canUndo.value = undoStack.isNotEmpty()
         _canRedo.value = redoStack.isNotEmpty()
     }
+
+    fun resizeDown(width: Int = 0, height: Int = 0) =
+        resizeOperation.resizeDown(width, height) {
+            backgroundImage.value = it
+        }
 
     fun rotate(angle: Float) {
         val centerX = availableDrawAreaSize.value.width / 2
         val centerY = availableDrawAreaSize.value.height / 2
         if (isRotateMode.value) {
             rotationAngle.value += angle
-            editMatrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
+            rotateOperation.rotate(
+                editMatrix,
+                angle,
+                centerX.toFloat(),
+                centerY.toFloat()
+            )
             return
         }
-        matrix.postRotate(angle, centerX.toFloat(), centerY.toFloat())
-    }
-
-    private fun undoRotate() {
-        if (rotationAngles.isNotEmpty()) {
-            redoRotationAngles.push(prevRotationAngle)
-            prevRotationAngle = rotationAngles.pop()
-            matrix.reset()
-            rotate(prevRotationAngle)
-        }
-    }
-
-    private fun redoRotate() {
-        if (redoRotationAngles.isNotEmpty()) {
-            rotationAngles.push(prevRotationAngle)
-            prevRotationAngle = redoRotationAngles.pop()
-            matrix.reset()
-            rotate(prevRotationAngle)
-        }
+        rotateOperation.rotate(
+            matrix,
+            angle,
+            centerX.toFloat(),
+            centerY.toFloat()
+        )
     }
 
     fun addRotation() {
@@ -163,33 +178,32 @@ class EditManager {
         updateRevised()
     }
 
-    fun addAngle() {
+    private fun addAngle() {
         rotationAngles.add(prevRotationAngle)
     }
 
-    fun resetRotation() {
-        rotationAngle.value = 0f
-        prevRotationAngle = 0f
-    }
-
-    private fun clearRotations() {
-        rotations.clear()
-        redoRotations.clear()
-        rotationAngles.clear()
-        redoRotationAngles.clear()
-        resetRotation()
-    }
-
-    fun addCrop() {
+    fun addResize() {
         if (canRedo.value) clearRedo()
-        cropStack.add(backgroundImage2.value)
-        undoStack.add(CROP)
+        resizes.add(backgroundImage2.value)
+        undoStack.add(RESIZE)
+        keepEditedPaths()
         updateRevised()
     }
 
-    private fun redrawCroppedPaths() {
-        if (croppedPathsStack.isNotEmpty()) {
-            val paths = croppedPathsStack.pop()
+    fun keepEditedPaths() {
+        val stack = Stack<DrawPath>()
+        if (drawPaths.isNotEmpty()) {
+            val size = drawPaths.size
+            for (i in 1..size) {
+                stack.push(drawPaths.pop())
+            }
+        }
+        editedPaths.add(stack)
+    }
+
+    fun redrawEditedPaths() {
+        if (editedPaths.isNotEmpty()) {
+            val paths = editedPaths.pop()
             if (paths.isNotEmpty()) {
                 val size = paths.size
                 for (i in 1..size) {
@@ -199,54 +213,18 @@ class EditManager {
         }
     }
 
-    private fun undoCrop() {
-        if (cropStack.isNotEmpty()) {
-            val image = cropStack.pop()
-            redoCropStack.push(backgroundImage.value)
-            updateAvailableDrawArea(image)
-            if (rotationAngles.isNotEmpty()) {
-                matrix.reset()
-                prevRotationAngle = rotationAngles.pop()
-                rotate(prevRotationAngle)
-            }
-            backgroundImage.value = image
-            redrawCroppedPaths()
-            updateRevised()
-        }
+    fun addCrop() {
+        if (canRedo.value) clearRedo()
+        cropStack.add(backgroundImage2.value)
+        undoStack.add(CROP)
+        updateRevised()
     }
 
-    private fun redoCrop() {
-        if (redoCropStack.isNotEmpty()) {
-            val image = redoCropStack.pop()
-            addAngle()
-            resetRotation()
-            matrix.reset()
-            cropStack.push(backgroundImage.value)
-            updateAvailableDrawArea(image)
-            backgroundImage.value = image
-            keepCroppedPaths()
-            updateRevised()
-        }
-    }
-
-    private fun clearCroppedPaths() {
-        croppedPathsStack.clear()
-    }
-
-    private fun undoDraw() {
-        if (drawPaths.isNotEmpty()) {
-            redoPaths.push(drawPaths.pop())
-            updateRevised()
-            return
-        }
-    }
-
-    private fun redoDraw() {
-        if (redoPaths.isNotEmpty()) {
-            drawPaths.push(redoPaths.pop())
-            updateRevised()
-            return
-        }
+    fun operationByTask(task: String) = when (task) {
+        ROTATE -> rotateOperation
+        RESIZE -> resizeOperation
+        CROP -> cropOperation
+        else -> drawOperation
     }
 
     fun undo() {
@@ -254,12 +232,7 @@ class EditManager {
             val undoTask = undoStack.pop()
             redoStack.push(undoTask)
             Timber.tag("edit-manager").d("undoing $undoTask")
-            if (undoTask == ROTATE)
-                undoRotate()
-            if (undoTask == DRAW)
-                undoDraw()
-            if (undoTask == CROP)
-                undoCrop()
+            undoOperation(operationByTask(undoTask))
         }
         invalidatorTick.value++
         updateRevised()
@@ -270,16 +243,23 @@ class EditManager {
             val redoTask = redoStack.pop()
             undoStack.push(redoTask)
             Timber.tag("edit-manager").d("redoing $redoTask")
-            if (redoTask == ROTATE) {
-                redoRotate()
-            }
-            if (redoTask == DRAW)
-                redoDraw()
-            if (redoTask == CROP && redoCropStack.isNotEmpty()) {
-                redoCrop()
-            }
+            redoOperation(operationByTask(redoTask))
             invalidatorTick.value++
             updateRevised()
+        }
+    }
+
+    fun saveRotationAfterOtherOperation() {
+        addAngle()
+        resetRotation()
+        matrix.reset()
+    }
+
+    fun restoreRotationAfterUndoOtherOperation() {
+        if (rotationAngles.isNotEmpty()) {
+            matrix.reset()
+            prevRotationAngle = rotationAngles.pop()
+            rotate(prevRotationAngle)
         }
     }
 
@@ -314,8 +294,26 @@ class EditManager {
         updateRevised()
     }
 
+    private fun clearResizes() {
+        resizes.clear()
+        redoResize.clear()
+        updateRevised()
+    }
+
+    private fun resetRotation() {
+        rotationAngle.value = 0f
+        prevRotationAngle = 0f
+    }
+
+    private fun clearRotations() {
+        rotationAngles.clear()
+        redoRotationAngles.clear()
+        resetRotation()
+    }
+
     fun clearEdits() {
         clearPaths()
+        clearResizes()
         clearRotations()
         clearCrop()
         undoStack.clear()
@@ -327,7 +325,9 @@ class EditManager {
 
     private fun clearRedo() {
         redoPaths.clear()
-        redoRotations.clear()
+        redoCropStack.clear()
+        redoRotationAngles.clear()
+        redoResize.clear()
         redoStack.clear()
         updateRevised()
     }
@@ -335,7 +335,6 @@ class EditManager {
     private fun clearCrop() {
         cropStack.clear()
         redoCropStack.clear()
-        clearCroppedPaths()
         updateRevised()
     }
 
@@ -376,6 +375,15 @@ class EditManager {
         editMatrix.reset()
     }
 
+    fun toggleResizeMode() {
+        _isResizeMode.value = !isResizeMode.value
+    }
+
+    fun cancelResizeMode() {
+        backgroundImage.value = backgroundImage2.value
+        updateAvailableDrawArea()
+    }
+
     fun setPaintStrokeWidth(strokeWidth: Float) {
         drawPaint.value.strokeWidth = strokeWidth
     }
@@ -395,6 +403,7 @@ class EditManager {
     private companion object {
         private const val DRAW = "draw"
         private const val CROP = "crop"
+        private const val RESIZE = "resize"
         private const val ROTATE = "rotate"
     }
 }
