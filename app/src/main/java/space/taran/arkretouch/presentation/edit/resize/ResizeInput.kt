@@ -66,8 +66,6 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
             mutableStateOf(false)
         }
 
-        val scope = rememberCoroutineScope()
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

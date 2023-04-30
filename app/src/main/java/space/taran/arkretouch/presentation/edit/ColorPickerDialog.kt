@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -88,6 +89,9 @@ fun ColorPickerDialog(
                                 .size(25.dp)
                                 .clip(CircleShape)
                                 .background(color)
+                                .clickable {
+                                    currentColor = HsvColor.from(color)
+                                }
                         )
                     }
                 }

@@ -9,13 +9,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -37,6 +38,7 @@ import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.outputStream
 
@@ -135,6 +137,40 @@ class EditViewModel(
             e.printStackTrace()
         }
         return uri!!
+    }
+
+    fun persistUsedColors(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val writer = context.openFileOutput(
+                    "colors",
+                    Context.MODE_PRIVATE
+                ).bufferedWriter()
+                editManager.oldColors.forEach { color ->
+                    val line = color.value.toString()
+                    writer.appendLine(line)
+                }
+                writer.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun readUsedColors(context: Context) {
+        viewModelScope.launch {
+            try {
+                val reader = context.openFileInput("colors").bufferedReader()
+                editManager.clearOldColors()
+                reader.readLines().forEach { line ->
+                    val color = Color(line.toULong())
+                    editManager.addColor(color)
+                }
+                reader.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun getCombinedImageBitmap(): ImageBitmap {
