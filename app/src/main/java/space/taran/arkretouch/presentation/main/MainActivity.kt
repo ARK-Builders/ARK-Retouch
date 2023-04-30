@@ -6,7 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -48,6 +50,8 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
+    var backgroundColor = Color.White
+    var resolution = IntSize.Zero
     val startScreen =
         if ((uri != null || realPath != null) && context.isWritePermGranted())
             NavHelper.editRoute
@@ -75,7 +79,9 @@ fun MainScreen(
         composable(NavHelper.pickerRoute) {
             PickerScreen(
                 fragmentManager,
-                onNavigateToEdit = { path ->
+                onNavigateToEdit = { path, _backgroundColor, _resolution ->
+                    backgroundColor = _backgroundColor
+                    resolution = _resolution
                     navController.navigate(
                         NavHelper.parseEditArgs(
                             path?.toString(),
@@ -83,7 +89,7 @@ fun MainScreen(
                             launchedFromIntent = false,
                         )
                     )
-                }
+                },
             )
         }
         composable(
@@ -108,6 +114,8 @@ fun MainScreen(
             EditScreen(
                 entry.arguments?.getString("path")?.let { Path(it) },
                 entry.arguments?.getString("uri"),
+                backgroundColor,
+                resolution,
                 fragmentManager,
                 navigateBack = { navController.popBackStack() },
                 entry.arguments?.getBoolean("launchedFromIntent")!!,

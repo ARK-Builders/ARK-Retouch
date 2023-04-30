@@ -78,6 +78,8 @@ import java.nio.file.Path
 fun EditScreen(
     imagePath: Path?,
     imageUri: String?,
+    backgroundColor: Color,
+    resolution: IntSize,
     fragmentManager: FragmentManager,
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
@@ -89,6 +91,8 @@ fun EditScreen(
                 .create(launchedFromIntent, imagePath, imageUri)
         ).apply {
             editManager.setPaintColor(primaryColor)
+            editManager.setBackgroundColor(backgroundColor)
+            editManager.setImageResolution(resolution)
         }
     val context = LocalContext.current
 

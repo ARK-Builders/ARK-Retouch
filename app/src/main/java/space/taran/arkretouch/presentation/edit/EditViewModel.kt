@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.ImageBitmap
@@ -16,6 +17,7 @@ import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.toSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -138,26 +140,28 @@ class EditViewModel(
     }
 
     fun getCombinedImageBitmap(): ImageBitmap {
-        val bitmap = editManager.backgroundImage.value
-        val size = if (bitmap != null)
-            editManager.availableDrawAreaSize.value
-        else editManager.drawAreaSize.value
+        val size = editManager.availableDrawAreaSize.value
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
-            ImageBitmapConfig.Argb8888
+            ImageBitmapConfig.Argb8888,
         )
+        val backgroundPaint = Paint().also {
+            it.color = editManager.backgroundColor
+        }
         val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
         combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
-        editManager.backgroundImage.value?.let {
+        if (editManager.backgroundImage.value != null) {
             combinedCanvas.drawImage(
-                it,
+                editManager.backgroundImage.value!!,
                 Offset.Zero,
                 Paint()
             )
+        } else {
+            drawCanvas.drawRect(Rect(Offset.Zero, size.toSize()), backgroundPaint)
         }
         editManager.drawPaths.forEach {
             drawCanvas.drawPath(it.path, it.paint)
