@@ -153,15 +153,14 @@ class EditViewModel(
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
+        combinedCanvas.drawRect(Rect(Offset.Zero, size.toSize()), backgroundPaint)
         combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
-        if (editManager.backgroundImage.value != null) {
+        editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
-                editManager.backgroundImage.value!!,
+                it,
                 Offset.Zero,
                 Paint()
             )
-        } else {
-            drawCanvas.drawRect(Rect(Offset.Zero, size.toSize()), backgroundPaint)
         }
         editManager.drawPaths.forEach {
             drawCanvas.drawPath(it.path, it.paint)
