@@ -57,7 +57,6 @@ import space.taran.arkretouch.presentation.utils.askWritePermissions
 import space.taran.arkretouch.presentation.utils.isWritePermGranted
 import space.taran.arkretouch.presentation.theme.Purple500
 import space.taran.arkretouch.presentation.theme.Purple700
-import timber.log.Timber
 import java.nio.file.Path
 
 @Composable
@@ -68,7 +67,7 @@ fun PickerScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     var size by remember { mutableStateOf(IntSize.Zero) }
-    val showColorDialog = mutableStateOf(false)
+    val showColorDialog = remember { mutableStateOf(false) }
     var backgroundColor by remember { mutableStateOf(Color.White) }
     var defaultResolution by remember { mutableStateOf(IntSize.Zero) }
     var resolution by remember { mutableStateOf(IntSize.Zero) }
@@ -214,11 +213,6 @@ fun NewImageOptions(
     )
     val digitsOnlyHint = stringResource(
         R.string.digits_only
-    )
-
-    Timber.tag("file-picker-screen").d(
-        "width: ${defaultResolution.width}\n" +
-            "height: ${defaultResolution.height}\n"
     )
 
     Hint(
