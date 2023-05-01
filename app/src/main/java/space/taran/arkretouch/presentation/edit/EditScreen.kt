@@ -148,6 +148,10 @@ fun EditScreen(
         launchedFromIntent,
         navigateBack
     )
+
+    if (viewModel.isSavingImage) {
+        SaveProgress()
+    }
 }
 
 @Composable
@@ -805,11 +809,12 @@ private fun HandleImageSavedEffect(
 ) {
     val context = LocalContext.current
     LaunchedEffect(viewModel.imageSaved) {
-        if (!viewModel.imageSaved) return@LaunchedEffect
+        if (!viewModel.imageSaved)
+            return@LaunchedEffect
         if (launchedFromIntent)
             context.getActivity()?.finish()
-        else
-            navigateBack()
+        // else
+        // navigateBack()
     }
 }
 
