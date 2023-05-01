@@ -83,13 +83,20 @@ fun EditScreen(
     launchedFromIntent: Boolean
 ) {
     val primaryColor = MaterialTheme.colors.primary
+    val prefs = DIManager.component.prefs()
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
             factory = DIManager.component.editVMFactory()
-                .create(launchedFromIntent, imagePath, imageUri)
+                .create(
+                    launchedFromIntent,
+                    imagePath,
+                    imageUri,
+                    prefs
+                )
         ).apply {
-            readUsedColors(DIManager.component.app())
-            editManager.initPaintColor(primaryColor)
+            readUsedColors {
+                it.initPaintColor(primaryColor)
+            }
         }
     val context = LocalContext.current
 
@@ -583,7 +590,7 @@ private fun EditMenuContent(
                 oldColors = editManager.oldColors,
                 onColorChanged = {
                     editManager.setPaintColor(it)
-                    viewModel.persistUsedColors(DIManager.component.app())
+                    viewModel.persistUsedColors()
                 },
             )
             Icon(
