@@ -2,6 +2,7 @@ package space.taran.arkretouch.presentation.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -154,7 +155,9 @@ fun SavePathDialog(
 @Composable
 fun SaveProgress() {
     Box(
-        Modifier.fillMaxSize(),
+        Modifier
+            .focusable(true)
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator(
