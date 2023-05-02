@@ -35,7 +35,7 @@ fun EditCanvas(viewModel: EditViewModel) {
     Box(
         Modifier.background(
             if (editManager.isCropMode.value) Color.White
-            else editManager.backgroundColor
+            else editManager.backgroundColor.value
         ),
         contentAlignment = Alignment.Center
     ) {

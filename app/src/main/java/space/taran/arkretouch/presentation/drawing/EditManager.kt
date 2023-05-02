@@ -50,8 +50,8 @@ class EditManager {
     val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    var backgroundColor = Color.White
-        private set
+    private var _backgroundColor = mutableStateOf(Color.White)
+    var backgroundColor: State<Color> = _backgroundColor
 
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
@@ -127,7 +127,7 @@ class EditManager {
     }
 
     fun setBackgroundColor(color: Color) {
-        backgroundColor = color
+        _backgroundColor.value = color
     }
 
     fun setImageResolution(value: IntSize) {

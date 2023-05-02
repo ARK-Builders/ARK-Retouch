@@ -147,7 +147,7 @@ class EditViewModel(
             ImageBitmapConfig.Argb8888,
         )
         val backgroundPaint = Paint().also {
-            it.color = editManager.backgroundColor
+            it.color = editManager.backgroundColor.value
         }
         val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =

@@ -7,13 +7,16 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.window.Dialog
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,25 +29,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Icon
-import androidx.compose.material.Slider
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.material.TextButton
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.Slider
+import androidx.compose.material.Checkbox
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -56,30 +63,37 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
+import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
+import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
+import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
 import space.taran.arkretouch.presentation.utils.getActivity
 import space.taran.arkretouch.presentation.utils.isWritePermGranted
+import timber.log.Timber
 import java.nio.file.Path
 
 @Composable
 fun EditScreen(
     imagePath: Path?,
     imageUri: String?,
-    backgroundColor: Color,
-    resolution: IntSize,
     fragmentManager: FragmentManager,
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
@@ -91,10 +105,11 @@ fun EditScreen(
                 .create(launchedFromIntent, imagePath, imageUri)
         ).apply {
             editManager.setPaintColor(primaryColor)
-            editManager.setBackgroundColor(backgroundColor)
-            editManager.setImageResolution(resolution)
         }
     val context = LocalContext.current
+    val showColorDialog = remember {
+        mutableStateOf(false)
+    }
 
     ExitDialog(
         viewModel = viewModel,
@@ -151,6 +166,30 @@ fun EditScreen(
         viewModel,
         launchedFromIntent,
         navigateBack
+    )
+
+    ColorPickerDialog(
+        isVisible = showColorDialog,
+        initialColor = viewModel.editManager.backgroundColor.value,
+        onColorChanged = {
+            viewModel.editManager.setBackgroundColor(it)
+        }
+    )
+
+    NewImageOptions(
+        navigateBack,
+        viewModel.editManager,
+        onResolutionChanged = { width, height ->
+            viewModel.editManager.setImageResolution(
+                IntSize(
+                    width,
+                    height
+                )
+            )
+        },
+        showColorDialog = {
+            showColorDialog.value = true
+        }
     )
 }
 
@@ -324,6 +363,12 @@ private fun BoxScope.TopMenu(
                         viewModel.menusVisible = true
                         return@clickable
                     }
+                    if (isResizeMode.value) {
+                        toggleResizeMode()
+                        cancelResizeMode()
+                        viewModel.menusVisible = true
+                        return@clickable
+                    }
                     if (
                         !viewModel.editManager.canUndo.value
                     ) {
@@ -337,27 +382,6 @@ private fun BoxScope.TopMenu(
                     } else {
                         viewModel.showExitDialog = true
                     }
-                }
-                if (viewModel.editManager.isResizeMode.value) {
-                    viewModel.editManager.apply {
-                        toggleResizeMode()
-                        cancelResizeMode()
-                    }
-                    viewModel.menusVisible = true
-                    return@clickable
-                }
-                if (
-                    !viewModel.editManager.canUndo.value
-                ) {
-                    if (launchedFromIntent) {
-                        context
-                            .getActivity()
-                            ?.finish()
-                    } else {
-                        navigateBack()
-                    }
-                } else {
-                    viewModel.showExitDialog = true
                 }
             },
         imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
@@ -863,4 +887,219 @@ private fun ExitDialog(
             }
         }
     )
+}
+
+@Composable
+fun NewImageOptions(
+    navigateBack: () -> Unit,
+    editManager: EditManager,
+    onResolutionChanged: (Int, Int) -> Unit,
+    showColorDialog: () -> Unit
+) {
+    var isVisible by remember { mutableStateOf(true) }
+
+    if (isVisible) {
+        Dialog(
+            onDismissRequest = {
+                isVisible = false
+                navigateBack()
+            }
+        ) {
+            val defaultResolution by remember {
+                mutableStateOf(editManager.resolution)
+            }
+            var width by remember {
+                mutableStateOf(defaultResolution.width.toString())
+            }
+            var height by remember {
+                mutableStateOf(defaultResolution.height.toString())
+            }
+            var rememberDefaults by remember { mutableStateOf(false) }
+            var showHint by remember { mutableStateOf(false) }
+            var hint by remember { mutableStateOf("") }
+            val heightHint = stringResource(
+                R.string.height_too_large,
+                defaultResolution.height
+            )
+            val widthHint = stringResource(
+                R.string.width_too_large,
+                defaultResolution.width
+            )
+            val digitsOnlyHint = stringResource(
+                R.string.digits_only
+            )
+
+            Column(
+                Modifier
+                    .background(Color.White, RoundedCornerShape(5))
+                    .wrapContentHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Customize new image",
+                    Modifier.padding(top = 10.dp)
+                )
+                Row(
+                    Modifier.padding(
+                        start = 8.dp,
+                        end = 8.dp,
+                        top = 20.dp,
+                        bottom = 12.dp
+                    )
+                ) {
+                    TextField(
+                        modifier = Modifier
+                            .padding(end = 6.dp)
+                            .fillMaxWidth(0.5f),
+                        value = width,
+                        onValueChange = {
+                            if (!it.isDigitsOnly()) {
+                                hint = digitsOnlyHint
+                                showHint = true
+                                return@TextField
+                            }
+                            if (
+                                it.isNotEmpty() && it.isDigitsOnly() &&
+                                it.toInt() > defaultResolution.width
+                            ) {
+                                hint = widthHint
+                                showHint = true
+                                return@TextField
+                            }
+                            width = it
+                            if (it.isNotEmpty() && it.isDigitsOnly()) {
+                                onResolutionChanged(width.toInt(), height.toInt())
+                            }
+                        },
+                        label = {
+                            Text(
+                                stringResource(R.string.width),
+                                Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colors.primary,
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        textStyle = TextStyle(
+                            color = Color.DarkGray,
+                            textAlign = TextAlign.Center
+                        ),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        )
+                    )
+                    TextField(
+                        modifier = Modifier
+                            .padding(start = 6.dp)
+                            .fillMaxWidth(),
+                        value = height,
+                        onValueChange = {
+                            if (!it.isDigitsOnly()) {
+                                hint = digitsOnlyHint
+                                showHint = true
+                                return@TextField
+                            }
+                            if (
+                                it.isNotEmpty() && it.isDigitsOnly() &&
+                                it.toInt() > defaultResolution.height
+                            ) {
+                                hint = heightHint
+                                showHint = true
+                                return@TextField
+                            }
+                            height = it
+                            if (it.isNotEmpty() && it.isDigitsOnly()) {
+                                onResolutionChanged(width.toInt(), height.toInt())
+                            }
+                        },
+                        label = {
+                            Text(
+                                stringResource(R.string.height),
+                                Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colors.primary,
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        textStyle = TextStyle(
+                            color = Color.DarkGray,
+                            textAlign = TextAlign.Center
+                        ),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        )
+                    )
+                }
+                Row(
+                    Modifier
+                        .background(Gray, RoundedCornerShape(5))
+                        .wrapContentHeight()
+                        .clickable {
+                            showColorDialog()
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.background),
+                        Modifier.padding(8.dp)
+                    )
+                    Box(
+                        Modifier
+                            .size(28.dp)
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Gray, CircleShape)
+                            .background(editManager.backgroundColor.value)
+                    )
+                }
+                Row(
+                    Modifier
+                        .padding(start = 8.dp)
+                        .align(Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = rememberDefaults,
+                        onCheckedChange = {
+                            rememberDefaults = it
+                        }
+                    )
+                    Text("Remember")
+                }
+                Row(
+                    Modifier.align(
+                        Alignment.End
+                    )
+                ) {
+                    TextButton(
+                        modifier = Modifier
+                            .padding(end = 8.dp),
+                        onClick = {
+                            isVisible = false
+                            navigateBack()
+                        }
+                    ) {
+                        Text("Close")
+                    }
+                    TextButton(
+                        modifier = Modifier
+                            .padding(end = 8.dp),
+                        onClick = {}
+                    ) {
+                        Text("Ok")
+                    }
+                }
+            }
+
+            Hint(
+                hint
+            ) {
+                delayHidingHint(it) {
+                    showHint = false
+                }
+                Timber.tag("hint").d(" show = $showHint")
+                showHint
+            }
+        }
+    }
 }
