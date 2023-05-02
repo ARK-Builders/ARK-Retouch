@@ -25,7 +25,6 @@ class Preferences @Inject constructor() {
                     val line = color.value.toString()
                     writer.appendLine(line)
                 }
-                writer.close()
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -38,7 +37,7 @@ class Preferences @Inject constructor() {
     ) {
         withContext(Dispatchers.IO) {
             try {
-                val read = async {
+                val read = async(Dispatchers.IO) {
                     val reader = appContext.openFileInput(COLORS_STORAGE)
                         .bufferedReader()
                     editManager.clearOldColors()
@@ -46,7 +45,6 @@ class Preferences @Inject constructor() {
                         val color = Color(line.toULong())
                         editManager.addColor(color)
                     }
-                    reader.close()
                 }
                 withContext(Dispatchers.Main) {
                     read.await()
