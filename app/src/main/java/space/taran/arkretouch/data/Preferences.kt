@@ -8,7 +8,9 @@ import kotlinx.coroutines.withContext
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
 import java.io.IOException
+import java.nio.file.Files
 import javax.inject.Inject
+import kotlin.text.Charsets.UTF_8
 
 class Preferences @Inject constructor() {
 
@@ -17,14 +19,12 @@ class Preferences @Inject constructor() {
     suspend fun persistUsedColors(editManager: EditManager) {
         withContext(Dispatchers.IO) {
             try {
-                val writer = appContext.openFileOutput(
-                    COLORS_STORAGE,
-                    Context.MODE_PRIVATE
-                ).bufferedWriter()
-                editManager.oldColors.forEach { color ->
-                    val line = color.value.toString()
-                    writer.appendLine(line)
+                val colorsStorage = appContext.filesDir.resolve(COLORS_STORAGE)
+                    .toPath()
+                val lines = editManager.oldColors.map { color ->
+                    color.value.toString()
                 }
+                Files.write(colorsStorage, lines, UTF_8)
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -37,13 +37,14 @@ class Preferences @Inject constructor() {
     ) {
         withContext(Dispatchers.IO) {
             try {
+                val colorsStorage = appContext.filesDir.resolve(COLORS_STORAGE)
                 val read = async(Dispatchers.IO) {
-                    val reader = appContext.openFileInput(COLORS_STORAGE)
-                        .bufferedReader()
-                    editManager.clearOldColors()
-                    reader.readLines().forEach { line ->
-                        val color = Color(line.toULong())
-                        editManager.addColor(color)
+                    if (colorsStorage.exists()) {
+                        editManager.clearOldColors()
+                        colorsStorage.readLines().forEach { line ->
+                            val color = Color(line.toULong())
+                            editManager.addColor(color)
+                        }
                     }
                 }
                 withContext(Dispatchers.Main) {
