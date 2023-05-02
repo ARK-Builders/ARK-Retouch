@@ -10,6 +10,7 @@ import space.taran.arkretouch.presentation.drawing.EditManager
 import java.io.IOException
 import java.nio.file.Files
 import javax.inject.Inject
+import kotlin.io.path.exists
 import kotlin.text.Charsets.UTF_8
 
 class Preferences @Inject constructor() {
@@ -38,10 +39,11 @@ class Preferences @Inject constructor() {
         withContext(Dispatchers.IO) {
             try {
                 val colorsStorage = appContext.filesDir.resolve(COLORS_STORAGE)
+                    .toPath()
                 val read = async(Dispatchers.IO) {
                     if (colorsStorage.exists()) {
                         editManager.clearOldColors()
-                        colorsStorage.readLines().forEach { line ->
+                        Files.readAllLines(colorsStorage, UTF_8).forEach { line ->
                             val color = Color(line.toULong())
                             editManager.addColor(color)
                         }
