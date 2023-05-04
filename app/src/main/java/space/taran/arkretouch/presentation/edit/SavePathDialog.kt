@@ -32,9 +32,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import space.taran.arkfilepicker.ArkFilePickerConfig
-import space.taran.arkfilepicker.ArkFilePickerFragment
-import space.taran.arkfilepicker.ArkFilePickerMode
-import space.taran.arkfilepicker.onArkPathPicked
+import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
+import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerMode
+import space.taran.arkfilepicker.presentation.onArkPathPicked
 import space.taran.arkretouch.R
 import space.taran.arkretouch.presentation.utils.findNotExistCopyName
 import kotlin.io.path.name
@@ -148,5 +148,7 @@ fun SavePathDialog(
 
 fun folderFilePickerConfig(initialPath: Path?) = ArkFilePickerConfig(
     mode = ArkFilePickerMode.FOLDER,
-    initialPath = initialPath
+    initialPath = initialPath,
+    showRoots = true,
+    rootsFirstPage = true
 )
