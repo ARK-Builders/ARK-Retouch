@@ -87,7 +87,6 @@ import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
 import space.taran.arkretouch.presentation.utils.getActivity
 import space.taran.arkretouch.presentation.utils.isWritePermGranted
-import timber.log.Timber
 import java.nio.file.Path
 
 @Composable
@@ -99,6 +98,10 @@ fun EditScreen(
     launchedFromIntent: Boolean
 ) {
     val primaryColor = MaterialTheme.colors.primary
+    var defaultResolution by remember { mutableStateOf(IntSize.Zero) }
+    var maxResolution by remember { mutableStateOf(IntSize.Zero) }
+    var backgroundColor by remember { mutableStateOf(Color.White) }
+
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
             factory = DIManager.component.editVMFactory()
@@ -107,8 +110,42 @@ fun EditScreen(
             editManager.setPaintColor(primaryColor)
         }
     val context = LocalContext.current
-    val showColorDialog = remember {
-        mutableStateOf(false)
+    val showDefaultsDialog = remember {
+        mutableStateOf(imagePath == null && imageUri == null)
+    }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .onSizeChanged {
+                if (maxResolution == IntSize.Zero)
+                    maxResolution = it
+                if (imagePath == null && imageUri == null) {
+                    viewModel.readDefaults { color, resolution ->
+                        defaultResolution = if (resolution != IntSize.Zero) {
+                            resolution
+                        } else {
+                            maxResolution
+                        }
+                        backgroundColor = color
+                    }
+                }
+            }
+    )
+
+    if (showDefaultsDialog.value && defaultResolution != IntSize.Zero) {
+        NewImageOptions(
+            backgroundColor,
+            defaultResolution,
+            maxResolution,
+            navigateBack,
+            viewModel.editManager,
+            persistDefaults = {
+                viewModel.persistDefaults()
+            },
+            onConfirm = { showDefaultsDialog.value = false }
+        )
+        return
     }
 
     ExitDialog(
@@ -166,30 +203,6 @@ fun EditScreen(
         viewModel,
         launchedFromIntent,
         navigateBack
-    )
-
-    ColorPickerDialog(
-        isVisible = showColorDialog,
-        initialColor = viewModel.editManager.backgroundColor.value,
-        onColorChanged = {
-            viewModel.editManager.setBackgroundColor(it)
-        }
-    )
-
-    NewImageOptions(
-        navigateBack,
-        viewModel.editManager,
-        onResolutionChanged = { width, height ->
-            viewModel.editManager.setImageResolution(
-                IntSize(
-                    width,
-                    height
-                )
-            )
-        },
-        showColorDialog = {
-            showColorDialog.value = true
-        }
     )
 }
 
@@ -265,6 +278,7 @@ private fun Menus(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun DrawContainer(
     viewModel: EditViewModel
@@ -891,44 +905,54 @@ private fun ExitDialog(
 
 @Composable
 fun NewImageOptions(
+    _backgroundColor: Color,
+    defaultResolution: IntSize,
+    maxResolution: IntSize,
     navigateBack: () -> Unit,
     editManager: EditManager,
-    onResolutionChanged: (Int, Int) -> Unit,
-    showColorDialog: () -> Unit
+    persistDefaults: () -> Unit,
+    onConfirm: () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(true) }
+    var backgroundColor by remember { mutableStateOf(_backgroundColor) }
+    val showColorDialog = remember { mutableStateOf(false) }
+
+    ColorPickerDialog(
+        isVisible = showColorDialog,
+        initialColor = backgroundColor,
+        onColorChanged = {
+            backgroundColor = it
+        }
+    )
 
     if (isVisible) {
+        var width by remember {
+            mutableStateOf(defaultResolution.width.toString())
+        }
+        var height by remember {
+            mutableStateOf(defaultResolution.height.toString())
+        }
+        var rememberDefaults by remember { mutableStateOf(false) }
+        var showHint by remember { mutableStateOf(false) }
+        var hint by remember { mutableStateOf("") }
+        val heightHint = stringResource(
+            R.string.height_too_large,
+            maxResolution.height
+        )
+        val widthHint = stringResource(
+            R.string.width_too_large,
+            maxResolution.width
+        )
+        val digitsOnlyHint = stringResource(
+            R.string.digits_only
+        )
+
         Dialog(
             onDismissRequest = {
                 isVisible = false
                 navigateBack()
             }
         ) {
-            val defaultResolution by remember {
-                mutableStateOf(editManager.resolution)
-            }
-            var width by remember {
-                mutableStateOf(defaultResolution.width.toString())
-            }
-            var height by remember {
-                mutableStateOf(defaultResolution.height.toString())
-            }
-            var rememberDefaults by remember { mutableStateOf(false) }
-            var showHint by remember { mutableStateOf(false) }
-            var hint by remember { mutableStateOf("") }
-            val heightHint = stringResource(
-                R.string.height_too_large,
-                defaultResolution.height
-            )
-            val widthHint = stringResource(
-                R.string.width_too_large,
-                defaultResolution.width
-            )
-            val digitsOnlyHint = stringResource(
-                R.string.digits_only
-            )
-
             Column(
                 Modifier
                     .background(Color.White, RoundedCornerShape(5))
@@ -960,15 +984,14 @@ fun NewImageOptions(
                             }
                             if (
                                 it.isNotEmpty() && it.isDigitsOnly() &&
-                                it.toInt() > defaultResolution.width
+                                it.toInt() > maxResolution.width
                             ) {
                                 hint = widthHint
                                 showHint = true
                                 return@TextField
                             }
-                            width = it
-                            if (it.isNotEmpty() && it.isDigitsOnly()) {
-                                onResolutionChanged(width.toInt(), height.toInt())
+                            if (it.isDigitsOnly()) {
+                                width = it
                             }
                         },
                         label = {
@@ -1001,15 +1024,14 @@ fun NewImageOptions(
                             }
                             if (
                                 it.isNotEmpty() && it.isDigitsOnly() &&
-                                it.toInt() > defaultResolution.height
+                                it.toInt() > maxResolution.height
                             ) {
                                 hint = heightHint
                                 showHint = true
                                 return@TextField
                             }
-                            height = it
-                            if (it.isNotEmpty() && it.isDigitsOnly()) {
-                                onResolutionChanged(width.toInt(), height.toInt())
+                            if (it.isDigitsOnly()) {
+                                height = it
                             }
                         },
                         label = {
@@ -1035,7 +1057,7 @@ fun NewImageOptions(
                         .background(Gray, RoundedCornerShape(5))
                         .wrapContentHeight()
                         .clickable {
-                            showColorDialog()
+                            showColorDialog.value = true
                         },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1049,7 +1071,7 @@ fun NewImageOptions(
                             .padding(2.dp)
                             .clip(CircleShape)
                             .border(2.dp, Gray, CircleShape)
-                            .background(editManager.backgroundColor.value)
+                            .background(backgroundColor)
                     )
                 }
                 Row(
@@ -1084,7 +1106,19 @@ fun NewImageOptions(
                     TextButton(
                         modifier = Modifier
                             .padding(end = 8.dp),
-                        onClick = {}
+                        onClick = {
+                            editManager.setImageResolution(
+                                IntSize(
+                                    width.toInt(),
+                                    height.toInt()
+                                )
+                            )
+                            editManager.setBackgroundColor(backgroundColor)
+                            if (rememberDefaults)
+                                persistDefaults()
+                            onConfirm()
+                            isVisible = false
+                        }
                     ) {
                         Text("Ok")
                     }
@@ -1097,7 +1131,6 @@ fun NewImageOptions(
                 delayHidingHint(it) {
                     showHint = false
                 }
-                Timber.tag("hint").d(" show = $showHint")
                 showHint
             }
         }

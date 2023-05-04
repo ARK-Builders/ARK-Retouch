@@ -10,13 +10,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -48,6 +50,7 @@ class EditViewModel(
     private val imageUri: String?,
 ) : ViewModel() {
     val editManager = EditManager()
+    private val prefs = DIManager.component.prefs()
 
     var strokeSliderExpanded by mutableStateOf(false)
     var menusVisible by mutableStateOf(true)
@@ -185,6 +188,20 @@ class EditViewModel(
             updateAvailableDrawArea(img)
             backgroundImage.value = img
             return img.asAndroidBitmap()
+        }
+    }
+
+    fun persistDefaults() {
+        viewModelScope.launch {
+            prefs.persistDefaults(editManager)
+        }
+    }
+
+    fun readDefaults(updateDefaults: (Color, IntSize) -> Unit) {
+        viewModelScope.launch {
+            prefs.readDefaults { color, resolution ->
+                updateDefaults(color, resolution)
+            }
         }
     }
 }

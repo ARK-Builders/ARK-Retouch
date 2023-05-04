@@ -50,17 +50,16 @@ class EditManager {
     val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    private var _backgroundColor = mutableStateOf(Color.White)
-    var backgroundColor: State<Color> = _backgroundColor
-
+    private val _backgroundColor = mutableStateOf(Color.White)
+    val backgroundColor: State<Color> = _backgroundColor
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
     val editMatrix = Matrix()
 
-    var resolution = IntSize.Zero
-        private set
+    private val _resolution = mutableStateOf(IntSize.Zero)
+    var resolution: State<IntSize> = _resolution
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
     val originalDrawAreaSize: IntSize
@@ -71,7 +70,7 @@ class EditManager {
                     bitmap.width,
                     bitmap.height
                 )
-            else resolution
+            else resolution.value
         }
 
     var invalidatorTick = mutableStateOf(0)
@@ -130,13 +129,13 @@ class EditManager {
         _backgroundColor.value = color
     }
 
-    fun setImageResolution(value: IntSize) {
-        resolution = value
+    fun setImageResolution(value: IntSize = availableDrawAreaSize.value) {
+        _resolution.value = value
     }
 
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
-            availableDrawAreaSize.value = resolution
+            availableDrawAreaSize.value = resolution.value
             return
         }
         availableDrawAreaSize.value = IntSize(
