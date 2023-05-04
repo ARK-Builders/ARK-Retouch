@@ -1,6 +1,7 @@
 package space.taran.arkretouch.presentation
 
 import android.app.Application
+import space.taran.arkfilepicker.folders.FoldersRepo
 import space.taran.arkretouch.di.DIManager
 import timber.log.Timber
 
@@ -9,5 +10,6 @@ class App : Application() {
         super.onCreate()
         DIManager.init(this)
         Timber.plant(Timber.DebugTree())
+        FoldersRepo.init(this)
     }
 }
