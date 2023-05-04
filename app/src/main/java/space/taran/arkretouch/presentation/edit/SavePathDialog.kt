@@ -2,7 +2,6 @@ package space.taran.arkretouch.presentation.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material.Checkbox
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
-// import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -154,15 +152,16 @@ fun SavePathDialog(
 
 @Composable
 fun SaveProgress() {
-    Box(
-        Modifier
-            .focusable(true)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            Modifier.size(40.dp)
-        )
+    Dialog(onDismissRequest = {}) {
+        Box(
+            Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                Modifier.size(40.dp)
+            )
+        }
     }
 }
 
