@@ -82,22 +82,19 @@ fun EditScreen(
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
 ) {
-    val primaryColor = MaterialTheme.colors.primary
-    val prefs = DIManager.component.prefs()
+    val primaryColor = MaterialTheme.colors.primary.value.toLong()
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
-            factory = DIManager.component.editVMFactory()
+            factory = DIManager
+                .component
+                .editVMFactory()
                 .create(
+                    primaryColor,
                     launchedFromIntent,
                     imagePath,
                     imageUri,
-                    prefs
                 )
-        ).apply {
-            readUsedColors {
-                it.initPaintColor(primaryColor)
-            }
-        }
+        )
     val context = LocalContext.current
 
     ExitDialog(

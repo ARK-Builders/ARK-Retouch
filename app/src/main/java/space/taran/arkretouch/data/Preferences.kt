@@ -3,60 +3,51 @@ package space.taran.arkretouch.data
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.drawing.EditManager
 import java.io.IOException
 import java.nio.file.Files
 import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.io.path.exists
 import kotlin.text.Charsets.UTF_8
 
-class Preferences @Inject constructor() {
+@Singleton
+class Preferences @Inject constructor(private val appCtx: Context) {
 
-    private val appContext: Context = DIManager.component.app()
-
-    suspend fun persistUsedColors(editManager: EditManager) {
-        withContext(Dispatchers.IO) {
-            try {
-                val colorsStorage = appContext.filesDir.resolve(COLORS_STORAGE)
-                    .toPath()
-                val lines = editManager.oldColors.map { color ->
-                    color.value.toString()
-                }
-                Files.write(colorsStorage, lines, UTF_8)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+    suspend fun persistUsedColors(
+        colors: List<Color>
+    ) = withContext(Dispatchers.IO) {
+        try {
+            val colorsStorage = appCtx.filesDir.resolve(COLORS_STORAGE)
+                .toPath()
+            val lines = colors.map { it.value.toString() }
+            Files.write(colorsStorage, lines, UTF_8)
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 
-    suspend fun readUsedColors(
-        editManager: EditManager,
-        initPaintColor: (EditManager) -> Unit
-    ) {
+    suspend fun readUsedColors(): List<Color> {
+        val colors = mutableListOf<Color>()
         withContext(Dispatchers.IO) {
+
             try {
-                val colorsStorage = appContext.filesDir.resolve(COLORS_STORAGE)
+                val colorsStorage = appCtx
+                    .filesDir
+                    .resolve(COLORS_STORAGE)
                     .toPath()
-                val read = async(Dispatchers.IO) {
-                    if (colorsStorage.exists()) {
-                        editManager.clearOldColors()
-                        Files.readAllLines(colorsStorage, UTF_8).forEach { line ->
-                            val color = Color(line.toULong())
-                            editManager.addColor(color)
-                        }
+
+                if (colorsStorage.exists()) {
+                    Files.readAllLines(colorsStorage, UTF_8).forEach { line ->
+                        val color = Color(line.toULong())
+                        colors.add(color)
                     }
-                }
-                withContext(Dispatchers.Main) {
-                    read.await()
-                    initPaintColor(editManager)
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
             }
         }
+        return colors
     }
 
     companion object {

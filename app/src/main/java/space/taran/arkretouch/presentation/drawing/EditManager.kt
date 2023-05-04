@@ -284,10 +284,12 @@ class EditManager {
         undoStack.add(DRAW)
     }
 
-    fun initPaintColor(color: Color) {
+    fun initColors(colors: List<Color>, defaultColor: Color) {
+        _oldColors.addAll(colors)
+
         val currentColor = if (oldColors.isNotEmpty()) oldColors.last() else {
-            _oldColors.add(color)
-            color
+            _oldColors.add(defaultColor)
+            defaultColor
         }
         drawPaint.value.color = currentColor
         _currentPaintColor.value = currentColor
