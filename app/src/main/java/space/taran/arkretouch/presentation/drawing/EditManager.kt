@@ -124,14 +124,6 @@ class EditManager {
         operation.redo()
     }
 
-    fun clearOldColors() {
-        _oldColors.clear()
-    }
-
-    fun addColor(color: Color) {
-        _oldColors.add(color)
-    }
-
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
             availableDrawAreaSize.value = drawAreaSize.value
@@ -299,7 +291,16 @@ class EditManager {
         drawPaint.value.color = color
         _currentPaintColor.value = color
         if (oldColors.isNotEmpty() && oldColors.last() != color) {
-            _oldColors.add(color)
+            val size = oldColors.size
+            when {
+                size < 20 -> {
+                    _oldColors.add(color)
+                }
+                size == 20 -> {
+                    _oldColors.removeFirst()
+                    _oldColors.add(color)
+                }
+            }
         }
     }
 
