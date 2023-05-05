@@ -156,9 +156,8 @@ fun LazyListScope.scrollToEnd(state: LazyListState, scope: CoroutineScope) {
 }
 
 fun enableScroll(state: LazyListState): Boolean {
-    val enabled = state.layoutInfo.totalItemsCount !=
+    return state.layoutInfo.totalItemsCount !=
         state.layoutInfo.visibleItemsInfo.size
-    return enabled
 }
 
 fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
