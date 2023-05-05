@@ -148,6 +148,10 @@ fun EditScreen(
         launchedFromIntent,
         navigateBack
     )
+
+    if (viewModel.isSavingImage) {
+        SaveProgress()
+    }
 }
 
 @Composable
@@ -320,6 +324,12 @@ private fun BoxScope.TopMenu(
                         viewModel.menusVisible = true
                         return@clickable
                     }
+                    if (isResizeMode.value) {
+                        toggleResizeMode()
+                        cancelResizeMode()
+                        viewModel.menusVisible = true
+                        return@clickable
+                    }
                     if (
                         !viewModel.editManager.canUndo.value
                     ) {
@@ -333,27 +343,6 @@ private fun BoxScope.TopMenu(
                     } else {
                         viewModel.showExitDialog = true
                     }
-                }
-                if (viewModel.editManager.isResizeMode.value) {
-                    viewModel.editManager.apply {
-                        toggleResizeMode()
-                        cancelResizeMode()
-                    }
-                    viewModel.menusVisible = true
-                    return@clickable
-                }
-                if (
-                    !viewModel.editManager.canUndo.value
-                ) {
-                    if (launchedFromIntent) {
-                        context
-                            .getActivity()
-                            ?.finish()
-                    } else {
-                        navigateBack()
-                    }
-                } else {
-                    viewModel.showExitDialog = true
                 }
             },
         imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
@@ -805,7 +794,8 @@ private fun HandleImageSavedEffect(
 ) {
     val context = LocalContext.current
     LaunchedEffect(viewModel.imageSaved) {
-        if (!viewModel.imageSaved) return@LaunchedEffect
+        if (!viewModel.imageSaved)
+            return@LaunchedEffect
         if (launchedFromIntent)
             context.getActivity()?.finish()
         else

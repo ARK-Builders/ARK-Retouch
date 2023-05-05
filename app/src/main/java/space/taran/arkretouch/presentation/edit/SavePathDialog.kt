@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
@@ -38,6 +41,7 @@ import space.taran.arkfilepicker.presentation.onArkPathPicked
 import space.taran.arkretouch.R
 import space.taran.arkretouch.presentation.utils.findNotExistCopyName
 import kotlin.io.path.name
+import androidx.compose.material.CircularProgressIndicator
 
 @Composable
 fun SavePathDialog(
@@ -142,6 +146,21 @@ fun SavePathDialog(
                     Text(text = stringResource(R.string.ok))
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SaveProgress() {
+    Dialog(onDismissRequest = {}) {
+        Box(
+            Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                Modifier.size(40.dp)
+            )
         }
     }
 }
