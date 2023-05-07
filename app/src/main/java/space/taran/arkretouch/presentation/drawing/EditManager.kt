@@ -291,16 +291,9 @@ class EditManager {
         drawPaint.value.color = color
         _currentPaintColor.value = color
         if (oldColors.isNotEmpty() && oldColors.last() != color) {
-            val size = oldColors.size
-            when {
-                size < 20 -> {
-                    _oldColors.add(color)
-                }
-                size == 20 -> {
-                    _oldColors.removeFirst()
-                    _oldColors.add(color)
-                }
-            }
+            _oldColors.add(color)
+            if (oldColors.size > MAX_COLOR_SIZE)
+                _oldColors.removeFirst()
         }
     }
 
@@ -422,6 +415,7 @@ class EditManager {
         private const val CROP = "crop"
         private const val RESIZE = "resize"
         private const val ROTATE = "rotate"
+        private const val MAX_COLOR_SIZE = 20
     }
 }
 
