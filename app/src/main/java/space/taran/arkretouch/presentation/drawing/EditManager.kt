@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.data.ImageDefaults
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
@@ -59,7 +60,7 @@ class EditManager {
     val editMatrix = Matrix()
 
     private val _resolution = mutableStateOf(IntSize.Zero)
-    var resolution: State<IntSize> = _resolution
+    val resolution: State<IntSize> = _resolution
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
     val originalDrawAreaSize: IntSize
@@ -131,6 +132,13 @@ class EditManager {
 
     fun setImageResolution(value: IntSize = availableDrawAreaSize.value) {
         _resolution.value = value
+    }
+
+    fun initDefaults(defaults: ImageDefaults, maxResolution: IntSize) {
+        _resolution.value = defaults.resolution.toIntSize()
+        if (resolution.value == IntSize.Zero)
+            _resolution.value = maxResolution
+        _backgroundColor.value = Color(defaults.colorValue)
     }
 
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {

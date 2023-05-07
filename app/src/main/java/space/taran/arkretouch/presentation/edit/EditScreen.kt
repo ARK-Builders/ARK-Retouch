@@ -75,6 +75,7 @@ import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.drawing.EditManager
@@ -95,53 +96,37 @@ fun EditScreen(
     imageUri: String?,
     fragmentManager: FragmentManager,
     navigateBack: () -> Unit,
-    launchedFromIntent: Boolean
+    launchedFromIntent: Boolean,
+    maxResolution: Resolution
 ) {
     val primaryColor = MaterialTheme.colors.primary
-    var defaultResolution by remember { mutableStateOf(IntSize.Zero) }
-    var maxResolution by remember { mutableStateOf(IntSize.Zero) }
+    var defaultResolution by remember { mutableStateOf(maxResolution) }
     var backgroundColor by remember { mutableStateOf(Color.White) }
-
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
             factory = DIManager.component.editVMFactory()
-                .create(launchedFromIntent, imagePath, imageUri)
+                .create(launchedFromIntent, imagePath, imageUri, maxResolution)
         ).apply {
             editManager.setPaintColor(primaryColor)
+            defaultResolution = Resolution.fromIntSize(editManager.resolution.value)
+            backgroundColor = editManager.backgroundColor.value
         }
     val context = LocalContext.current
     val showDefaultsDialog = remember {
         mutableStateOf(imagePath == null && imageUri == null)
     }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .onSizeChanged {
-                if (maxResolution == IntSize.Zero)
-                    maxResolution = it
-                if (imagePath == null && imageUri == null) {
-                    viewModel.readDefaults { color, resolution ->
-                        defaultResolution = if (resolution != IntSize.Zero) {
-                            resolution
-                        } else {
-                            maxResolution
-                        }
-                        backgroundColor = color
-                    }
-                }
-            }
-    )
-
-    if (showDefaultsDialog.value && defaultResolution != IntSize.Zero) {
+    if (
+        showDefaultsDialog.value && defaultResolution.toIntSize() != IntSize.Zero
+    ) {
         NewImageOptions(
-            backgroundColor,
             defaultResolution,
-            maxResolution,
+            maxResolution.toIntSize(),
+            backgroundColor,
             navigateBack,
             viewModel.editManager,
-            persistDefaults = {
-                viewModel.persistDefaults()
+            persistDefaults = { color, resolution ->
+                viewModel.persistDefaults(color, resolution)
             },
             onConfirm = { showDefaultsDialog.value = false }
         )
@@ -910,16 +895,18 @@ private fun ExitDialog(
 
 @Composable
 fun NewImageOptions(
-    _backgroundColor: Color,
-    defaultResolution: IntSize,
+    defaultResolution: Resolution,
     maxResolution: IntSize,
+    _backgroundColor: Color,
     navigateBack: () -> Unit,
     editManager: EditManager,
-    persistDefaults: () -> Unit,
+    persistDefaults: (Color, IntSize) -> Unit,
     onConfirm: () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(true) }
-    var backgroundColor by remember { mutableStateOf(_backgroundColor) }
+    var backgroundColor by remember {
+        mutableStateOf(_backgroundColor)
+    }
     val showColorDialog = remember { mutableStateOf(false) }
 
     ColorPickerDialog(
@@ -1081,8 +1068,7 @@ fun NewImageOptions(
                 }
                 Row(
                     Modifier
-                        .padding(start = 8.dp)
-                        .align(Alignment.Start),
+                        .padding(start = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
@@ -1112,15 +1098,14 @@ fun NewImageOptions(
                         modifier = Modifier
                             .padding(end = 8.dp),
                         onClick = {
-                            editManager.setImageResolution(
-                                IntSize(
-                                    width.toInt(),
-                                    height.toInt()
-                                )
+                            val resolution = IntSize(
+                                width.toInt(),
+                                height.toInt()
                             )
+                            editManager.setImageResolution(resolution)
                             editManager.setBackgroundColor(backgroundColor)
                             if (rememberDefaults)
-                                persistDefaults()
+                                persistDefaults(backgroundColor, resolution)
                             onConfirm()
                             isVisible = false
                         }

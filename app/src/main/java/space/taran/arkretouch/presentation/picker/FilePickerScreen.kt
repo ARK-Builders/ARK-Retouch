@@ -38,6 +38,7 @@ import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
 import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerMode
 import space.taran.arkfilepicker.presentation.onArkPathPicked
 import space.taran.arkretouch.R
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.presentation.utils.askWritePermissions
 import space.taran.arkretouch.presentation.utils.isWritePermGranted
 import space.taran.arkretouch.presentation.theme.Purple500
@@ -47,15 +48,19 @@ import java.nio.file.Path
 @Composable
 fun PickerScreen(
     fragmentManager: FragmentManager,
-    onNavigateToEdit: (Path?) -> Unit
+    onNavigateToEdit: (Path?, Resolution) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     var size by remember { mutableStateOf(IntSize.Zero) }
+    var screenSize by remember { mutableStateOf(IntSize.Zero) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .onSizeChanged {
+                screenSize = it
+            }
     ) {
         Column(
             modifier = Modifier
@@ -77,7 +82,7 @@ fun PickerScreen(
                         .newInstance(imageFilePickerConfig())
                         .show(fragmentManager, null)
                     fragmentManager.onArkPathPicked(lifecycleOwner) {
-                        onNavigateToEdit(it)
+                        onNavigateToEdit(it, Resolution.fromIntSize(screenSize))
                     }
                 }
                 .border(2.dp, Purple700, shape = RoundedCornerShape(10)),
@@ -111,7 +116,7 @@ fun PickerScreen(
                 .background(Purple500)
                 .fillMaxWidth()
                 .clickable {
-                    onNavigateToEdit(null)
+                    onNavigateToEdit(null, Resolution.fromIntSize(screenSize))
                 }
                 .border(2.dp, Purple700, shape = RoundedCornerShape(10)),
             verticalArrangement = Arrangement.SpaceEvenly,

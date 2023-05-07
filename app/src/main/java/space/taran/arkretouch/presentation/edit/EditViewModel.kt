@@ -37,6 +37,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
+import space.taran.arkretouch.data.Preferences
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
 import timber.log.Timber
@@ -48,9 +50,10 @@ class EditViewModel(
     private val launchedFromIntent: Boolean,
     private val imagePath: Path?,
     private val imageUri: String?,
+    private val maxResolution: Resolution,
+    private val prefs: Preferences
 ) : ViewModel() {
     val editManager = EditManager()
-    private val prefs = DIManager.component.prefs()
 
     var strokeSliderExpanded by mutableStateOf(false)
     var menusVisible by mutableStateOf(true)
@@ -64,6 +67,14 @@ class EditViewModel(
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
     val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
+    init {
+        viewModelScope.launch {
+            editManager.initDefaults(
+                prefs.readDefaults(),
+                maxResolution.toIntSize()
+            )
+        }
+    }
 
     fun loadImage() {
         imagePath?.let {
@@ -194,17 +205,9 @@ class EditViewModel(
         }
     }
 
-    fun persistDefaults() {
+    fun persistDefaults(color: Color, resolution: IntSize) {
         viewModelScope.launch {
-            prefs.persistDefaults(editManager)
-        }
-    }
-
-    fun readDefaults(updateDefaults: (Color, IntSize) -> Unit) {
-        viewModelScope.launch {
-            prefs.readDefaults { color, resolution ->
-                updateDefaults(color, resolution)
-            }
+            prefs.persistDefaults(color, resolution)
         }
     }
 }
@@ -213,9 +216,17 @@ class EditViewModelFactory @AssistedInject constructor(
     @Assisted private val launchedFromIntent: Boolean,
     @Assisted private val imagePath: Path?,
     @Assisted private val imageUri: String?,
+    @Assisted private val maxResolution: Resolution,
+    private val prefs: Preferences,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return EditViewModel(launchedFromIntent, imagePath, imageUri) as T
+        return EditViewModel(
+            launchedFromIntent,
+            imagePath,
+            imageUri,
+            maxResolution,
+            prefs,
+        ) as T
     }
 
     @AssistedFactory
@@ -224,6 +235,7 @@ class EditViewModelFactory @AssistedInject constructor(
             @Assisted launchedFromIntent: Boolean,
             @Assisted imagePath: Path?,
             @Assisted imageUri: String?,
+            @Assisted maxResolution: Resolution,
         ): EditViewModelFactory
     }
 }
