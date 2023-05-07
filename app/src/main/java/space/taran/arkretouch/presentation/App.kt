@@ -8,6 +8,7 @@ import org.acra.ktx.initAcra
 import org.acra.sender.HttpSender
 import space.taran.arkretouch.BuildConfig
 import space.taran.arkretouch.R
+import space.taran.arkfilepicker.folders.FoldersRepo
 import space.taran.arkretouch.di.DIManager
 import timber.log.Timber
 
@@ -16,6 +17,7 @@ class App : Application() {
         super.onCreate()
         DIManager.init(this)
         Timber.plant(Timber.DebugTree())
+        FoldersRepo.init(this)
 
         initAcra {
             buildConfigClass = BuildConfig::class.java

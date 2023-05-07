@@ -58,6 +58,7 @@ class EditViewModel(
     var showExitDialog by mutableStateOf(false)
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
+    var isSavingImage by mutableStateOf(false)
     var exitConfirmed = false
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
@@ -90,6 +91,7 @@ class EditViewModel(
 
     fun saveImage(savePath: Path) =
         viewModelScope.launch(Dispatchers.IO) {
+            isSavingImage = true
             val combinedBitmap = getCombinedImageBitmap()
 
             savePath.outputStream().use { out ->
@@ -97,6 +99,7 @@ class EditViewModel(
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
             imageSaved = true
+            isSavingImage = false
         }
 
     fun shareImage(context: Context) =
