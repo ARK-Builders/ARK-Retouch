@@ -82,14 +82,19 @@ fun EditScreen(
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
 ) {
-    val primaryColor = MaterialTheme.colors.primary
+    val primaryColor = MaterialTheme.colors.primary.value.toLong()
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
-            factory = DIManager.component.editVMFactory()
-                .create(launchedFromIntent, imagePath, imageUri)
-        ).apply {
-            editManager.setPaintColor(primaryColor)
-        }
+            factory = DIManager
+                .component
+                .editVMFactory()
+                .create(
+                    primaryColor,
+                    launchedFromIntent,
+                    imagePath,
+                    imageUri,
+                )
+        )
     val context = LocalContext.current
 
     ExitDialog(
@@ -568,7 +573,11 @@ private fun EditMenuContent(
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
                 initialColor = editManager.currentPaintColor.value,
-                onColorChanged = { editManager.setPaintColor(it) },
+                oldColors = editManager.oldColors,
+                onColorChanged = {
+                    editManager.setPaintColor(it)
+                    viewModel.persistUsedColors()
+                },
             )
             Icon(
                 modifier = Modifier

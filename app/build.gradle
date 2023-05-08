@@ -11,12 +11,20 @@ android {
     compileSdk 33
 
     defaultConfig {
+        def login = System.getenv("ACRA_LOGIN") ?: ""
+        def password = System.getenv("ACRA_PASS") ?: ""
+        def uri = System.getenv("ACRA_URI") ?: ""
+
         applicationId "space.taran.arkretouch2"
         minSdk 26
         targetSdk 32
         versionCode 1
         versionName "1.0"
         setProperty("archivesBaseName", "ark-retouch")
+
+        buildConfigField "String", "ACRA_LOGIN", "\"$login\""
+        buildConfigField "String", "ACRA_PASS", "\"$password\""
+        buildConfigField "String", "ACRA_URI", "\"$uri\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -74,13 +82,16 @@ dependencies {
     implementation "com.github.bumptech.glide:glide:4.11.0"
     kapt "com.github.bumptech.glide:compiler:4.11.0"
 
-    implementation 'com.google.dagger:dagger:2.42'
-    kapt 'com.google.dagger:dagger-compiler:2.42'
+    implementation 'com.google.dagger:dagger:2.44'
+    kapt 'com.google.dagger:dagger-compiler:2.44'
 
     implementation 'com.godaddy.android.colorpicker:compose-color-picker:0.5.1'
 
     implementation 'com.github.ARK-Builders:ark-filepicker:c6d66141c1'
     implementation "androidx.navigation:navigation-compose:2.5.2"
+
+    implementation "ch.acra:acra-http:5.9.3"
+    implementation "ch.acra:acra-dialog:5.9.3"
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

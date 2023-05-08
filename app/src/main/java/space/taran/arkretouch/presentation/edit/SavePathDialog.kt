@@ -83,7 +83,9 @@ fun SavePathDialog(
             TextButton(
                 onClick = {
                     ArkFilePickerFragment
-                        .newInstance(folderFilePickerConfig(currentPath))
+                        .newInstance(
+                            folderFilePickerConfig(currentPath)
+                        )
                         .show(fragmentManager, null)
                     fragmentManager.onArkPathPicked(lifecycleOwner) {
                         currentPath = it

@@ -10,12 +10,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -33,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
+import space.taran.arkretouch.data.Preferences
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
 import timber.log.Timber
@@ -41,9 +43,11 @@ import java.nio.file.Path
 import kotlin.io.path.outputStream
 
 class EditViewModel(
+    private val primaryColor: Long,
     private val launchedFromIntent: Boolean,
     private val imagePath: Path?,
     private val imageUri: String?,
+    private val prefs: Preferences,
 ) : ViewModel() {
     val editManager = EditManager()
 
@@ -59,6 +63,13 @@ class EditViewModel(
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
     val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
+
+    init {
+        viewModelScope.launch {
+            val colors = prefs.readUsedColors()
+            editManager.initColors(colors, Color(primaryColor.toULong()))
+        }
+    }
 
     fun loadImage() {
         imagePath?.let {
@@ -140,6 +151,12 @@ class EditViewModel(
         return uri!!
     }
 
+    fun persistUsedColors() {
+        viewModelScope.launch {
+            prefs.persistUsedColors(editManager.oldColors)
+        }
+    }
+
     fun getCombinedImageBitmap(): ImageBitmap {
         val bitmap = editManager.backgroundImage.value
         val size = if (bitmap != null)
@@ -190,17 +207,26 @@ class EditViewModel(
 }
 
 class EditViewModelFactory @AssistedInject constructor(
+    @Assisted private val primaryColor: Long,
     @Assisted private val launchedFromIntent: Boolean,
     @Assisted private val imagePath: Path?,
     @Assisted private val imageUri: String?,
+    private val prefs: Preferences,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return EditViewModel(launchedFromIntent, imagePath, imageUri) as T
+        return EditViewModel(
+            primaryColor,
+            launchedFromIntent,
+            imagePath,
+            imageUri,
+            prefs,
+        ) as T
     }
 
     @AssistedFactory
     interface Factory {
         fun create(
+            @Assisted primaryColor: Long,
             @Assisted launchedFromIntent: Boolean,
             @Assisted imagePath: Path?,
             @Assisted imageUri: String?,
