@@ -59,8 +59,8 @@ class EditManager {
     val matrix = Matrix()
     val editMatrix = Matrix()
 
-    private val _resolution = mutableStateOf(IntSize.Zero)
-    val resolution: State<IntSize> = _resolution
+    private val _resolution = mutableStateOf<IntSize?>(null)
+    val resolution: State<IntSize?> = _resolution
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
     val originalDrawAreaSize: IntSize
@@ -71,7 +71,7 @@ class EditManager {
                     bitmap.width,
                     bitmap.height
                 )
-            else resolution.value
+            else resolution.value!!
         }
 
     var invalidatorTick = mutableStateOf(0)
@@ -135,15 +135,19 @@ class EditManager {
     }
 
     fun initDefaults(defaults: ImageDefaults, maxResolution: IntSize) {
-        _resolution.value = defaults.resolution.toIntSize()
-        if (resolution.value == IntSize.Zero)
+        defaults.resolution?.let {
+            _resolution.value = it.toIntSize()
+        }
+        if (resolution.value == null)
             _resolution.value = maxResolution
         _backgroundColor.value = Color(defaults.colorValue)
     }
 
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
-            availableDrawAreaSize.value = resolution.value
+            resolution.value?.let {
+                availableDrawAreaSize.value = it
+            }
             return
         }
         availableDrawAreaSize.value = IntSize(

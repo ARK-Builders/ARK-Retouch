@@ -24,7 +24,7 @@ class Preferences @Inject constructor(private val appCtx: Context) {
                 color.value,
                 Resolution.fromIntSize(resolution)
             )
-            val jsonString = defaults.toJson()
+            val jsonString = defaults.toString()
             defaultsStorage.writeText(jsonString, UTF_8)
         }
     }
@@ -37,7 +37,7 @@ class Preferences @Inject constructor(private val appCtx: Context) {
                     .toPath()
                 if (defaultsStorage.exists()) {
                     val jsonString = defaultsStorage.readText(UTF_8)
-                    defaults = ImageDefaults.fromJson(jsonString)
+                    defaults = ImageDefaults.fromString(jsonString)
                 }
             }
         } catch (e: IOException) {

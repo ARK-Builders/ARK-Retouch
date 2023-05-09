@@ -100,37 +100,35 @@ fun EditScreen(
     maxResolution: Resolution
 ) {
     val primaryColor = MaterialTheme.colors.primary
-    var defaultResolution by remember { mutableStateOf(maxResolution) }
-    var backgroundColor by remember { mutableStateOf(Color.White) }
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
             factory = DIManager.component.editVMFactory()
                 .create(launchedFromIntent, imagePath, imageUri, maxResolution)
         ).apply {
             editManager.setPaintColor(primaryColor)
-            defaultResolution = Resolution.fromIntSize(editManager.resolution.value)
-            backgroundColor = editManager.backgroundColor.value
         }
     val context = LocalContext.current
     val showDefaultsDialog = remember {
         mutableStateOf(imagePath == null && imageUri == null)
     }
 
-    if (
-        showDefaultsDialog.value && defaultResolution.toIntSize() != IntSize.Zero
-    ) {
-        NewImageOptions(
-            defaultResolution,
-            maxResolution.toIntSize(),
-            backgroundColor,
-            navigateBack,
-            viewModel.editManager,
-            persistDefaults = { color, resolution ->
-                viewModel.persistDefaults(color, resolution)
-            },
-            onConfirm = { showDefaultsDialog.value = false }
-        )
-        return
+    if (showDefaultsDialog.value) {
+        viewModel.editManager.apply {
+            resolution.value?.let {
+                NewImageOptions(
+                    Resolution.fromIntSize(it),
+                    maxResolution.toIntSize(),
+                    this.backgroundColor.value,
+                    navigateBack,
+                    this,
+                    persistDefaults = { color, resolution ->
+                        viewModel.persistDefaults(color, resolution)
+                    },
+                    onConfirm = { showDefaultsDialog.value = false }
+                )
+                return
+            }
+        }
     }
 
     ExitDialog(
