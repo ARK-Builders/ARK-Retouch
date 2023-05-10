@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.data.ImageDefaults
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
@@ -59,8 +60,8 @@ class EditManager {
     val matrix = Matrix()
     val editMatrix = Matrix()
 
-    private val _resolution = mutableStateOf<IntSize?>(null)
-    val resolution: State<IntSize?> = _resolution
+    private val _resolution = mutableStateOf<Resolution?>(null)
+    val resolution: State<Resolution?> = _resolution
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
     val originalDrawAreaSize: IntSize
@@ -71,7 +72,7 @@ class EditManager {
                     bitmap.width,
                     bitmap.height
                 )
-            else resolution.value!!
+            else resolution.value?.toIntSize()!!
         }
 
     var invalidatorTick = mutableStateOf(0)
@@ -79,6 +80,8 @@ class EditManager {
     private val _currentPaintColor: MutableState<Color> =
         mutableStateOf(drawPaint.value.color)
     val currentPaintColor: State<Color> = _currentPaintColor
+    private val _oldColors = mutableListOf<Color>()
+    val oldColors: List<Color> = _oldColors
 
     private val _isEraseMode: MutableState<Boolean> = mutableStateOf(false)
     val isEraseMode: State<Boolean> = _isEraseMode
@@ -130,13 +133,13 @@ class EditManager {
         _backgroundColor.value = color
     }
 
-    fun setImageResolution(value: IntSize = availableDrawAreaSize.value) {
+    fun setImageResolution(value: Resolution) {
         _resolution.value = value
     }
 
-    fun initDefaults(defaults: ImageDefaults, maxResolution: IntSize) {
+    fun initDefaults(defaults: ImageDefaults, maxResolution: Resolution) {
         defaults.resolution?.let {
-            _resolution.value = it.toIntSize()
+            _resolution.value = it
         }
         if (resolution.value == null)
             _resolution.value = maxResolution
@@ -146,7 +149,7 @@ class EditManager {
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
             resolution.value?.let {
-                availableDrawAreaSize.value = it
+                availableDrawAreaSize.value = it.toIntSize()
             }
             return
         }
@@ -297,9 +300,25 @@ class EditManager {
         undoStack.add(DRAW)
     }
 
+    fun initColors(colors: List<Color>, defaultColor: Color) {
+        _oldColors.addAll(colors)
+
+        val currentColor = if (oldColors.isNotEmpty()) oldColors.last() else {
+            _oldColors.add(defaultColor)
+            defaultColor
+        }
+        drawPaint.value.color = currentColor
+        _currentPaintColor.value = currentColor
+    }
+
     fun setPaintColor(color: Color) {
         drawPaint.value.color = color
         _currentPaintColor.value = color
+        if (oldColors.isNotEmpty() && oldColors.last() != color) {
+            _oldColors.add(color)
+            if (oldColors.size > MAX_COLOR_SIZE)
+                _oldColors.removeFirst()
+        }
     }
 
     private fun clearPaths() {
@@ -420,6 +439,7 @@ class EditManager {
         private const val CROP = "crop"
         private const val RESIZE = "resize"
         private const val ROTATE = "rotate"
+        private const val MAX_COLOR_SIZE = 20
     }
 }
 

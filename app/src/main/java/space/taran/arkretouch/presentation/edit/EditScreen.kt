@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.ui.window.Dialog
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,24 +29,19 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.material.TextButton
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.Slider
-import androidx.compose.material.Checkbox
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
@@ -63,26 +56,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import space.taran.arkretouch.R
 import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
-import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
-import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
-import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -99,14 +84,20 @@ fun EditScreen(
     launchedFromIntent: Boolean,
     maxResolution: Resolution
 ) {
-    val primaryColor = MaterialTheme.colors.primary
+    val primaryColor = MaterialTheme.colors.primary.value.toLong()
     val viewModel: EditViewModel =
         viewModel<EditViewModel>(
-            factory = DIManager.component.editVMFactory()
-                .create(launchedFromIntent, imagePath, imageUri, maxResolution)
-        ).apply {
-            editManager.setPaintColor(primaryColor)
-        }
+            factory = DIManager
+                .component
+                .editVMFactory()
+                .create(
+                    primaryColor,
+                    launchedFromIntent,
+                    imagePath,
+                    imageUri,
+                    maxResolution
+                )
+        )
     val context = LocalContext.current
     val showDefaultsDialog = remember {
         mutableStateOf(imagePath == null && imageUri == null)
@@ -115,9 +106,9 @@ fun EditScreen(
     if (showDefaultsDialog.value) {
         viewModel.editManager.apply {
             resolution.value?.let {
-                NewImageOptions(
-                    Resolution.fromIntSize(it),
-                    maxResolution.toIntSize(),
+                NewImageOptionsDialog(
+                    it,
+                    maxResolution,
                     this.backgroundColor.value,
                     navigateBack,
                     this,
@@ -608,7 +599,11 @@ private fun EditMenuContent(
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
                 initialColor = editManager.currentPaintColor.value,
-                onColorChanged = { editManager.setPaintColor(it) },
+                oldColors = editManager.oldColors,
+                onColorChanged = {
+                    editManager.setPaintColor(it)
+                    viewModel.persistUsedColors()
+                },
             )
             Icon(
                 modifier = Modifier
@@ -889,238 +884,4 @@ private fun ExitDialog(
             }
         }
     )
-}
-
-@Composable
-fun NewImageOptions(
-    defaultResolution: Resolution,
-    maxResolution: IntSize,
-    _backgroundColor: Color,
-    navigateBack: () -> Unit,
-    editManager: EditManager,
-    persistDefaults: (Color, IntSize) -> Unit,
-    onConfirm: () -> Unit
-) {
-    var isVisible by remember { mutableStateOf(true) }
-    var backgroundColor by remember {
-        mutableStateOf(_backgroundColor)
-    }
-    val showColorDialog = remember { mutableStateOf(false) }
-
-    ColorPickerDialog(
-        isVisible = showColorDialog,
-        initialColor = backgroundColor,
-        onColorChanged = {
-            backgroundColor = it
-        }
-    )
-
-    if (isVisible) {
-        var width by remember {
-            mutableStateOf(defaultResolution.width.toString())
-        }
-        var height by remember {
-            mutableStateOf(defaultResolution.height.toString())
-        }
-        var rememberDefaults by remember { mutableStateOf(false) }
-        var showHint by remember { mutableStateOf(false) }
-        var hint by remember { mutableStateOf("") }
-        val heightHint = stringResource(
-            R.string.height_too_large,
-            maxResolution.height
-        )
-        val widthHint = stringResource(
-            R.string.width_too_large,
-            maxResolution.width
-        )
-        val digitsOnlyHint = stringResource(
-            R.string.digits_only
-        )
-
-        Dialog(
-            onDismissRequest = {
-                isVisible = false
-                navigateBack()
-            }
-        ) {
-            Column(
-                Modifier
-                    .background(Color.White, RoundedCornerShape(5))
-                    .wrapContentHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "Customize new image",
-                    Modifier.padding(top = 10.dp)
-                )
-                Row(
-                    Modifier.padding(
-                        start = 8.dp,
-                        end = 8.dp,
-                        top = 20.dp,
-                        bottom = 12.dp
-                    )
-                ) {
-                    TextField(
-                        modifier = Modifier
-                            .padding(end = 6.dp)
-                            .fillMaxWidth(0.5f),
-                        value = width,
-                        onValueChange = {
-                            if (!it.isDigitsOnly()) {
-                                hint = digitsOnlyHint
-                                showHint = true
-                                return@TextField
-                            }
-                            if (
-                                it.isNotEmpty() && it.isDigitsOnly() &&
-                                it.toInt() > maxResolution.width
-                            ) {
-                                hint = widthHint
-                                showHint = true
-                                return@TextField
-                            }
-                            if (it.isDigitsOnly()) {
-                                width = it
-                            }
-                        },
-                        label = {
-                            Text(
-                                stringResource(R.string.width),
-                                Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colors.primary,
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        textStyle = TextStyle(
-                            color = Color.DarkGray,
-                            textAlign = TextAlign.Center
-                        ),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        )
-                    )
-                    TextField(
-                        modifier = Modifier
-                            .padding(start = 6.dp)
-                            .fillMaxWidth(),
-                        value = height,
-                        onValueChange = {
-                            if (!it.isDigitsOnly()) {
-                                hint = digitsOnlyHint
-                                showHint = true
-                                return@TextField
-                            }
-                            if (
-                                it.isNotEmpty() && it.isDigitsOnly() &&
-                                it.toInt() > maxResolution.height
-                            ) {
-                                hint = heightHint
-                                showHint = true
-                                return@TextField
-                            }
-                            if (it.isDigitsOnly()) {
-                                height = it
-                            }
-                        },
-                        label = {
-                            Text(
-                                stringResource(R.string.height),
-                                Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colors.primary,
-                                textAlign = TextAlign.Center
-                            )
-                        },
-                        textStyle = TextStyle(
-                            color = Color.DarkGray,
-                            textAlign = TextAlign.Center
-                        ),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        )
-                    )
-                }
-                Row(
-                    Modifier
-                        .background(Gray, RoundedCornerShape(5))
-                        .wrapContentHeight()
-                        .clickable {
-                            showColorDialog.value = true
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        stringResource(R.string.background),
-                        Modifier.padding(8.dp)
-                    )
-                    Box(
-                        Modifier
-                            .size(28.dp)
-                            .padding(2.dp)
-                            .clip(CircleShape)
-                            .border(2.dp, Gray, CircleShape)
-                            .background(backgroundColor)
-                    )
-                }
-                Row(
-                    Modifier
-                        .padding(start = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = rememberDefaults,
-                        onCheckedChange = {
-                            rememberDefaults = it
-                        }
-                    )
-                    Text("Remember")
-                }
-                Row(
-                    Modifier.align(
-                        Alignment.End
-                    )
-                ) {
-                    TextButton(
-                        modifier = Modifier
-                            .padding(end = 8.dp),
-                        onClick = {
-                            isVisible = false
-                            navigateBack()
-                        }
-                    ) {
-                        Text("Close")
-                    }
-                    TextButton(
-                        modifier = Modifier
-                            .padding(end = 8.dp),
-                        onClick = {
-                            val resolution = IntSize(
-                                width.toInt(),
-                                height.toInt()
-                            )
-                            editManager.setImageResolution(resolution)
-                            editManager.setBackgroundColor(backgroundColor)
-                            if (rememberDefaults)
-                                persistDefaults(backgroundColor, resolution)
-                            onConfirm()
-                            isVisible = false
-                        }
-                    ) {
-                        Text("Ok")
-                    }
-                }
-            }
-
-            Hint(
-                hint
-            ) {
-                delayHidingHint(it) {
-                    showHint = false
-                }
-                showHint
-            }
-        }
-    }
 }

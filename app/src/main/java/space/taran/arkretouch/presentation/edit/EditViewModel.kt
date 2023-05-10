@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -47,6 +46,7 @@ import java.nio.file.Path
 import kotlin.io.path.outputStream
 
 class EditViewModel(
+    private val primaryColor: Long,
     private val launchedFromIntent: Boolean,
     private val imagePath: Path?,
     private val imageUri: String?,
@@ -68,11 +68,16 @@ class EditViewModel(
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
     val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
     init {
+        if (imageUri == null && imagePath == null)
+            viewModelScope.launch {
+                editManager.initDefaults(
+                    prefs.readDefaults(),
+                    maxResolution
+                )
+            }
         viewModelScope.launch {
-            editManager.initDefaults(
-                prefs.readDefaults(),
-                maxResolution.toIntSize()
-            )
+            val colors = prefs.readUsedColors()
+            editManager.initColors(colors, Color(primaryColor.toULong()))
         }
     }
 
@@ -156,6 +161,12 @@ class EditViewModel(
         return uri!!
     }
 
+    fun persistUsedColors() {
+        viewModelScope.launch {
+            prefs.persistUsedColors(editManager.oldColors)
+        }
+    }
+
     fun getCombinedImageBitmap(): ImageBitmap {
         val size = editManager.availableDrawAreaSize.value
         val drawBitmap = ImageBitmap(
@@ -205,7 +216,7 @@ class EditViewModel(
         }
     }
 
-    fun persistDefaults(color: Color, resolution: IntSize) {
+    fun persistDefaults(color: Color, resolution: Resolution) {
         viewModelScope.launch {
             prefs.persistDefaults(color, resolution)
         }
@@ -213,6 +224,7 @@ class EditViewModel(
 }
 
 class EditViewModelFactory @AssistedInject constructor(
+    @Assisted private val primaryColor: Long,
     @Assisted private val launchedFromIntent: Boolean,
     @Assisted private val imagePath: Path?,
     @Assisted private val imageUri: String?,
@@ -221,6 +233,7 @@ class EditViewModelFactory @AssistedInject constructor(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return EditViewModel(
+            primaryColor,
             launchedFromIntent,
             imagePath,
             imageUri,
@@ -232,6 +245,7 @@ class EditViewModelFactory @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
+            @Assisted primaryColor: Long,
             @Assisted launchedFromIntent: Boolean,
             @Assisted imagePath: Path?,
             @Assisted imageUri: String?,
