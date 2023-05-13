@@ -64,10 +64,23 @@ class EditViewModel(
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
     val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
 
+    private val _usedColors = mutableListOf<Color>()
+    val usedColors: List<Color> = _usedColors
+
     init {
         viewModelScope.launch {
-            val colors = prefs.readUsedColors()
-            editManager.initColors(colors, Color(primaryColor.toULong()))
+            _usedColors.addAll(prefs.readUsedColors())
+
+            val color = if (_usedColors.isNotEmpty()) {
+                _usedColors.last()
+            } else {
+                val defaultColor = Color(primaryColor.toULong())
+
+                _usedColors.add(defaultColor)
+                defaultColor
+            }
+
+            editManager.initColor(color)
         }
     }
 
@@ -151,9 +164,17 @@ class EditViewModel(
         return uri!!
     }
 
-    fun persistUsedColors() {
+    fun trackColor(color: Color) {
+        _usedColors.remove(color)
+        _usedColors.add(color)
+
+        val excess = _usedColors.size - KEEP_USED_COLORS
+        repeat(excess) {
+            _usedColors.removeFirst()
+        }
+
         viewModelScope.launch {
-            prefs.persistUsedColors(editManager.oldColors)
+            prefs.persistUsedColors(usedColors)
         }
     }
 
@@ -203,6 +224,10 @@ class EditViewModel(
             backgroundImage.value = img
             return img.asAndroidBitmap()
         }
+    }
+
+    companion object {
+        private const val KEEP_USED_COLORS = 20
     }
 }
 

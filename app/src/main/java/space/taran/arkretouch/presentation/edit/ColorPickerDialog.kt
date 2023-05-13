@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 fun ColorPickerDialog(
     isVisible: MutableState<Boolean>,
     initialColor: Color,
-    oldColors: List<Color>,
+    usedColors: List<Color>,
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
@@ -82,7 +82,7 @@ fun ColorPickerDialog(
                         .align(Alignment.Center),
                     state = state
                 ) {
-                    items(oldColors) { color ->
+                    items(usedColors) { color ->
                         Box(
                             Modifier
                                 .padding(
@@ -103,7 +103,7 @@ fun ColorPickerDialog(
                 LaunchedEffect(state) {
                     scrollToEnd(state, this)
                 }
-                OldColorsFlowHint(
+                UsedColorsFlowHint(
                     { enableScroll(state) },
                     { checkScroll(state).first },
                     { checkScroll(state).second }
@@ -182,7 +182,7 @@ fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
 }
 
 @Composable
-fun BoxScope.OldColorsFlowHint(
+fun BoxScope.UsedColorsFlowHint(
     scrollIsEnabled: () -> Boolean,
     scrollIsAtStart: () -> Boolean,
     scrollIsAtEnd: () -> Boolean
