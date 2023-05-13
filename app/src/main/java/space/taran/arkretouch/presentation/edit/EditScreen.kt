@@ -254,6 +254,7 @@ private fun DrawContainer(
                     viewModel.editManager.resizeOperation.resetApply()
                     return@onSizeChanged
                 }
+                if (viewModel.showSavePathDialog) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
                 viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
