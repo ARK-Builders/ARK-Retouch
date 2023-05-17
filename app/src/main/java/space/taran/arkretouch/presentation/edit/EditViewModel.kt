@@ -59,6 +59,7 @@ class EditViewModel(
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
+    var isLoaded by mutableStateOf(false)
     var exitConfirmed = false
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
@@ -85,6 +86,7 @@ class EditViewModel(
     }
 
     fun loadImage() {
+        isLoaded = true
         imagePath?.let {
             loadImageWithPath(
                 DIManager.component.app(),

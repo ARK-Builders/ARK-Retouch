@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
@@ -36,13 +35,10 @@ fun EditCanvas(viewModel: EditViewModel) {
         Modifier.background(Color.White),
         contentAlignment = Alignment.Center
     ) {
-        val modifier = if (
-            editManager.availableDrawAreaSize.value != IntSize.Zero
-        ) Modifier.size(
+        val modifier = Modifier.size(
             editManager.availableDrawAreaSize.value.width.toDp(),
             editManager.availableDrawAreaSize.value.height.toDp()
         )
-        else Modifier.fillMaxSize()
         EditCanvasImage(modifier, editManager)
         EditDrawCanvas(modifier, viewModel)
     }
