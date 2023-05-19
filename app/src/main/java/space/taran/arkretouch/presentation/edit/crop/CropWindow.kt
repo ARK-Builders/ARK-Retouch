@@ -63,17 +63,6 @@ class CropWindow {
         paint.strokeWidth = 5F
     }
 
-    private fun create() {
-        width = drawAreaSize.width.toFloat() - HORIZONTAL_OFFSET
-        height = drawAreaSize.height.toFloat() - VERTICAL_OFFSET
-        rect = Rect(
-            HORIZONTAL_OFFSET,
-            VERTICAL_OFFSET,
-            width,
-            height
-        )
-    }
-
     fun close() {
         isInitialized = false
     }
@@ -87,14 +76,15 @@ class CropWindow {
             Timber.tag("crop-window").d("Initialising")
             this.bitmap = bitmap
             this.drawAreaSize = editManager.drawAreaSize.value
-            this.offset = editManager.calcImageOffset()
-            create()
+            // this.offset = editManager.calcImageOffset()
+            computeResolution()
+            // create()
             this.bitmap = fitBitmap(
                 bitmap,
-                rect.width.toInt(),
-                rect.height.toInt()
+                width.toInt(),
+                height.toInt()
             )
-            this.offset = editManager.calcImageOffset()
+            // this.offset = editManager.calcImageOffset()
             isInitialized = true
         }
     }
@@ -108,6 +98,19 @@ class CropWindow {
 
     fun setDelta(delta: Offset) {
         this.delta = delta
+    }
+
+    private fun computeResolution() {
+        width = drawAreaSize.width.toFloat() - 2 * HORIZONTAL_OFFSET
+        height = drawAreaSize.height.toFloat() - 2 * VERTICAL_OFFSET
+    }
+    private fun create() {
+        rect = Rect(
+            0F,
+            0F,
+            width,
+            height
+        )
     }
 
     private fun isAspectRatioFixed() =
@@ -252,6 +255,9 @@ class CropWindow {
         isTouched.value = isTouchedLeft.value || isTouchedRight.value ||
             isTouchedTop.value || isTouchedBottom.value ||
             isTouchedInside.value
+        Timber.tag("crop-window").d(
+            "event x = ${eventPoint.x}"
+        )
     }
 
     fun resize() {

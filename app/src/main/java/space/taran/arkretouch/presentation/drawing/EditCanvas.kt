@@ -8,7 +8,6 @@ import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -77,8 +76,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
-    val drawModifier = if (editManager.isCropMode.value) Modifier.fillMaxSize()
-    else modifier
 
     fun handleDrawEvent(action: Int, eventX: Float, eventY: Float) {
         when (action) {
@@ -173,7 +170,7 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     }
 
     Canvas(
-        modifier = drawModifier
+        modifier = modifier
             // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
             // https://stackoverflow.com/questions/65653560/jetpack-compose-applying-porterduffmode-to-image
             // Provide a slight opacity to for compositing into an
@@ -196,11 +193,13 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         eventX,
                         eventY
                     )
+
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
                         eventY
                     )
+
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++
