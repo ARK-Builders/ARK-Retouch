@@ -425,7 +425,7 @@ private fun StrokeWidthPopup(
                         .fillMaxWidth()
                         .height(viewModel.strokeWidth.dp)
                         .clip(RoundedCornerShape(30))
-                        .background(editManager.currentPaintColor())
+                        .background(editManager.paintColor.value)
                 )
             }
 
@@ -562,7 +562,7 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(color = editManager.currentPaintColor())
+                    .background(color = editManager.paintColor.value)
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
@@ -574,7 +574,7 @@ private fun EditMenuContent(
             )
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
-                initialColor = editManager.currentPaintColor(),
+                initialColor = editManager.paintColor.value,
                 usedColors = viewModel.usedColors,
                 onColorChanged = {
                     editManager.setPaintColor(it)
@@ -601,7 +601,7 @@ private fun EditMenuContent(
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
                     !editManager.isCropMode.value
-                ) editManager.currentPaintColor()
+                ) editManager.paintColor.value
                 else Color.Black,
                 contentDescription = null
             )

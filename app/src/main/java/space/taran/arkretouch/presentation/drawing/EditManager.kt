@@ -26,6 +26,10 @@ import java.util.Stack
 class EditManager {
     private val drawPaint: MutableState<Paint> = mutableStateOf(defaultPaint())
 
+    private val _paintColor: MutableState<Color> =
+        mutableStateOf(drawPaint.value.color)
+    val paintColor: State<Color> = _paintColor
+
     private val erasePaint: Paint = Paint().apply {
         shader = null
         color = Color.Transparent
@@ -40,7 +44,7 @@ class EditManager {
     val rotateOperation = RotateOperation(this)
     val cropOperation = CropOperation(this)
 
-    val currentPaint: Paint
+    private val currentPaint: Paint
         get() = if (isEraseMode.value) {
             erasePaint
         } else {
@@ -271,15 +275,10 @@ class EditManager {
         undoStack.add(DRAW)
     }
 
-    fun initColor(color: Color) {
-        drawPaint.value.color = color
-    }
-
     fun setPaintColor(color: Color) {
         drawPaint.value.color = color
+        _paintColor.value = color
     }
-
-    fun currentPaintColor(): Color = drawPaint.value.color
 
     private fun clearPaths() {
         drawPaths.clear()

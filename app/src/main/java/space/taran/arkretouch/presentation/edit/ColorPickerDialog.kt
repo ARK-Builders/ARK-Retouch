@@ -56,7 +56,16 @@ fun ColorPickerDialog(
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
-    var currentColor by remember { mutableStateOf(HsvColor.from(initialColor)) }
+
+    var currentColor by remember {
+        mutableStateOf(HsvColor.from(initialColor))
+    }
+
+    val finish = {
+        onColorChanged(currentColor.toColor())
+        isVisible.value = false
+    }
+
     Dialog(
         onDismissRequest = {
             isVisible.value = false
@@ -96,6 +105,7 @@ fun ColorPickerDialog(
                                 .background(color)
                                 .clickable {
                                     currentColor = HsvColor.from(color)
+                                    finish()
                                 }
                         )
                     }
@@ -122,10 +132,7 @@ fun ColorPickerDialog(
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .fillMaxWidth(),
-                onClick = {
-                    onColorChanged(currentColor.toColor())
-                    isVisible.value = false
-                }
+                onClick = finish
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(

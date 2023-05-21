@@ -80,7 +80,7 @@ class EditViewModel(
                 defaultColor
             }
 
-            editManager.initColor(color)
+            editManager.setPaintColor(color)
         }
     }
 
