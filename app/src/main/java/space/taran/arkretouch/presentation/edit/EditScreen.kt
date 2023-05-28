@@ -255,8 +255,14 @@ private fun DrawContainer(
                     return@onSizeChanged
                 }
                 if (viewModel.showSavePathDialog) return@onSizeChanged
-                if (viewModel.isLoaded) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
+                if (viewModel.isLoaded) {
+                    viewModel.editManager.apply {
+                        val offset = calcImageOffset()
+                        if (isCropMode.value) cropWindow.updateOffset(offset)
+                        return@onSizeChanged
+                    }
+                }
                 viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
             },

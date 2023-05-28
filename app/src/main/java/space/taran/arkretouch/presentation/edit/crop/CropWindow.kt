@@ -75,20 +75,29 @@ class CropWindow {
         if (!isInitialized) {
             Timber.tag("crop-window").d("Initialising")
             this.bitmap = bitmap
-            this.drawAreaSize = editManager.drawAreaSize.value
-            // this.offset = editManager.calcImageOffset()
+            drawAreaSize = editManager.drawAreaSize.value
             computeResolution()
-            // create()
             this.bitmap = fitBitmap(
                 bitmap,
                 width.toInt(),
                 height.toInt()
             )
-            // this.offset = editManager.calcImageOffset()
+            offset = editManager.calcImageOffset()
             isInitialized = true
         }
     }
 
+    fun updateOffset(offset: Offset) {
+        val leftMove = rect.left - this.offset.x
+        val topMove = rect.top - this.offset.y
+        this.offset = offset
+        recreate(
+            offset.x + leftMove,
+            offset.y + topMove,
+            offset.x + leftMove + rect.width,
+            offset.y + topMove + rect.height
+        )
+    }
     fun show(canvas: Canvas) {
         if (isInitialized) {
             update()
@@ -103,14 +112,6 @@ class CropWindow {
     private fun computeResolution() {
         width = drawAreaSize.width.toFloat() - 2 * HORIZONTAL_OFFSET
         height = drawAreaSize.height.toFloat() - 2 * VERTICAL_OFFSET
-    }
-    private fun create() {
-        rect = Rect(
-            0F,
-            0F,
-            width,
-            height
-        )
     }
 
     private fun isAspectRatioFixed() =
@@ -255,9 +256,6 @@ class CropWindow {
         isTouched.value = isTouchedLeft.value || isTouchedRight.value ||
             isTouchedTop.value || isTouchedBottom.value ||
             isTouchedInside.value
-        Timber.tag("crop-window").d(
-            "event x = ${eventPoint.x}"
-        )
     }
 
     fun resize() {
@@ -267,8 +265,8 @@ class CropWindow {
     }
 
     private fun resizeByBitmap() {
-        val newBottom = this.bitmap.height.toFloat() + offset.y
-        val newRight = this.bitmap.width.toFloat() + offset.x
+        val newBottom = bitmap.height.toFloat() + offset.y
+        val newRight = bitmap.width.toFloat() + offset.x
         recreate(
             offset.x,
             offset.y,
