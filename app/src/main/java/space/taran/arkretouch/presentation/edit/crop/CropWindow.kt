@@ -91,7 +91,7 @@ class CropWindow {
         val leftMove = rect.left - this.offset.x
         val topMove = rect.top - this.offset.y
         this.offset = offset
-        recreate(
+        create(
             offset.x + leftMove,
             offset.y + topMove,
             offset.x + leftMove + rect.width,
@@ -219,7 +219,7 @@ class CropWindow {
         }
 
         if (isNotMaxSize() && isNotMinSize() && isWithinBounds()) {
-            recreate(
+            create(
                 left,
                 top,
                 right,
@@ -267,7 +267,7 @@ class CropWindow {
     private fun resizeByBitmap() {
         val newBottom = bitmap.height.toFloat() + offset.y
         val newRight = bitmap.width.toFloat() + offset.x
-        recreate(
+        create(
             offset.x,
             offset.y,
             newRight,
@@ -293,7 +293,7 @@ class CropWindow {
         }
     }
 
-    private fun recreate(
+    private fun create(
         newLeft: Float,
         newTop: Float,
         newRight: Float,
@@ -327,7 +327,7 @@ class CropWindow {
             newBottom = newTop + newHeight
         }
 
-        recreate(
+        create(
             newLeft,
             newTop,
             newRight,
