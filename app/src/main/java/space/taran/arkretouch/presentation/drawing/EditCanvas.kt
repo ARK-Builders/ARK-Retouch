@@ -39,13 +39,13 @@ fun EditCanvas(viewModel: EditViewModel) {
             editManager.availableDrawAreaSize.value.width.toDp(),
             editManager.availableDrawAreaSize.value.height.toDp()
         )
-        EditCanvasImage(modifier, editManager)
+        EditImageCanvas(modifier, editManager)
         EditDrawCanvas(modifier, viewModel)
     }
 }
 
 @Composable
-fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
+fun EditImageCanvas(modifier: Modifier, editManager: EditManager) {
     val imageModifier = with(editManager) {
         if (isCropMode.value) Modifier.size(
             backgroundImage.value?.width?.toDp()!!,
