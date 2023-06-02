@@ -7,7 +7,6 @@ import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -36,12 +35,10 @@ fun EditCanvas(viewModel: EditViewModel) {
         Modifier.background(Color.White),
         contentAlignment = Alignment.Center
     ) {
-        val modifier = Modifier
-            .border(2.toDp(), Color.Green)
-            .size(
-                editManager.availableDrawAreaSize.value.width.toDp(),
-                editManager.availableDrawAreaSize.value.height.toDp()
-            )
+        val modifier = Modifier.size(
+            editManager.availableDrawAreaSize.value.width.toDp(),
+            editManager.availableDrawAreaSize.value.height.toDp()
+        )
         EditCanvasImage(modifier, editManager)
         EditDrawCanvas(modifier, viewModel)
     }
@@ -194,6 +191,9 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 val mappedY = mappedXY[1]
 
                 when (true) {
+
+                    editManager.isResizeMode.value -> {}
+
                     editManager.isRotateMode.value -> handleRotateEvent(
                         event.action,
                         eventX,
