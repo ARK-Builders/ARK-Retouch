@@ -3,6 +3,7 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.compose.runtime.getValue
@@ -41,6 +42,7 @@ import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.outputStream
+import kotlin.system.measureTimeMillis
 
 class EditViewModel(
     private val primaryColor: Long,
@@ -105,7 +107,7 @@ class EditViewModel(
     fun saveImage(savePath: Path) =
         viewModelScope.launch(Dispatchers.IO) {
             isSavingImage = true
-            val combinedBitmap = getCombinedImageBitmap()
+            val combinedBitmap = getEditedImage()
 
             savePath.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
@@ -144,7 +146,7 @@ class EditViewModel(
     ): Uri {
         var uri: Uri? = null
         val imageCacheFolder = File(context.cacheDir, "images")
-        val imgBitmap = bitmap ?: getCombinedImageBitmap().asAndroidBitmap()
+        val imgBitmap = bitmap ?: getEditedImage().asAndroidBitmap()
         try {
             imageCacheFolder.mkdirs()
             val file = File(imageCacheFolder, "image$name.png")
@@ -183,30 +185,99 @@ class EditViewModel(
         val size = if (bitmap != null)
             editManager.availableDrawAreaSize.value
         else editManager.drawAreaSize.value
-        val drawBitmap = ImageBitmap(
-            size.width,
-            size.height,
-            ImageBitmapConfig.Argb8888
-        )
-        val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
-        val combinedCanvas = Canvas(combinedBitmap)
-        combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
-        editManager.backgroundImage.value?.let {
-            combinedCanvas.drawImage(
-                it,
-                Offset.Zero,
-                Paint()
+        val time = measureTimeMillis {
+            val drawBitmap = ImageBitmap(
+                size.width,
+                size.height,
+                ImageBitmapConfig.Argb8888
             )
+            val drawCanvas = Canvas(drawBitmap)
+            val combinedCanvas = Canvas(combinedBitmap)
+            combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
+            editManager.backgroundImage.value?.let {
+                combinedCanvas.drawImage(
+                    it,
+                    Offset.Zero,
+                    Paint()
+                )
+            }
+            editManager.drawPaths.forEach {
+                drawCanvas.drawPath(it.path, it.paint)
+            }
+            combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         }
-        editManager.drawPaths.forEach {
-            drawCanvas.drawPath(it.path, it.paint)
-        }
-        combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         return combinedBitmap
     }
 
+    fun getEditedImage(): ImageBitmap {
+        var bitmap: ImageBitmap
+        val time = measureTimeMillis {
+            bitmap = with(editManager) {
+                backgroundImage.value?.let {
+                    var image = it
+                    var canvas = Canvas(image)
+                    if (rotationAngles.isNotEmpty()) {
+                        val matrix = Matrix().apply {
+                            val centerX = it.width / 2
+                            val centerY = it.height / 2
+                            setRotate(
+                                rotationAngle.value,
+                                centerX.toFloat(),
+                                centerY.toFloat()
+                            )
+                        }
+                        image = ImageBitmap(
+                            image.width,
+                            image.height,
+                            ImageBitmapConfig.Argb8888
+                        )
+                        canvas = Canvas(image)
+                        canvas.nativeCanvas.drawBitmap(
+                            it.asAndroidBitmap(),
+                            matrix,
+                            null
+                        )
+                    }
+                    if (drawPaths.isNotEmpty()) {
+                        drawPaths.forEach { pathData ->
+                            canvas.drawPath(pathData.path, pathData.paint)
+                        }
+                    }
+                    image
+                } ?: run {
+                    val size = availableDrawAreaSize.value
+                    val image =
+                        ImageBitmap(
+                            size.width,
+                            size.height,
+                            ImageBitmapConfig.Argb8888
+                        )
+                    val canvas = Canvas(image)
+                    if (rotationAngles.isNotEmpty()) {
+                        val matrix = Matrix().apply {
+                            val centerX = size.width / 2
+                            val centerY = size.height / 2
+                            setRotate(
+                                rotationAngle.value,
+                                centerX.toFloat(),
+                                centerY.toFloat()
+                            )
+                        }
+                        canvas.nativeCanvas.setMatrix(matrix)
+                    }
+                    if (drawPaths.isNotEmpty()) {
+                        drawPaths.forEach {
+                            canvas.drawPath(it.path, it.paint)
+                        }
+                    }
+                    image
+                }
+            }
+        }
+        return bitmap
+    }
     fun confirmExit() = viewModelScope.launch {
         exitConfirmed = true
         delay(2_000)
