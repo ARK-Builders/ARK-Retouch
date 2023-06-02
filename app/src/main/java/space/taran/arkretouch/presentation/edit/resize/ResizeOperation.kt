@@ -14,6 +14,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
 
     private lateinit var bitmap: Bitmap
     private var aspectRatio = 1f
+    private lateinit var editMatrixScale: Scale
     private val isApplied = mutableStateOf(false)
 
     override fun apply() {
@@ -21,6 +22,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
             addResize()
             saveRotationAfterOtherOperation()
             toggleResizeMode()
+            editMatrix.reset()
             isApplied.value = true
         }
     }
@@ -52,6 +54,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
     fun init(bitmap: Bitmap) {
         this.bitmap = bitmap
         aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+        editMatrixScale = editManager.scaleToFitOnResize()?.scale!!
         isApplied.value = false
     }
 
@@ -85,9 +88,15 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
                         sy
                     )
                     val imgBitmap = bitmap.resize(downScale).asImageBitmap()
+                    val drawWidth = imgBitmap.width * editMatrixScale.x
+                    val drawHeight = imgBitmap.height * editMatrixScale.y
+                    val drawArea = IntSize(
+                        drawWidth.toInt(),
+                        drawHeight.toInt()
+                    )
+                    updateAvailableDrawArea(drawArea)
                     updateImage(imgBitmap)
                 }
-                editManager.updateAvailableDrawArea()
             }
             IntSize(
                 newWidth,

@@ -255,6 +255,7 @@ private fun DrawContainer(
                     return@onSizeChanged
                 }
                 if (viewModel.showSavePathDialog) return@onSizeChanged
+                if (viewModel.imageLoaded.value) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
                 viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
@@ -733,8 +734,7 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !isResizeMode.value
                             if (isResizeMode.value) {
-                                val imgBitmap =
-                                    viewModel.getCombinedImageBitmap()
+                                val imgBitmap = viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()
                                 resizeOperation.init(imgBitmap.asAndroidBitmap())
                                 backgroundImage.value = imgBitmap

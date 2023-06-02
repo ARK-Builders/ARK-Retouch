@@ -7,6 +7,7 @@ import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -22,7 +23,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
@@ -36,13 +36,12 @@ fun EditCanvas(viewModel: EditViewModel) {
         Modifier.background(Color.White),
         contentAlignment = Alignment.Center
     ) {
-        val modifier = if (
-            editManager.availableDrawAreaSize.value != IntSize.Zero
-        ) Modifier.size(
-            editManager.availableDrawAreaSize.value.width.toDp(),
-            editManager.availableDrawAreaSize.value.height.toDp()
-        )
-        else Modifier.fillMaxSize()
+        val modifier = Modifier
+            .border(2.toDp(), Color.Green)
+            .size(
+                editManager.availableDrawAreaSize.value.width.toDp(),
+                editManager.availableDrawAreaSize.value.height.toDp()
+            )
         EditCanvasImage(modifier, editManager)
         EditDrawCanvas(modifier, viewModel)
     }
@@ -200,11 +199,13 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                         eventX,
                         eventY
                     )
+
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
                         eventY
                     )
+
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++
