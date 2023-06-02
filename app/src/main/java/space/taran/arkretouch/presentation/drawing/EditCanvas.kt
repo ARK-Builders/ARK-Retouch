@@ -31,7 +31,37 @@ import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.comput
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
+    val currentPoint = PointF(0f, 0f)
     val editManager = viewModel.editManager
+
+    fun handleRotateEvent(action: Int, eventX: Float, eventY: Float) {
+        when (action) {
+            MotionEvent.ACTION_MOVE -> {
+                val centerX = editManager.drawAreaSize.value.width / 2
+                val centerY = editManager.drawAreaSize.value.height / 2
+                val prevDX = currentPoint.x - centerX
+                val prevDY = currentPoint.y - centerY
+                val dx = eventX - centerX
+                val dy = eventY - centerY
+                val angle1 = atan2(prevDY, prevDX)
+                val angle2 = atan2(dy, dx)
+                val degreesAngle =
+                    Math.toDegrees(
+                        (angle2 - angle1).toDouble()
+                    )
+                if (degreesAngle != 0.0)
+                    editManager.rotate(degreesAngle.toFloat())
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_DOWN -> {
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
+        }
+    }
+
     Box(
         Modifier.background(Color.White),
         contentAlignment = Alignment.Center
@@ -44,19 +74,38 @@ fun EditCanvas(viewModel: EditViewModel) {
         )
         else Modifier.fillMaxSize()
         EditCanvasImage(modifier, editManager)
-        EditDrawCanvas(modifier, viewModel)
+        EditDrawCanvas(
+            modifier,
+            viewModel
+        ) { action, x, y ->
+            handleRotateEvent(action, x, y)
+        }
+    }
+    if (editManager.isRotateMode.value) {
+        Canvas(
+            Modifier
+                .fillMaxSize()
+                .pointerInteropFilter {
+                    handleRotateEvent(it.action, it.x, it.y)
+                    editManager.invalidatorTick.value++
+                    true
+                }
+        ) {}
     }
 }
 
 @Composable
 fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
     val imageModifier = with(editManager) {
-        if (isCropMode.value) Modifier.size(
-            backgroundImage.value?.width?.toDp()!!,
-            backgroundImage.value?.height?.toDp()!!
-        )
-        else modifier
+        when (true) {
+            isCropMode.value -> Modifier.size(
+                backgroundImage.value?.width?.toDp()!!,
+                backgroundImage.value?.height?.toDp()!!
+            )
+            else -> modifier
+        }
     }
+
     Canvas(imageModifier) {
         editManager.apply {
             invalidatorTick.value
@@ -77,7 +126,11 @@ fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
 }
 
 @Composable
-fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
+fun EditDrawCanvas(
+    modifier: Modifier,
+    viewModel: EditViewModel,
+    onRotate: (Int, Float, Float) -> Unit
+) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
@@ -118,34 +171,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 path = Path()
             }
             else -> {}
-        }
-    }
-
-    fun handleRotateEvent(action: Int, eventX: Float, eventY: Float) {
-        when (action) {
-            MotionEvent.ACTION_MOVE -> {
-                val centerX = editManager.availableDrawAreaSize.value.width / 2
-                val centerY = editManager.availableDrawAreaSize.value.height / 2
-                val prevDX = currentPoint.x - centerX
-                val prevDY = currentPoint.y - centerY
-                val dx = eventX - centerX
-                val dy = eventY - centerY
-                val angle1 = atan2(prevDY, prevDX)
-                val angle2 = atan2(dy, dx)
-                val degreesAngle =
-                    Math.toDegrees(
-                        (angle2 - angle1).toDouble()
-                    )
-                if (degreesAngle != 0.0)
-                    editManager.rotate(degreesAngle.toFloat())
-                currentPoint.x = eventX
-                currentPoint.y = eventY
-            }
-            MotionEvent.ACTION_DOWN -> {
-                currentPoint.x = eventX
-                currentPoint.y = eventY
-            }
-            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
         }
     }
 
@@ -195,15 +220,15 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 val mappedY = mappedXY[1]
 
                 when (true) {
-                    editManager.isRotateMode.value -> handleRotateEvent(
-                        event.action,
-                        eventX,
-                        eventY
-                    )
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
                         eventY
+                    )
+                    editManager.isRotateMode.value -> onRotate(
+                        event.action,
+                        event.x,
+                        event.y
                     )
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
