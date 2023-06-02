@@ -90,12 +90,14 @@ class CropWindow {
     fun updateOffset(offset: Offset) {
         val leftMove = rect.left - this.offset.x
         val topMove = rect.top - this.offset.y
+        val newLeft = offset.x + leftMove
+        val newTop = offset.y + topMove
         this.offset = offset
         create(
-            offset.x + leftMove,
-            offset.y + topMove,
-            offset.x + leftMove + rect.width,
-            offset.y + topMove + rect.height
+            newLeft,
+            newTop,
+            newLeft + rect.width,
+            newTop + rect.height
         )
     }
     fun show(canvas: Canvas) {

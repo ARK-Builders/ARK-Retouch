@@ -385,10 +385,8 @@ class EditManager {
         val drawArea = drawAreaSize.value
         var offset = Offset.Zero
         backgroundImage.value?.let { bitmap ->
-            var xOffset = (drawArea.width - bitmap.width) / 2
-            var yOffset = (drawArea.height - bitmap.height) / 2
-            if (xOffset < 0) xOffset = 0
-            if (yOffset < 0) yOffset = 0
+            val xOffset = ((drawArea.width - bitmap.width) / 2).coerceAtLeast(0)
+            val yOffset = ((drawArea.height - bitmap.height) / 2).coerceAtLeast(0)
             offset = Offset(xOffset.toFloat(), yOffset.toFloat())
         }
         return offset
