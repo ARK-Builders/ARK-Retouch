@@ -27,6 +27,11 @@ import java.util.Stack
 
 class EditManager {
     private val drawPaint: MutableState<Paint> = mutableStateOf(defaultPaint())
+
+    private val _paintColor: MutableState<Color> =
+        mutableStateOf(drawPaint.value.color)
+    val paintColor: State<Color> = _paintColor
+
     private val erasePaint: Paint = Paint().apply {
         shader = null
         color = Color.Transparent
@@ -41,7 +46,7 @@ class EditManager {
     val rotateOperation = RotateOperation(this)
     val cropOperation = CropOperation(this)
 
-    val currentPaint: Paint
+    private val currentPaint: Paint
         get() = if (isEraseMode.value) {
             erasePaint
         } else {
@@ -76,12 +81,6 @@ class EditManager {
         }
 
     var invalidatorTick = mutableStateOf(0)
-
-    private val _currentPaintColor: MutableState<Color> =
-        mutableStateOf(drawPaint.value.color)
-    val currentPaintColor: State<Color> = _currentPaintColor
-    private val _oldColors = mutableListOf<Color>()
-    val oldColors: List<Color> = _oldColors
 
     private val _isEraseMode: MutableState<Boolean> = mutableStateOf(false)
     val isEraseMode: State<Boolean> = _isEraseMode
@@ -300,25 +299,9 @@ class EditManager {
         undoStack.add(DRAW)
     }
 
-    fun initColors(colors: List<Color>, defaultColor: Color) {
-        _oldColors.addAll(colors)
-
-        val currentColor = if (oldColors.isNotEmpty()) oldColors.last() else {
-            _oldColors.add(defaultColor)
-            defaultColor
-        }
-        drawPaint.value.color = currentColor
-        _currentPaintColor.value = currentColor
-    }
-
     fun setPaintColor(color: Color) {
         drawPaint.value.color = color
-        _currentPaintColor.value = color
-        if (oldColors.isNotEmpty() && oldColors.last() != color) {
-            _oldColors.add(color)
-            if (oldColors.size > MAX_COLOR_SIZE)
-                _oldColors.removeFirst()
-        }
+        _paintColor.value = color
     }
 
     private fun clearPaths() {
@@ -439,7 +422,6 @@ class EditManager {
         private const val CROP = "crop"
         private const val RESIZE = "resize"
         private const val ROTATE = "rotate"
-        private const val MAX_COLOR_SIZE = 20
     }
 }
 

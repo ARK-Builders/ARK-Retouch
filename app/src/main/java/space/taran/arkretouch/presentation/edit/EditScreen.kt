@@ -86,7 +86,7 @@ fun EditScreen(
 ) {
     val primaryColor = MaterialTheme.colors.primary.value.toLong()
     val viewModel: EditViewModel =
-        viewModel<EditViewModel>(
+        viewModel(
             factory = DIManager
                 .component
                 .editVMFactory()
@@ -280,6 +280,7 @@ private fun DrawContainer(
                     viewModel.editManager.resizeOperation.resetApply()
                     return@onSizeChanged
                 }
+                if (viewModel.showSavePathDialog) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
                 viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
@@ -450,7 +451,7 @@ private fun StrokeWidthPopup(
                         .fillMaxWidth()
                         .height(viewModel.strokeWidth.dp)
                         .clip(RoundedCornerShape(30))
-                        .background(editManager.currentPaintColor.value)
+                        .background(editManager.paintColor.value)
                 )
             }
 
@@ -543,11 +544,12 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        if (
-                            !editManager.isRotateMode.value &&
+                        if (!editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value
-                        ) editManager.undo()
+                        ) {
+                            editManager.undo()
+                        }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (
@@ -586,7 +588,7 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(color = editManager.currentPaintColor.value)
+                    .background(color = editManager.paintColor.value)
                     .clickable {
                         if (
                             !editManager.isRotateMode.value &&
@@ -598,11 +600,11 @@ private fun EditMenuContent(
             )
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
-                initialColor = editManager.currentPaintColor.value,
-                oldColors = editManager.oldColors,
+                initialColor = editManager.paintColor.value,
+                usedColors = viewModel.usedColors,
                 onColorChanged = {
                     editManager.setPaintColor(it)
-                    viewModel.persistUsedColors()
+                    viewModel.trackColor(it)
                 },
             )
             Icon(
@@ -625,7 +627,7 @@ private fun EditMenuContent(
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
                     !editManager.isCropMode.value
-                ) editManager.currentPaintColor.value
+                ) editManager.paintColor.value
                 else Color.Black,
                 contentDescription = null
             )

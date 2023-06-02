@@ -52,11 +52,20 @@ import kotlinx.coroutines.launch
 fun ColorPickerDialog(
     isVisible: MutableState<Boolean>,
     initialColor: Color,
-    oldColors: List<Color> = listOf(),
+    usedColors: List<Color>,
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
-    var currentColor by remember { mutableStateOf(HsvColor.from(initialColor)) }
+
+    var currentColor by remember {
+        mutableStateOf(HsvColor.from(initialColor))
+    }
+
+    val finish = {
+        onColorChanged(currentColor.toColor())
+        isVisible.value = false
+    }
+
     Dialog(
         onDismissRequest = {
             isVisible.value = false
@@ -82,7 +91,7 @@ fun ColorPickerDialog(
                         .align(Alignment.Center),
                     state = state
                 ) {
-                    items(oldColors) { color ->
+                    items(usedColors) { color ->
                         Box(
                             Modifier
                                 .padding(
@@ -96,6 +105,7 @@ fun ColorPickerDialog(
                                 .background(color)
                                 .clickable {
                                     currentColor = HsvColor.from(color)
+                                    finish()
                                 }
                         )
                     }
@@ -103,7 +113,7 @@ fun ColorPickerDialog(
                 LaunchedEffect(state) {
                     scrollToEnd(state, this)
                 }
-                OldColorsFlowHint(
+                UsedColorsFlowHint(
                     { enableScroll(state) },
                     { checkScroll(state).first },
                     { checkScroll(state).second }
@@ -122,10 +132,7 @@ fun ColorPickerDialog(
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .fillMaxWidth(),
-                onClick = {
-                    onColorChanged(currentColor.toColor())
-                    isVisible.value = false
-                }
+                onClick = finish
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -182,7 +189,7 @@ fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
 }
 
 @Composable
-fun BoxScope.OldColorsFlowHint(
+fun BoxScope.UsedColorsFlowHint(
     scrollIsEnabled: () -> Boolean,
     scrollIsAtStart: () -> Boolean,
     scrollIsAtEnd: () -> Boolean

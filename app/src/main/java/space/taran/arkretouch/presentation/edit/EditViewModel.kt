@@ -67,6 +67,10 @@ class EditViewModel(
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
     val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
+
+    private val _usedColors = mutableListOf<Color>()
+    val usedColors: List<Color> = _usedColors
+
     init {
         if (imageUri == null && imagePath == null)
             viewModelScope.launch {
@@ -76,8 +80,18 @@ class EditViewModel(
                 )
             }
         viewModelScope.launch {
-            val colors = prefs.readUsedColors()
-            editManager.initColors(colors, Color(primaryColor.toULong()))
+            _usedColors.addAll(prefs.readUsedColors())
+
+            val color = if (_usedColors.isNotEmpty()) {
+                _usedColors.last()
+            } else {
+                val defaultColor = Color(primaryColor.toULong())
+
+                _usedColors.add(defaultColor)
+                defaultColor
+            }
+
+            editManager.setPaintColor(color)
         }
     }
 
@@ -161,9 +175,17 @@ class EditViewModel(
         return uri!!
     }
 
-    fun persistUsedColors() {
+    fun trackColor(color: Color) {
+        _usedColors.remove(color)
+        _usedColors.add(color)
+
+        val excess = _usedColors.size - KEEP_USED_COLORS
+        repeat(excess) {
+            _usedColors.removeFirst()
+        }
+
         viewModelScope.launch {
-            prefs.persistUsedColors(editManager.oldColors)
+            prefs.persistUsedColors(usedColors)
         }
     }
 
@@ -172,7 +194,7 @@ class EditViewModel(
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
-            ImageBitmapConfig.Argb8888,
+            ImageBitmapConfig.Argb8888
         )
         val backgroundPaint = Paint().also {
             it.color = editManager.backgroundColor.value
@@ -220,6 +242,10 @@ class EditViewModel(
         viewModelScope.launch {
             prefs.persistDefaults(color, resolution)
         }
+    }
+
+    companion object {
+        private const val KEEP_USED_COLORS = 20
     }
 }
 
