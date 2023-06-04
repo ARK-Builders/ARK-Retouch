@@ -178,6 +178,23 @@ class EditViewModel(
         }
     }
 
+    fun toggleEyeDropper() {
+        editManager.toggleEyeDropper()
+    }
+    fun cancelEyeDropper() {
+        editManager.setPaintColor(usedColors.last())
+    }
+
+    fun processPixelColor(x: Int, y: Int) {
+        try {
+            val bitmap = getCombinedImageBitmap().asAndroidBitmap()
+            val pixel = bitmap.getPixel(x, y)
+            val color = Color(pixel)
+            editManager.setPaintColor(color)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
     fun getCombinedImageBitmap(): ImageBitmap {
         val bitmap = editManager.backgroundImage.value
         val size = if (bitmap != null)

@@ -201,6 +201,10 @@ fun EditDrawCanvas(
         }
     }
 
+    fun handleEyeDropEvent(eventX: Float, eventY: Float) {
+        viewModel.processPixelColor(eventX.toInt(), eventY.toInt())
+    }
+
     Canvas(
         modifier = drawModifier
             // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
@@ -227,6 +231,10 @@ fun EditDrawCanvas(
                     )
                     editManager.isRotateMode.value -> onRotate(
                         event.action,
+                        event.x,
+                        event.y
+                    )
+                    editManager.isEyeDropperMode.value -> handleEyeDropEvent(
                         event.x,
                         event.y
                     )

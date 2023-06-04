@@ -40,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -47,12 +49,15 @@ import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import space.taran.arkretouch.R
 
 @Composable
 fun ColorPickerDialog(
     isVisible: MutableState<Boolean>,
     initialColor: Color,
     usedColors: List<Color>,
+    enableEyeDropper: Boolean,
+    onToggleEyeDropper: () -> Unit,
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
@@ -128,6 +133,26 @@ fun ColorPickerDialog(
                     currentColor = it
                 }
             )
+            if (enableEyeDropper) {
+                Box(Modifier.padding(8.dp)) {
+                    Box(
+                        Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                onToggleEyeDropper()
+                                isVisible.value = false
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.ic_eyedropper),
+                            "",
+                            Modifier.size(25.dp)
+                        )
+                    }
+                }
+            }
             TextButton(
                 modifier = Modifier
                     .padding(top = 8.dp)

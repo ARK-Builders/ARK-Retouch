@@ -123,6 +123,12 @@ fun EditScreen(
             viewModel.menusVisible = true
             return@BackHandler
         }
+        if (editManager.isEyeDropperMode.value) {
+            viewModel.toggleEyeDropper()
+            viewModel.cancelEyeDropper()
+            viewModel.menusVisible = true
+            return@BackHandler
+        }
         if (editManager.canUndo.value) {
             editManager.undo()
             return@BackHandler
@@ -307,7 +313,8 @@ private fun BoxScope.TopMenu(
         !viewModel.menusVisible &&
         !viewModel.editManager.isRotateMode.value &&
         !viewModel.editManager.isResizeMode.value &&
-        !viewModel.editManager.isCropMode.value
+        !viewModel.editManager.isCropMode.value &&
+        !viewModel.editManager.isEyeDropperMode.value
     )
         return
     Icon(
@@ -333,6 +340,12 @@ private fun BoxScope.TopMenu(
                     if (isResizeMode.value) {
                         toggleResizeMode()
                         cancelResizeMode()
+                        viewModel.menusVisible = true
+                        return@clickable
+                    }
+                    if (isEyeDropperMode.value) {
+                        viewModel.toggleEyeDropper()
+                        viewModel.cancelEyeDropper()
                         viewModel.menusVisible = true
                         return@clickable
                     }
@@ -367,6 +380,12 @@ private fun BoxScope.TopMenu(
                 .clip(CircleShape)
                 .clickable {
                     viewModel.editManager.apply {
+                        if (isEyeDropperMode.value) {
+                            viewModel.trackColor(paintColor.value)
+                            viewModel.toggleEyeDropper()
+                            viewModel.menusVisible = true
+                            return@clickable
+                        }
                         if (
                             isCropMode.value || isRotateMode.value ||
                             isResizeMode.value
@@ -387,7 +406,8 @@ private fun BoxScope.TopMenu(
             imageVector = if (
                 viewModel.editManager.isCropMode.value ||
                 viewModel.editManager.isRotateMode.value ||
-                viewModel.editManager.isResizeMode.value
+                viewModel.editManager.isResizeMode.value ||
+                viewModel.editManager.isEyeDropperMode.value
             )
                 ImageVector.vectorResource(R.drawable.ic_check)
             else ImageVector.vectorResource(R.drawable.ic_more_vert),
@@ -520,7 +540,8 @@ private fun EditMenuContent(
                     .clickable {
                         if (!editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value
                         ) {
                             editManager.undo()
                         }
@@ -530,7 +551,8 @@ private fun EditMenuContent(
                     editManager.canUndo.value &&
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
-                    !editManager.isCropMode.value
+                    !editManager.isCropMode.value &&
+                    !editManager.isEyeDropperMode.value
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
@@ -543,7 +565,8 @@ private fun EditMenuContent(
                         if (
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value
                         ) editManager.redo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
@@ -552,7 +575,8 @@ private fun EditMenuContent(
                     (
                         !editManager.isRotateMode.value &&
                             !editManager.isCropMode.value &&
-                            !editManager.isResizeMode.value
+                            !editManager.isResizeMode.value &&
+                            !editManager.isEyeDropperMode.value
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
@@ -564,6 +588,12 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .background(color = editManager.paintColor.value)
                     .clickable {
+                        if (editManager.isEyeDropperMode.value) {
+                            viewModel.toggleEyeDropper()
+                            viewModel.cancelEyeDropper()
+                            colorDialogExpanded.value = true
+                            return@clickable
+                        }
                         if (
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
@@ -576,10 +606,14 @@ private fun EditMenuContent(
                 isVisible = colorDialogExpanded,
                 initialColor = editManager.paintColor.value,
                 usedColors = viewModel.usedColors,
+                enableEyeDropper = true,
+                onToggleEyeDropper = {
+                    viewModel.toggleEyeDropper()
+                },
                 onColorChanged = {
                     editManager.setPaintColor(it)
                     viewModel.trackColor(it)
-                },
+                }
             )
             Icon(
                 modifier = Modifier
@@ -590,7 +624,8 @@ private fun EditMenuContent(
                         if (
                             !editManager.isRotateMode.value &&
                             !editManager.isCropMode.value &&
-                            !editManager.isResizeMode.value
+                            !editManager.isResizeMode.value &&
+                            !editManager.isEyeDropperMode.value
                         )
                             viewModel.strokeSliderExpanded =
                                 !viewModel.strokeSliderExpanded
@@ -600,7 +635,8 @@ private fun EditMenuContent(
                 tint = if (
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
-                    !editManager.isCropMode.value
+                    !editManager.isCropMode.value &&
+                    !editManager.isEyeDropperMode.value
                 ) editManager.paintColor.value
                 else Color.Black,
                 contentDescription = null
@@ -614,7 +650,8 @@ private fun EditMenuContent(
                         if (
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value
                         )
                             editManager.clearEdits()
                     },
@@ -622,7 +659,8 @@ private fun EditMenuContent(
                 tint = if (
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
-                    !editManager.isCropMode.value
+                    !editManager.isCropMode.value &&
+                    !editManager.isEyeDropperMode.value
                 )
                     MaterialTheme.colors.primary
                 else Color.Black,
@@ -637,7 +675,8 @@ private fun EditMenuContent(
                         if (
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value
                         )
                             editManager.toggleEraseMode()
                     },
@@ -645,7 +684,8 @@ private fun EditMenuContent(
                 tint = if (
                     editManager.isEraseMode.value &&
                     !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value
+                    !editManager.isResizeMode.value &&
+                    !editManager.isEyeDropperMode.value
                 )
                     MaterialTheme.colors.primary
                 else
@@ -659,7 +699,11 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (!isRotateMode.value && !isResizeMode.value)
+                            if (
+                                !isRotateMode.value &&
+                                !isResizeMode.value &&
+                                !isEyeDropperMode.value
+                            )
                                 toggleCropMode()
                             else return@clickable
                             viewModel.menusVisible =
@@ -701,7 +745,11 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (!isCropMode.value && !isResizeMode.value)
+                            if (
+                                !isCropMode.value &&
+                                !isResizeMode.value &&
+                                !isEyeDropperMode.value
+                            )
                                 toggleRotateMode()
                             else return@clickable
                             if (isRotateMode.value) {
@@ -728,7 +776,11 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (!isRotateMode.value && !isCropMode.value)
+                            if (
+                                !isRotateMode.value &&
+                                !isCropMode.value &&
+                                !isEyeDropperMode.value
+                            )
                                 toggleResizeMode()
                             else return@clickable
                             viewModel.menusVisible = !isResizeMode.value
