@@ -380,12 +380,6 @@ private fun BoxScope.TopMenu(
                 .clip(CircleShape)
                 .clickable {
                     viewModel.editManager.apply {
-                        if (isEyeDropperMode.value) {
-                            viewModel.trackColor(paintColor.value)
-                            viewModel.toggleEyeDropper()
-                            viewModel.menusVisible = true
-                            return@clickable
-                        }
                         if (
                             isCropMode.value || isRotateMode.value ||
                             isResizeMode.value
@@ -406,8 +400,7 @@ private fun BoxScope.TopMenu(
             imageVector = if (
                 viewModel.editManager.isCropMode.value ||
                 viewModel.editManager.isRotateMode.value ||
-                viewModel.editManager.isResizeMode.value ||
-                viewModel.editManager.isEyeDropperMode.value
+                viewModel.editManager.isResizeMode.value
             )
                 ImageVector.vectorResource(R.drawable.ic_check)
             else ImageVector.vectorResource(R.drawable.ic_more_vert),

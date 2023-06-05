@@ -202,7 +202,7 @@ fun EditDrawCanvas(
     }
 
     fun handleEyeDropEvent(eventX: Float, eventY: Float) {
-        viewModel.processPixelColor(eventX.toInt(), eventY.toInt())
+        viewModel.applyEyeDropper(eventX.toInt(), eventY.toInt())
     }
 
     Canvas(

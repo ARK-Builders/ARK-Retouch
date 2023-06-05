@@ -185,12 +185,15 @@ class EditViewModel(
         editManager.setPaintColor(usedColors.last())
     }
 
-    fun processPixelColor(x: Int, y: Int) {
+    fun applyEyeDropper(x: Int, y: Int) {
         try {
             val bitmap = getCombinedImageBitmap().asAndroidBitmap()
             val pixel = bitmap.getPixel(x, y)
             val color = Color(pixel)
             editManager.setPaintColor(color)
+            trackColor(color)
+            toggleEyeDropper()
+            menusVisible = true
         } catch (e: Exception) {
             e.printStackTrace()
         }
