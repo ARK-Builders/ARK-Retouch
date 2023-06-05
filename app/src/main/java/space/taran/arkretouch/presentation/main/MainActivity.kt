@@ -64,9 +64,11 @@ fun MainScreen(
         contract = PermissionsHelper.writePermContract()
     ) { isGranted ->
         if (!isGranted) return@rememberLauncherForActivityResult
-        navController.navigate(
-            NavHelper.parseEditArgs(realPath, uri, launchedFromIntent)
-        )
+        if (launchedFromIntent) {
+            navController.navigate(
+                NavHelper.parseEditArgs(realPath, uri, true)
+            )
+        }
     }
 
     SideEffect {
