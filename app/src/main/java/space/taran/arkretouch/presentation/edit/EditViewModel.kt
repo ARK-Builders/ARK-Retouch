@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.view.MotionEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -59,6 +60,7 @@ class EditViewModel(
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
+    var showEyeDropperHint by mutableStateOf(false)
     var exitConfirmed = false
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
@@ -185,15 +187,23 @@ class EditViewModel(
         editManager.setPaintColor(usedColors.last())
     }
 
-    fun applyEyeDropper(x: Int, y: Int) {
+    fun applyEyeDropper(action: Int, x: Int, y: Int) {
         try {
             val bitmap = getCombinedImageBitmap().asAndroidBitmap()
             val pixel = bitmap.getPixel(x, y)
             val color = Color(pixel)
+            if (color == Color.Transparent) {
+                showEyeDropperHint = true
+                return
+            }
+            when (action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> {
+                    trackColor(color)
+                    toggleEyeDropper()
+                    menusVisible = true
+                }
+            }
             editManager.setPaintColor(color)
-            trackColor(color)
-            toggleEyeDropper()
-            menusVisible = true
         } catch (e: Exception) {
             e.printStackTrace()
         }

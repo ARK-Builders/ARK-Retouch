@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -66,7 +67,9 @@ import space.taran.arkretouch.R
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
+import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
+import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -162,6 +165,20 @@ fun EditScreen(
 
     if (viewModel.isSavingImage) {
         SaveProgress()
+    }
+
+    if (viewModel.showEyeDropperHint) {
+        Box(
+            Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Hint(stringResource(R.string.pick_color)) {
+                delayHidingHint(it) {
+                    viewModel.showEyeDropperHint = false
+                }
+                viewModel.showEyeDropperHint
+            }
+        }
     }
 }
 

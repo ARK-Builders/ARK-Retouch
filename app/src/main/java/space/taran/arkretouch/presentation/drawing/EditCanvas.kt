@@ -201,8 +201,8 @@ fun EditDrawCanvas(
         }
     }
 
-    fun handleEyeDropEvent(eventX: Float, eventY: Float) {
-        viewModel.applyEyeDropper(eventX.toInt(), eventY.toInt())
+    fun handleEyeDropEvent(action: Int, eventX: Float, eventY: Float) {
+        viewModel.applyEyeDropper(action, eventX.toInt(), eventY.toInt())
     }
 
     Canvas(
@@ -235,6 +235,7 @@ fun EditDrawCanvas(
                         event.y
                     )
                     editManager.isEyeDropperMode.value -> handleEyeDropEvent(
+                        event.action,
                         event.x,
                         event.y
                     )
