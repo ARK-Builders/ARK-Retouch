@@ -72,19 +72,39 @@ fun NewImageOptionsDialog(
         var height by remember {
             mutableStateOf(defaultResolution.height.toString())
         }
+        var widthError by remember {
+            mutableStateOf(0.toString())
+        }
+        var heightError by remember {
+            mutableStateOf(0.toString())
+        }
         var rememberDefaults by remember { mutableStateOf(false) }
         var showHint by remember { mutableStateOf(false) }
         var hint by remember { mutableStateOf("") }
-        val heightHint = stringResource(
+        val maxHeightHint = stringResource(
             R.string.height_too_large,
             maxResolution.height
         )
-        val widthHint = stringResource(
+        val minHeightHint = stringResource(
+            R.string.height_not_accepted,
+            heightError
+        )
+        val maxWidthHint = stringResource(
             R.string.width_too_large,
             maxResolution.width
         )
+        val minWidthHint = stringResource(
+            R.string.width_not_accepted,
+            widthError
+        )
         val digitsOnlyHint = stringResource(
             R.string.digits_only
+        )
+        val widthEmptyHint = stringResource(
+            R.string.width_empty
+        )
+        val heightEmptyHint = stringResource(
+            R.string.height_empty
         )
 
         Dialog(
@@ -126,7 +146,16 @@ fun NewImageOptionsDialog(
                                 it.isNotEmpty() && it.isDigitsOnly() &&
                                 it.toInt() > maxResolution.width
                             ) {
-                                hint = widthHint
+                                hint = maxWidthHint
+                                showHint = true
+                                return@TextField
+                            }
+                            if (
+                                it.isNotEmpty() && it.isDigitsOnly() &&
+                                it.toInt() <= 0
+                            ) {
+                                widthError = it
+                                hint = minWidthHint
                                 showHint = true
                                 return@TextField
                             }
@@ -166,7 +195,16 @@ fun NewImageOptionsDialog(
                                 it.isNotEmpty() && it.isDigitsOnly() &&
                                 it.toInt() > maxResolution.height
                             ) {
-                                hint = heightHint
+                                hint = maxHeightHint
+                                showHint = true
+                                return@TextField
+                            }
+                            if (
+                                it.isNotEmpty() && it.isDigitsOnly() &&
+                                it.toInt() <= 0
+                            ) {
+                                heightError = it
+                                hint = minHeightHint
                                 showHint = true
                                 return@TextField
                             }
@@ -246,6 +284,16 @@ fun NewImageOptionsDialog(
                         modifier = Modifier
                             .padding(end = 8.dp),
                         onClick = {
+                            if (width.isEmpty()) {
+                                hint = widthEmptyHint
+                                showHint = true
+                                return@TextButton
+                            }
+                            if (height.isEmpty()) {
+                                hint = heightEmptyHint
+                                showHint = true
+                                return@TextButton
+                            }
                             val resolution = Resolution(
                                 width.toInt(),
                                 height.toInt()

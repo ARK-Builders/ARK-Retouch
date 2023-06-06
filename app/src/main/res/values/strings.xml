@@ -28,4 +28,8 @@
     <string name="crash_dialog_title">Crash</string>
     <string name="crash_dialog_comment">You can add a comment here:</string>
     <string name="background">Background</string>
+    <string name="height_not_accepted">Height cannot be %s</string>
+    <string name="width_not_accepted">Width cannot be %s</string>
+    <string name="width_empty">Please enter width</string>
+    <string name="height_empty">Please enter height</string>
 </resources>
