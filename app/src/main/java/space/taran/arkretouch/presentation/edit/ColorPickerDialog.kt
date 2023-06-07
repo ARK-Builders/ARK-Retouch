@@ -34,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,7 +51,7 @@ import kotlinx.coroutines.launch
 fun ColorPickerDialog(
     isVisible: MutableState<Boolean>,
     initialColor: Color,
-    usedColors: List<Color>,
+    usedColors: List<Color> = listOf(),
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
@@ -79,45 +78,46 @@ fun ColorPickerDialog(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-            ) {
-                val state = rememberLazyListState()
-                val scope = rememberCoroutineScope()
-
-                LazyRow(
+            if (usedColors.isNotEmpty()) {
+                Box(
                     Modifier
-                        .align(Alignment.Center),
-                    state = state
+                        .fillMaxWidth()
                 ) {
-                    items(usedColors) { color ->
-                        Box(
-                            Modifier
-                                .padding(
-                                    start = 5.dp,
-                                    end = 5.dp,
-                                    top = 12.dp,
-                                    bottom = 12.dp
-                                )
-                                .size(25.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .clickable {
-                                    currentColor = HsvColor.from(color)
-                                    finish()
-                                }
-                        )
+                    val state = rememberLazyListState()
+
+                    LazyRow(
+                        Modifier
+                            .align(Alignment.Center),
+                        state = state
+                    ) {
+                        items(usedColors) { color ->
+                            Box(
+                                Modifier
+                                    .padding(
+                                        start = 5.dp,
+                                        end = 5.dp,
+                                        top = 12.dp,
+                                        bottom = 12.dp
+                                    )
+                                    .size(25.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .clickable {
+                                        currentColor = HsvColor.from(color)
+                                        finish()
+                                    }
+                            )
+                        }
                     }
+                    LaunchedEffect(state) {
+                        scrollToEnd(state, this)
+                    }
+                    UsedColorsFlowHint(
+                        { enableScroll(state) },
+                        { checkScroll(state).first },
+                        { checkScroll(state).second }
+                    )
                 }
-                LaunchedEffect(state) {
-                    scrollToEnd(state, this)
-                }
-                UsedColorsFlowHint(
-                    { enableScroll(state) },
-                    { checkScroll(state).first },
-                    { checkScroll(state).second }
-                )
             }
             ClassicColorPicker(
                 modifier = Modifier

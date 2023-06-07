@@ -12,7 +12,6 @@ import javax.inject.Singleton
 interface AppComponent {
     fun editVMFactory(): EditViewModelFactory.Factory
     fun app(): Application
-
     @Component.Factory
     interface Factory {
         fun create(

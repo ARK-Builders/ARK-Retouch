@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
+import space.taran.arkretouch.data.ImageDefaults
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
@@ -55,13 +57,16 @@ class EditManager {
     val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
-
+    private val _backgroundColor = mutableStateOf(Color.White)
+    val backgroundColor: State<Color> = _backgroundColor
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
     val editMatrix = Matrix()
 
+    private val _resolution = mutableStateOf<Resolution?>(null)
+    val resolution: State<Resolution?> = _resolution
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
     val originalDrawAreaSize: IntSize
@@ -72,7 +77,7 @@ class EditManager {
                     bitmap.width,
                     bitmap.height
                 )
-            else drawAreaSize.value
+            else resolution.value?.toIntSize()!!
         }
 
     var invalidatorTick = mutableStateOf(0)
@@ -123,9 +128,28 @@ class EditManager {
         operation.redo()
     }
 
+    fun setBackgroundColor(color: Color) {
+        _backgroundColor.value = color
+    }
+
+    fun setImageResolution(value: Resolution) {
+        _resolution.value = value
+    }
+
+    fun initDefaults(defaults: ImageDefaults, maxResolution: Resolution) {
+        defaults.resolution?.let {
+            _resolution.value = it
+        }
+        if (resolution.value == null)
+            _resolution.value = maxResolution
+        _backgroundColor.value = Color(defaults.colorValue)
+    }
+
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
-            availableDrawAreaSize.value = drawAreaSize.value
+            resolution.value?.let {
+                availableDrawAreaSize.value = it.toIntSize()
+            }
             return
         }
         availableDrawAreaSize.value = IntSize(
