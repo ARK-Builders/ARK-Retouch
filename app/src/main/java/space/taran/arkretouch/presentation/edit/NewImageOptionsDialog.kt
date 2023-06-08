@@ -60,6 +60,8 @@ fun NewImageOptionsDialog(
     ColorPickerDialog(
         isVisible = showColorDialog,
         initialColor = backgroundColor,
+        enableEyeDropper = false,
+        onToggleEyeDropper = {},
         onColorChanged = {
             backgroundColor = it
         }
