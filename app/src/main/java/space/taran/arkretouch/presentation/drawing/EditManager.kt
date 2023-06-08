@@ -97,6 +97,9 @@ class EditManager {
     private val _isResizeMode = mutableStateOf(false)
     val isResizeMode = _isResizeMode
 
+    private val _isEyeDropperMode = mutableStateOf(false)
+    val isEyeDropperMode = _isEyeDropperMode
+
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
 
@@ -160,6 +163,10 @@ class EditManager {
 
     internal fun clearRedoPath() {
         redoPaths.clear()
+    }
+
+    fun toggleEyeDropper() {
+        _isEyeDropperMode.value = !isEyeDropperMode.value
     }
 
     fun updateRevised() {
