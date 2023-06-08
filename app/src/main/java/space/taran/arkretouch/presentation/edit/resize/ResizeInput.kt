@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -187,11 +188,13 @@ fun Hint(text: String, isVisible: (CoroutineScope) -> Boolean) {
         enter = fadeIn(),
         exit = fadeOut(tween(durationMillis = 500, delayMillis = 1000)),
         modifier = Modifier
+            .wrapContentSize()
             .background(Color.LightGray, RoundedCornerShape(10))
     ) {
         Text(
             text,
-            Modifier.padding(12.dp)
+            Modifier
+                .padding(12.dp)
         )
     }
 }

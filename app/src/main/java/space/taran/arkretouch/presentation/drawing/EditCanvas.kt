@@ -15,12 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
@@ -63,7 +63,10 @@ fun EditCanvas(viewModel: EditViewModel) {
     }
 
     Box(
-        Modifier.background(Color.White),
+        Modifier.background(
+            if (editManager.isCropMode.value) Color.White
+            else editManager.backgroundColor.value
+        ),
         contentAlignment = Alignment.Center
     ) {
         val modifier = if (
