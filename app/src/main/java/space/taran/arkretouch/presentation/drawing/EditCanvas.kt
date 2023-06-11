@@ -15,12 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
@@ -30,9 +30,42 @@ import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.comput
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
+    val currentPoint = PointF(0f, 0f)
     val editManager = viewModel.editManager
+
+    fun handleRotateEvent(action: Int, eventX: Float, eventY: Float) {
+        when (action) {
+            MotionEvent.ACTION_MOVE -> {
+                val centerX = editManager.drawAreaSize.value.width / 2
+                val centerY = editManager.drawAreaSize.value.height / 2
+                val prevDX = currentPoint.x - centerX
+                val prevDY = currentPoint.y - centerY
+                val dx = eventX - centerX
+                val dy = eventY - centerY
+                val angle1 = atan2(prevDY, prevDX)
+                val angle2 = atan2(dy, dx)
+                val degreesAngle =
+                    Math.toDegrees(
+                        (angle2 - angle1).toDouble()
+                    )
+                if (degreesAngle != 0.0)
+                    editManager.rotate(degreesAngle.toFloat())
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_DOWN -> {
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
+        }
+    }
+
     Box(
-        Modifier.background(Color.White),
+        Modifier.background(
+            if (editManager.isCropMode.value) Color.White
+            else editManager.backgroundColor.value
+        ),
         contentAlignment = Alignment.Center
     ) {
         val modifier = Modifier.size(
@@ -40,19 +73,38 @@ fun EditCanvas(viewModel: EditViewModel) {
             editManager.availableDrawAreaSize.value.height.toDp()
         )
         EditImageCanvas(modifier, editManager)
-        EditDrawCanvas(modifier, viewModel)
+        EditDrawCanvas(
+            modifier,
+            viewModel
+        ) { action, x, y ->
+            handleRotateEvent(action, x, y)
+        }
+    }
+    if (editManager.isRotateMode.value) {
+        Canvas(
+            Modifier
+                .fillMaxSize()
+                .pointerInteropFilter {
+                    handleRotateEvent(it.action, it.x, it.y)
+                    editManager.invalidatorTick.value++
+                    true
+                }
+        ) {}
     }
 }
 
 @Composable
 fun EditImageCanvas(modifier: Modifier, editManager: EditManager) {
     val imageModifier = with(editManager) {
-        if (isCropMode.value) Modifier.size(
-            backgroundImage.value?.width?.toDp()!!,
-            backgroundImage.value?.height?.toDp()!!
-        )
-        else modifier
+        when (true) {
+            isCropMode.value -> Modifier.size(
+                backgroundImage.value?.width?.toDp()!!,
+                backgroundImage.value?.height?.toDp()!!
+            )
+            else -> modifier
+        }
     }
+
     Canvas(imageModifier) {
         editManager.apply {
             invalidatorTick.value
@@ -73,7 +125,11 @@ fun EditImageCanvas(modifier: Modifier, editManager: EditManager) {
 }
 
 @Composable
-fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
+fun EditDrawCanvas(
+    modifier: Modifier,
+    viewModel: EditViewModel,
+    onRotate: (Int, Float, Float) -> Unit
+) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
@@ -117,34 +173,6 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         }
     }
 
-    fun handleRotateEvent(action: Int, eventX: Float, eventY: Float) {
-        when (action) {
-            MotionEvent.ACTION_MOVE -> {
-                val centerX = editManager.availableDrawAreaSize.value.width / 2
-                val centerY = editManager.availableDrawAreaSize.value.height / 2
-                val prevDX = currentPoint.x - centerX
-                val prevDY = currentPoint.y - centerY
-                val dx = eventX - centerX
-                val dy = eventY - centerY
-                val angle1 = atan2(prevDY, prevDX)
-                val angle2 = atan2(dy, dx)
-                val degreesAngle =
-                    Math.toDegrees(
-                        (angle2 - angle1).toDouble()
-                    )
-                if (degreesAngle != 0.0)
-                    editManager.rotate(degreesAngle.toFloat())
-                currentPoint.x = eventX
-                currentPoint.y = eventY
-            }
-            MotionEvent.ACTION_DOWN -> {
-                currentPoint.x = eventX
-                currentPoint.y = eventY
-            }
-            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
-        }
-    }
-
     fun handleCropEvent(action: Int, eventX: Float, eventY: Float) {
         when (action) {
             MotionEvent.ACTION_DOWN -> {
@@ -172,6 +200,10 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         }
     }
 
+    fun handleEyeDropEvent(action: Int, eventX: Float, eventY: Float) {
+        viewModel.applyEyeDropper(action, eventX.toInt(), eventY.toInt())
+    }
+
     Canvas(
         modifier = drawModifier
             // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
@@ -194,18 +226,21 @@ fun EditDrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
 
                     editManager.isResizeMode.value -> {}
 
-                    editManager.isRotateMode.value -> handleRotateEvent(
-                        event.action,
-                        eventX,
-                        eventY
-                    )
-
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
                         eventY
                     )
-
+                    editManager.isRotateMode.value -> onRotate(
+                        event.action,
+                        event.x,
+                        event.y
+                    )
+                    editManager.isEyeDropperMode.value -> handleEyeDropEvent(
+                        event.action,
+                        event.x,
+                        event.y
+                    )
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++

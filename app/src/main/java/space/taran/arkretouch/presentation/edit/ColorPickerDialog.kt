@@ -34,12 +34,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -47,12 +48,15 @@ import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import space.taran.arkretouch.R
 
 @Composable
 fun ColorPickerDialog(
     isVisible: MutableState<Boolean>,
     initialColor: Color,
-    usedColors: List<Color>,
+    usedColors: List<Color> = listOf(),
+    enableEyeDropper: Boolean,
+    onToggleEyeDropper: () -> Unit,
     onColorChanged: (Color) -> Unit,
 ) {
     if (!isVisible.value) return
@@ -79,45 +83,46 @@ fun ColorPickerDialog(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-            ) {
-                val state = rememberLazyListState()
-                val scope = rememberCoroutineScope()
-
-                LazyRow(
+            if (usedColors.isNotEmpty()) {
+                Box(
                     Modifier
-                        .align(Alignment.Center),
-                    state = state
+                        .fillMaxWidth()
                 ) {
-                    items(usedColors) { color ->
-                        Box(
-                            Modifier
-                                .padding(
-                                    start = 5.dp,
-                                    end = 5.dp,
-                                    top = 12.dp,
-                                    bottom = 12.dp
-                                )
-                                .size(25.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .clickable {
-                                    currentColor = HsvColor.from(color)
-                                    finish()
-                                }
-                        )
+                    val state = rememberLazyListState()
+
+                    LazyRow(
+                        Modifier
+                            .align(Alignment.Center),
+                        state = state
+                    ) {
+                        items(usedColors) { color ->
+                            Box(
+                                Modifier
+                                    .padding(
+                                        start = 5.dp,
+                                        end = 5.dp,
+                                        top = 12.dp,
+                                        bottom = 12.dp
+                                    )
+                                    .size(25.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .clickable {
+                                        currentColor = HsvColor.from(color)
+                                        finish()
+                                    }
+                            )
+                        }
                     }
+                    LaunchedEffect(state) {
+                        scrollToEnd(state, this)
+                    }
+                    UsedColorsFlowHint(
+                        { enableScroll(state) },
+                        { checkScroll(state).first },
+                        { checkScroll(state).second }
+                    )
                 }
-                LaunchedEffect(state) {
-                    scrollToEnd(state, this)
-                }
-                UsedColorsFlowHint(
-                    { enableScroll(state) },
-                    { checkScroll(state).first },
-                    { checkScroll(state).second }
-                )
             }
             ClassicColorPicker(
                 modifier = Modifier
@@ -128,6 +133,26 @@ fun ColorPickerDialog(
                     currentColor = it
                 }
             )
+            if (enableEyeDropper) {
+                Box(Modifier.padding(8.dp)) {
+                    Box(
+                        Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                onToggleEyeDropper()
+                                isVisible.value = false
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.ic_eyedropper),
+                            "",
+                            Modifier.size(25.dp)
+                        )
+                    }
+                }
+            }
             TextButton(
                 modifier = Modifier
                     .padding(top = 8.dp)

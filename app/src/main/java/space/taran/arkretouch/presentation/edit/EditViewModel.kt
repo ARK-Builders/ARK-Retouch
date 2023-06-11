@@ -7,19 +7,19 @@ import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.compose.runtime.State
+import android.view.MotionEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -38,9 +38,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import space.taran.arkretouch.R
 import space.taran.arkretouch.data.Preferences
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -51,7 +51,8 @@ class EditViewModel(
     private val launchedFromIntent: Boolean,
     private val imagePath: Path?,
     private val imageUri: String?,
-    private val prefs: Preferences,
+    private val maxResolution: Resolution,
+    private val prefs: Preferences
 ) : ViewModel() {
     val editManager = EditManager()
 
@@ -63,6 +64,7 @@ class EditViewModel(
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
+    var showEyeDropperHint by mutableStateOf(false)
     var exitConfirmed = false
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
@@ -74,6 +76,13 @@ class EditViewModel(
     val imageLoaded: State<Boolean> = _imageLoaded
 
     init {
+        if (imageUri == null && imagePath == null)
+            viewModelScope.launch {
+                editManager.initDefaults(
+                    prefs.readDefaults(),
+                    maxResolution
+                )
+            }
         viewModelScope.launch {
             _usedColors.addAll(prefs.readUsedColors())
 
@@ -186,6 +195,34 @@ class EditViewModel(
         }
     }
 
+    fun toggleEyeDropper() {
+        editManager.toggleEyeDropper()
+    }
+    fun cancelEyeDropper() {
+        editManager.setPaintColor(usedColors.last())
+    }
+
+    fun applyEyeDropper(action: Int, x: Int, y: Int) {
+        try {
+            val bitmap = getCombinedImageBitmap().asAndroidBitmap()
+            val pixel = bitmap.getPixel(x, y)
+            val color = Color(pixel)
+            if (color == Color.Transparent) {
+                showEyeDropperHint = true
+                return
+            }
+            when (action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> {
+                    trackColor(color)
+                    toggleEyeDropper()
+                    menusVisible = true
+                }
+            }
+            editManager.setPaintColor(color)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
     fun getCombinedImageBitmap(): ImageBitmap {
         val size = editManager.imageSize
         val drawBitmap = ImageBitmap(
@@ -193,6 +230,9 @@ class EditViewModel(
             size.height,
             ImageBitmapConfig.Argb8888
         )
+        val backgroundPaint = Paint().also {
+            it.color = editManager.backgroundColor.value
+        }
         val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
@@ -242,6 +282,12 @@ class EditViewModel(
         }
     }
 
+    fun persistDefaults(color: Color, resolution: Resolution) {
+        viewModelScope.launch {
+            prefs.persistDefaults(color, resolution)
+        }
+    }
+
     companion object {
         private const val KEEP_USED_COLORS = 20
     }
@@ -252,6 +298,7 @@ class EditViewModelFactory @AssistedInject constructor(
     @Assisted private val launchedFromIntent: Boolean,
     @Assisted private val imagePath: Path?,
     @Assisted private val imageUri: String?,
+    @Assisted private val maxResolution: Resolution,
     private val prefs: Preferences,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -260,6 +307,7 @@ class EditViewModelFactory @AssistedInject constructor(
             launchedFromIntent,
             imagePath,
             imageUri,
+            maxResolution,
             prefs,
         ) as T
     }
@@ -271,6 +319,7 @@ class EditViewModelFactory @AssistedInject constructor(
             @Assisted launchedFromIntent: Boolean,
             @Assisted imagePath: Path?,
             @Assisted imageUri: String?,
+            @Assisted maxResolution: Resolution,
         ): EditViewModelFactory
     }
 }
