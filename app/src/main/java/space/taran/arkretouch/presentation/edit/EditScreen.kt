@@ -51,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -118,13 +117,13 @@ fun EditScreen(
                     persistDefaults = { color, resolution ->
                         viewModel.persistDefaults(color, resolution)
                     },
-                    onConfirm = { showDefaultsDialog.value = false }
+                    onConfirm = {
+                        showDefaultsDialog.value = false
+                    }
                 )
-                return
             }
         }
     }
-
     ExitDialog(
         viewModel = viewModel,
         navigateBack = { navigateBack() },
@@ -176,9 +175,10 @@ fun EditScreen(
 
     HandleImageSavedEffect(viewModel, launchedFromIntent, navigateBack)
 
-    DrawContainer(
-        viewModel
-    )
+    if (!showDefaultsDialog.value)
+        DrawContainer(
+            viewModel
+        )
 
     Menus(
         imagePath,
@@ -304,6 +304,7 @@ private fun DrawContainer(
                     return@onSizeChanged
                 }
                 if (viewModel.showSavePathDialog) return@onSizeChanged
+                if (viewModel.imageLoaded.value) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
                 if (viewModel.isLoaded) {
                     viewModel.editManager.apply {
@@ -312,7 +313,6 @@ private fun DrawContainer(
                         return@onSizeChanged
                     }
                 }
-                viewModel.editManager.updateAvailableDrawArea()
                 viewModel.loadImage()
             },
         contentAlignment = Alignment.Center
@@ -754,18 +754,11 @@ private fun EditMenuContent(
                             if (isCropMode.value) {
                                 val bitmap = viewModel
                                     .getCombinedImageBitmap()
-                                    .asAndroidBitmap()
                                 setBackgroundImage2()
+                                backgroundImage.value = bitmap
                                 viewModel.editManager.cropWindow.init(
                                     editManager,
-                                    bitmap,
-                                    fitBitmap = { bitmap1, maxWidth, maxHeight ->
-                                        viewModel.fitBitmap(
-                                            bitmap1.asImageBitmap(),
-                                            maxWidth,
-                                            maxHeight
-                                        )
-                                    }
+                                    bitmap.asAndroidBitmap()
                                 )
                                 return@clickable
                             }
@@ -828,11 +821,12 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !isResizeMode.value
                             if (isResizeMode.value) {
-                                val imgBitmap =
-                                    viewModel.getCombinedImageBitmap()
+                                val imgBitmap = viewModel.getCombinedImageBitmap()
                                 setBackgroundImage2()
-                                resizeOperation.init(imgBitmap.asAndroidBitmap())
                                 backgroundImage.value = imgBitmap
+                                resizeOperation.init(
+                                    imgBitmap.asAndroidBitmap()
+                                )
                                 return@clickable
                             }
                             cancelResizeMode()
