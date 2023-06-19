@@ -6,9 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -38,6 +38,7 @@ import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
 import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerMode
 import space.taran.arkfilepicker.presentation.onArkPathPicked
 import space.taran.arkretouch.R
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.presentation.utils.askWritePermissions
 import space.taran.arkretouch.presentation.utils.isWritePermGranted
 import space.taran.arkretouch.presentation.theme.Purple500
@@ -47,14 +48,19 @@ import java.nio.file.Path
 @Composable
 fun PickerScreen(
     fragmentManager: FragmentManager,
-    onNavigateToEdit: (Path?) -> Unit
+    onNavigateToEdit: (Path?, Resolution) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     var size by remember { mutableStateOf(IntSize.Zero) }
+    var screenSize by remember { mutableStateOf(IntSize.Zero) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .onSizeChanged {
+                screenSize = it
+            }
     ) {
         Column(
             modifier = Modifier
@@ -76,7 +82,7 @@ fun PickerScreen(
                         .newInstance(imageFilePickerConfig())
                         .show(fragmentManager, null)
                     fragmentManager.onArkPathPicked(lifecycleOwner) {
-                        onNavigateToEdit(it)
+                        onNavigateToEdit(it, Resolution.fromIntSize(screenSize))
                     }
                 }
                 .border(2.dp, Purple700, shape = RoundedCornerShape(10)),
@@ -102,18 +108,20 @@ fun PickerScreen(
             fontSize = 24.sp
         )
         Column(
-            modifier = Modifier
+            Modifier
                 .weight(2f)
                 .fillMaxWidth()
                 .padding(20.dp)
                 .clip(RoundedCornerShape(10))
                 .background(Purple500)
+                .fillMaxWidth()
                 .clickable {
-                    onNavigateToEdit(null)
+                    onNavigateToEdit(null, Resolution.fromIntSize(screenSize))
                 }
                 .border(2.dp, Purple700, shape = RoundedCornerShape(10)),
             verticalArrangement = Arrangement.SpaceEvenly,
             horizontalAlignment = Alignment.CenterHorizontally
+
         ) {
             Text(
                 text = stringResource(R.string.new_),

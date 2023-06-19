@@ -5,6 +5,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentManager
@@ -13,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.presentation.utils.PermissionsHelper
 import space.taran.arkretouch.presentation.edit.EditScreen
 import space.taran.arkretouch.presentation.utils.isWritePermGranted
@@ -48,6 +53,7 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
+    var maxResolution by remember { mutableStateOf(Resolution(0, 0)) }
     val startScreen =
         if ((uri != null || realPath != null) && context.isWritePermGranted())
             NavHelper.editRoute
@@ -58,9 +64,11 @@ fun MainScreen(
         contract = PermissionsHelper.writePermContract()
     ) { isGranted ->
         if (!isGranted) return@rememberLauncherForActivityResult
-        navController.navigate(
-            NavHelper.parseEditArgs(realPath, uri, launchedFromIntent)
-        )
+        if (launchedFromIntent) {
+            navController.navigate(
+                NavHelper.parseEditArgs(realPath, uri, true)
+            )
+        }
     }
 
     SideEffect {
@@ -75,7 +83,8 @@ fun MainScreen(
         composable(NavHelper.pickerRoute) {
             PickerScreen(
                 fragmentManager,
-                onNavigateToEdit = { path ->
+                onNavigateToEdit = { path, resolution ->
+                    maxResolution = resolution
                     navController.navigate(
                         NavHelper.parseEditArgs(
                             path?.toString(),
@@ -83,7 +92,7 @@ fun MainScreen(
                             launchedFromIntent = false,
                         )
                     )
-                }
+                },
             )
         }
         composable(
@@ -111,6 +120,7 @@ fun MainScreen(
                 fragmentManager,
                 navigateBack = { navController.popBackStack() },
                 entry.arguments?.getBoolean("launchedFromIntent")!!,
+                maxResolution
             )
         }
     }
