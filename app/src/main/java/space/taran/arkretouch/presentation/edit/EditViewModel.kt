@@ -3,8 +3,10 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import androidx.compose.runtime.State
 import android.view.MotionEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -41,6 +44,7 @@ import space.taran.arkretouch.data.Preferences
 import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditManager
+import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -72,15 +76,18 @@ class EditViewModel(
 
     private val _usedColors = mutableListOf<Color>()
     val usedColors: List<Color> = _usedColors
+    private val _imageLoaded = mutableStateOf(false)
+    val imageLoaded: State<Boolean> = _imageLoaded
 
     init {
-        if (imageUri == null && imagePath == null)
+        if (imageUri == null && imagePath == null) {
             viewModelScope.launch {
                 editManager.initDefaults(
                     prefs.readDefaults(),
                     maxResolution
                 )
             }
+        }
         viewModelScope.launch {
             _usedColors.addAll(prefs.readUsedColors())
 
@@ -104,6 +111,7 @@ class EditViewModel(
                 imagePath,
                 editManager
             )
+            _imageLoaded.value = true
             return
         }
         imageUri?.let {
@@ -112,7 +120,10 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
+            _imageLoaded.value = true
+            return
         }
+        editManager.scaleToFit()
     }
 
     fun saveImage(savePath: Path) =
@@ -201,7 +212,9 @@ class EditViewModel(
     fun applyEyeDropper(action: Int, x: Int, y: Int) {
         try {
             val bitmap = getCombinedImageBitmap().asAndroidBitmap()
-            val pixel = bitmap.getPixel(x, y)
+            val imageX = (x * editManager.bitmapScale.x).toInt()
+            val imageY = (y * editManager.bitmapScale.y).toInt()
+            val pixel = bitmap.getPixel(imageX, imageY)
             val color = Color(pixel)
             if (color == Color.Transparent) {
                 showEyeDropperHint = true
@@ -220,7 +233,7 @@ class EditViewModel(
         }
     }
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.availableDrawAreaSize.value
+        val size = editManager.imageSize
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -233,8 +246,19 @@ class EditViewModel(
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
         val combinedCanvas = Canvas(combinedBitmap)
+        val matrix = Matrix().apply {
+            if (editManager.rotationAngles.isNotEmpty()) {
+                val centerX = size.width / 2
+                val centerY = size.height / 2
+                setRotate(
+                    editManager.rotationAngle.value,
+                    centerX.toFloat(),
+                    centerY.toFloat()
+                )
+            }
+        }
         combinedCanvas.drawRect(Rect(Offset.Zero, size.toSize()), backgroundPaint)
-        combinedCanvas.nativeCanvas.setMatrix(editManager.matrix)
+        combinedCanvas.nativeCanvas.setMatrix(matrix)
         editManager.backgroundImage.value?.let {
             combinedCanvas.drawImage(
                 it,
@@ -257,15 +281,6 @@ class EditViewModel(
 
     fun applyOperation(operation: Operation) {
         editManager.applyOperation(operation)
-    }
-
-    fun fitBitmap(imgBitmap: ImageBitmap, maxWidth: Int, maxHeight: Int): Bitmap {
-        editManager.apply {
-            val img = resize(imgBitmap, maxWidth, maxHeight)
-            updateAvailableDrawArea(img)
-            backgroundImage.value = img
-            return img.asAndroidBitmap()
-        }
     }
 
     fun persistDefaults(color: Color, resolution: Resolution) {
@@ -344,16 +359,11 @@ private fun RequestBuilder<Bitmap>.loadInto(
             bitmap: Bitmap,
             transition: Transition<in Bitmap>?
         ) {
-            val areaSize = editManager.drawAreaSize.value
             editManager.apply {
-                val image = resize(
-                    bitmap.asImageBitmap(),
-                    areaSize.width,
-                    areaSize.height
-                )
-                updateAvailableDrawArea(image)
+                val image = bitmap.asImageBitmap()
                 backgroundImage.value = image
                 setOriginalBackgroundImage(image)
+                scaleToFit()
             }
         }
 
@@ -385,3 +395,71 @@ fun resize(
         .createScaledBitmap(bitmap, finalWidth, finalHeight, true)
         .asImageBitmap()
 }
+
+fun fitImage(
+    imageBitmap: ImageBitmap,
+    maxWidth: Int,
+    maxHeight: Int
+): ImageViewParams {
+    val bitmap = imageBitmap.asAndroidBitmap()
+    val width = bitmap.width
+    val height = bitmap.height
+
+    val bitmapRatio = width.toFloat() / height.toFloat()
+    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+
+    var finalWidth = maxWidth
+    var finalHeight = maxHeight
+
+    if (maxRatio > bitmapRatio) {
+        finalWidth = (maxHeight.toFloat() * bitmapRatio).toInt()
+    } else {
+        finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
+    }
+    return ImageViewParams(
+        IntSize(
+            finalWidth,
+            finalHeight,
+        ),
+        ResizeOperation.Scale(
+            finalWidth.toFloat() / width.toFloat(),
+            finalHeight.toFloat() / height.toFloat()
+        )
+    )
+}
+
+fun fitBackground(
+    resolution: Resolution,
+    maxWidth: Int,
+    maxHeight: Int
+): ImageViewParams {
+
+    val width = resolution.width
+    val height = resolution.height
+
+    val resolutionRatio = width.toFloat() / height.toFloat()
+    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+
+    var finalWidth = maxWidth
+    var finalHeight = maxHeight
+
+    if (maxRatio > resolutionRatio) {
+        finalWidth = (maxHeight.toFloat() * resolutionRatio).toInt()
+    } else {
+        finalHeight = (maxWidth.toFloat() / resolutionRatio).toInt()
+    }
+    return ImageViewParams(
+        IntSize(
+            finalWidth,
+            finalHeight,
+        ),
+        ResizeOperation.Scale(
+            finalWidth.toFloat() / width.toFloat(),
+            finalHeight.toFloat() / height.toFloat()
+        )
+    )
+}
+class ImageViewParams(
+    val drawArea: IntSize,
+    val scale: ResizeOperation.Scale
+)

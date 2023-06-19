@@ -21,7 +21,7 @@ class RotateOperation(private val editManager: EditManager) : Operation {
             if (rotationAngles.isNotEmpty()) {
                 redoRotationAngles.push(prevRotationAngle)
                 prevRotationAngle = rotationAngles.pop()
-                matrix.reset()
+                scaleToFit()
                 rotate(prevRotationAngle)
             }
         }
@@ -32,7 +32,7 @@ class RotateOperation(private val editManager: EditManager) : Operation {
             if (redoRotationAngles.isNotEmpty()) {
                 rotationAngles.push(prevRotationAngle)
                 prevRotationAngle = redoRotationAngles.pop()
-                matrix.reset()
+                scaleToFit()
                 rotate(prevRotationAngle)
             }
         }

@@ -19,6 +19,7 @@ import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropSquare
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_2_3
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_4_5
 import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_9_16
+import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 
 class CropWindow {
@@ -27,10 +28,14 @@ class CropWindow {
 
     private var offset = Offset(0f, 0f)
 
-    private var aspectRatio = 0F
+    private var aspectRatio = 1F
 
-    private var width: Float = 0F
-    private var height: Float = 0F
+    private var width: Float = MIN_WIDTH
+    private var height: Float = MIN_HEIGHT
+    private var cropAreaWidth: Float = MIN_WIDTH
+    private var cropAreaHeight: Float = MIN_HEIGHT
+    private lateinit var matrixScale: ResizeOperation.Scale
+    private lateinit var cropScale: ResizeOperation.Scale
 
     private var drawAreaSize = IntSize.Zero
 
@@ -63,15 +68,15 @@ class CropWindow {
         paint.strokeWidth = 5F
     }
 
-    private fun create() {
+    private fun calcMaxDimens() {
         width = drawAreaSize.width.toFloat() - HORIZONTAL_OFFSET
         height = drawAreaSize.height.toFloat() - VERTICAL_OFFSET
-        rect = Rect(
-            HORIZONTAL_OFFSET,
-            VERTICAL_OFFSET,
-            width,
-            height
-        )
+    }
+
+    private fun initOffset(width: Int, height: Int) {
+        val x = (drawAreaSize.width - width) / 2f
+        val y = (drawAreaSize.height - height) / 2f
+        offset = Offset(x, y)
     }
 
     fun close() {
@@ -80,21 +85,25 @@ class CropWindow {
 
     fun init(
         editManager: EditManager,
-        bitmap: Bitmap,
-        fitBitmap: (Bitmap, Int, Int) -> Bitmap
+        bitmap: Bitmap
     ) {
         if (!isInitialized) {
             Timber.tag("crop-window").d("Initialising")
             this.bitmap = bitmap
             this.drawAreaSize = editManager.drawAreaSize.value
-            this.offset = editManager.calcImageOffset()
-            create()
-            this.bitmap = fitBitmap(
-                bitmap,
-                rect.width.toInt(),
-                rect.height.toInt()
+            calcMaxDimens()
+            val viewParams = editManager.scaleToFitOnEdit(
+                width.toInt(),
+                height.toInt()
             )
-            this.offset = editManager.calcImageOffset()
+            matrixScale = viewParams.scale
+            cropAreaWidth = viewParams.drawArea.width.toFloat()
+            cropAreaHeight = viewParams.drawArea.height.toFloat()
+            cropScale = ResizeOperation.Scale(
+                bitmap.width / cropAreaWidth,
+                bitmap.height / cropAreaHeight
+            )
+            initOffset(cropAreaWidth.toInt(), cropAreaHeight.toInt())
             isInitialized = true
         }
     }
@@ -183,13 +192,13 @@ class CropWindow {
         fun isNotMinSize() = (right - left) >= MIN_WIDTH &&
             (bottom - top) >= MIN_HEIGHT
 
-        fun isNotMaxSize() = (right - left) <= bitmap.width &&
-            (bottom - top) <= bitmap.height
+        fun isNotMaxSize() = (right - left) <= cropAreaWidth &&
+            (bottom - top) <= cropAreaHeight
 
         fun isWithinBounds() = left >= offset.x &&
-            right <= offset.x + bitmap.width &&
+            right <= offset.x + cropAreaWidth &&
             top >= offset.y &&
-            bottom <= offset.y + bitmap.height
+            bottom <= offset.y + cropAreaHeight
 
         if (isTouchedInside.value) {
             right += delta.x
@@ -200,22 +209,22 @@ class CropWindow {
                 left = offset.x
                 right = left + rect.width
             }
-            if (right > offset.x + bitmap.width) {
-                right = offset.x + bitmap.width
+            if (right > offset.x + cropAreaWidth) {
+                right = offset.x + cropAreaWidth
                 left = right - rect.width
             }
             if (top < offset.y) {
                 top = offset.y
                 bottom = top + rect.height
             }
-            if (bottom > offset.y + bitmap.height) {
-                bottom = offset.y + bitmap.height
+            if (bottom > offset.y + cropAreaHeight) {
+                bottom = offset.y + cropAreaHeight
                 top = bottom - rect.height
             }
         }
 
         if (isNotMaxSize() && isNotMinSize() && isWithinBounds()) {
-            recreate(
+            create(
                 left,
                 top,
                 right,
@@ -261,9 +270,9 @@ class CropWindow {
     }
 
     private fun resizeByBitmap() {
-        val newBottom = this.bitmap.height.toFloat() + offset.y
-        val newRight = this.bitmap.width.toFloat() + offset.x
-        recreate(
+        val newBottom = cropAreaHeight + offset.y
+        val newRight = cropAreaWidth + offset.x
+        create(
             offset.x,
             offset.y,
             newRight,
@@ -289,7 +298,7 @@ class CropWindow {
         }
     }
 
-    private fun recreate(
+    private fun create(
         newLeft: Float,
         newTop: Float,
         newRight: Float,
@@ -304,26 +313,26 @@ class CropWindow {
     }
 
     private fun computeSize() {
-        var newWidth = bitmap.width.toFloat()
-        var newHeight = bitmap.width * aspectRatio
+        var newWidth = cropAreaWidth
+        var newHeight = cropAreaWidth * aspectRatio
         var newLeft = offset.x
         var newTop = offset.y +
-            (bitmap.height - newHeight) / 2f
+            (cropAreaHeight - newHeight) / 2f
         var newRight = newLeft + newWidth
         var newBottom = newTop + newHeight
 
-        if (newHeight > bitmap.height) {
-            newHeight = bitmap.height.toFloat()
+        if (newHeight > cropAreaHeight) {
+            newHeight = cropAreaHeight
             newWidth = newHeight / aspectRatio
             newLeft = offset.x + (
-                bitmap.width - newWidth
+                cropAreaWidth - newWidth
                 ) / 2f
             newTop = offset.y
             newRight = newLeft + newWidth
             newBottom = newTop + newHeight
         }
 
-        recreate(
+        create(
             newLeft,
             newTop,
             newRight,
@@ -339,12 +348,15 @@ class CropWindow {
     }
 
     fun getCropParams(): CropParams {
-        val x = rect.left - offset.x
-        val y = rect.top - offset.y
+        val x = ((rect.left - offset.x) * cropScale.x).toInt()
+        val y = ((rect.top - offset.y) * cropScale.y).toInt()
+        val width = (rect.width * cropScale.x).toInt()
+        val height = (rect.height * cropScale.y).toInt()
         return CropParams.create(
-            x.toInt(), y.toInt(),
-            rect.width.toInt(),
-            rect.height.toInt()
+            x,
+            y,
+            width,
+            height
         )
     }
 
