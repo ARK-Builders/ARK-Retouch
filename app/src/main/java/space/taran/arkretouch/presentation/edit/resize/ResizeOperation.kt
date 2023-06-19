@@ -32,7 +32,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
             if (resizes.isNotEmpty()) {
                 redoResize.push(backgroundImage.value)
                 backgroundImage.value = resizes.pop()
-                updateAvailableDrawArea()
+                scaleToFit()
                 restoreRotationAfterUndoOtherOperation()
                 redrawEditedPaths()
             }
@@ -45,7 +45,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
                 resizes.push(backgroundImage.value)
                 saveRotationAfterOtherOperation()
                 backgroundImage.value = redoResize.pop()
-                updateAvailableDrawArea()
+                scaleToFit()
                 keepEditedPaths()
             }
         }
@@ -54,7 +54,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
     fun init(bitmap: Bitmap) {
         this.bitmap = bitmap
         aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
-        editMatrixScale = editManager.scaleToFitOnResize()?.scale!!
+        editMatrixScale = editManager.scaleToFitOnEdit().scale
         isApplied.value = false
     }
 

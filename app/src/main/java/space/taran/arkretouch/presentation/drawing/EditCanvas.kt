@@ -63,7 +63,10 @@ fun EditCanvas(viewModel: EditViewModel) {
 
     Box(
         Modifier.background(
-            if (editManager.isCropMode.value) Color.White
+            if (
+                editManager.isCropMode.value ||
+                editManager.isResizeMode.value
+            ) Color.White
             else editManager.backgroundColor.value
         ),
         contentAlignment = Alignment.Center
@@ -95,24 +98,14 @@ fun EditCanvas(viewModel: EditViewModel) {
 
 @Composable
 fun EditImageCanvas(modifier: Modifier, editManager: EditManager) {
-    val imageModifier = with(editManager) {
-        when (true) {
-            isCropMode.value -> Modifier.size(
-                backgroundImage.value?.width?.toDp()!!,
-                backgroundImage.value?.height?.toDp()!!
-            )
-            else -> modifier
-        }
-    }
-
-    Canvas(imageModifier) {
+    Canvas(modifier) {
         editManager.apply {
             invalidatorTick.value
             var matrix = matrix
             drawIntoCanvas { canvas ->
-                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
-                    matrix = editMatrix
                 backgroundImage.value?.let {
+                    if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                        matrix = editMatrix
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
                         matrix,
@@ -252,8 +245,9 @@ fun EditDrawCanvas(
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                if (isRotateMode.value || isResizeMode.value)
                     matrix = editMatrix
+                if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
                 if (isResizeMode.value) return@drawIntoCanvas
                 if (isCropMode.value) {

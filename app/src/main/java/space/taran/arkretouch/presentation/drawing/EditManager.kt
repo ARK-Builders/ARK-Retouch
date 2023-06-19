@@ -14,15 +14,16 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntSize
-import space.taran.arkretouch.presentation.edit.ImageViewParams
 import space.taran.arkretouch.data.ImageDefaults
 import space.taran.arkretouch.data.Resolution
+import space.taran.arkretouch.presentation.edit.ImageViewParams
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.draw.DrawOperation
-import space.taran.arkretouch.presentation.edit.fit
+import space.taran.arkretouch.presentation.edit.fitBackground
+import space.taran.arkretouch.presentation.edit.fitImage
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
 import java.util.Stack
@@ -68,6 +69,8 @@ class EditManager {
     val editMatrix = Matrix()
     lateinit var matrixScale: ResizeOperation.Scale
         private set
+    lateinit var bitmapScale: ResizeOperation.Scale
+        private set
 
     val imageSize: IntSize
         get() {
@@ -76,11 +79,11 @@ class EditManager {
                     IntSize(it.width, it.height)
                 } ?: originalBackgroundImage.value?.let {
                     IntSize(it.width, it.height)
-                } ?: drawAreaSize.value
+                } ?: resolution.value?.toIntSize()!!
             else
                 backgroundImage.value?.let {
                     IntSize(it.width, it.height)
-                } ?: drawAreaSize.value
+                } ?: resolution.value?.toIntSize()!!
         }
 
     private val _resolution = mutableStateOf<Resolution?>(null)
@@ -129,43 +132,53 @@ class EditManager {
 
     fun applyOperation(operation: Operation) {
         operation.apply()
-        updateAvailableDrawAreaByMatrix()
     }
 
     private fun undoOperation(operation: Operation) {
         operation.undo()
-        updateAvailableDrawAreaByMatrix()
     }
 
     private fun redoOperation(operation: Operation) {
         operation.redo()
-        updateAvailableDrawAreaByMatrix()
     }
 
     fun scaleToFit() {
-        backgroundImage.value?.let {
-            val viewParams = fit(
+        val viewParams = backgroundImage.value?.let {
+            fitImage(
                 it,
                 drawAreaSize.value.width,
                 drawAreaSize.value.height
             )
-            matrixScale = viewParams.scale
-            scaleMatrix(viewParams.scale)
-            updateAvailableDrawArea(viewParams.drawArea)
+        } ?: run {
+            fitBackground(
+                resolution.value!!,
+                drawAreaSize.value.width,
+                drawAreaSize.value.height
+            )
         }
+        matrixScale = viewParams.scale
+        scaleMatrix(viewParams.scale)
+        updateAvailableDrawArea(viewParams.drawArea)
+        val bitmapXScale =
+            imageSize.width.toFloat() / viewParams.drawArea.width.toFloat()
+        val bitmapYScale =
+            imageSize.height.toFloat() / viewParams.drawArea.height.toFloat()
+        bitmapScale = ResizeOperation.Scale(
+            bitmapXScale,
+            bitmapYScale
+        )
     }
 
-    fun scaleToFitOnResize(): ImageViewParams? {
+    fun scaleToFitOnEdit(
+        maxWidth: Int = drawAreaSize.value.width,
+        maxHeight: Int = drawAreaSize.value.height
+    ): ImageViewParams {
         return backgroundImage.value?.let {
-            val viewParams = fit(
-                it,
-                drawAreaSize.value.width,
-                drawAreaSize.value.height
-            )
+            val viewParams = fitImage(it, maxWidth, maxHeight)
             scaleEditMatrix(viewParams.scale)
             updateAvailableDrawArea(viewParams.drawArea)
             viewParams
-        }
+        }!!
     }
 
     fun scaleMatrix(scale: ResizeOperation.Scale) {
@@ -194,15 +207,22 @@ class EditManager {
     }
 
     fun updateAvailableDrawAreaByMatrix() {
-        backgroundImage.value?.let {
+        val drawArea = backgroundImage.value?.let {
             val drawWidth = it.width * matrixScale.x
             val drawHeight = it.height * matrixScale.y
-            val drawArea = IntSize(
+            IntSize(
                 drawWidth.toInt(),
                 drawHeight.toInt()
             )
-            updateAvailableDrawArea(drawArea)
+        } ?: run {
+            val drawWidth = resolution.value?.width!! * matrixScale.x
+            val drawHeight = resolution.value?.height!! * matrixScale.y
+            IntSize(
+                drawWidth.toInt(),
+                drawHeight.toInt()
+            )
         }
+        updateAvailableDrawArea(drawArea)
     }
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
@@ -450,6 +470,7 @@ class EditManager {
 
     fun cancelCropMode() {
         backgroundImage.value = backgroundImage2.value
+        editMatrix.reset()
         updateAvailableDrawAreaByMatrix()
     }
 
@@ -465,6 +486,7 @@ class EditManager {
     fun cancelResizeMode() {
         backgroundImage.value = backgroundImage2.value
         editMatrix.reset()
+        updateAvailableDrawAreaByMatrix()
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {
