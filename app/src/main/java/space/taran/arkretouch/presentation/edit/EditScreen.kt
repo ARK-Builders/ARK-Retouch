@@ -745,9 +745,7 @@ private fun EditMenuContent(
                             viewModel.menusVisible =
                                 !editManager.isCropMode.value
                             if (isCropMode.value) {
-                                val bitmap = viewModel
-                                    .getEditedImage()
-                                    .asAndroidBitmap()
+                                val bitmap = viewModel.getEditedImage()
                                 setBackgroundImage2()
                                 backgroundImage.value = bitmap
                                 viewModel.editManager.cropWindow.init(
@@ -815,10 +813,8 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !isResizeMode.value
                             if (isResizeMode.value) {
-                                val imgBitmap =
-                                    viewModel.getEditedImage()
                                 setBackgroundImage2()
-                                val imgBitmap = viewModel.getCombinedImageBitmap()
+                                val imgBitmap = viewModel.getEditedImage()
                                 backgroundImage.value = imgBitmap
                                 resizeOperation.init(
                                     imgBitmap.asAndroidBitmap()

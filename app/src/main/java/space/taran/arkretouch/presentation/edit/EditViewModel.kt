@@ -212,7 +212,7 @@ class EditViewModel(
 
     fun applyEyeDropper(action: Int, x: Int, y: Int) {
         try {
-            val bitmap = getCombinedImageBitmap().asAndroidBitmap()
+            val bitmap = getEditedImage().asAndroidBitmap()
             val imageX = (x * editManager.bitmapScale.x).toInt()
             val imageY = (y * editManager.bitmapScale.y).toInt()
             val pixel = bitmap.getPixel(imageX, imageY)
@@ -240,37 +240,46 @@ class EditViewModel(
             size.height,
             ImageBitmapConfig.Argb8888
         )
-        val backgroundPaint = Paint().also {
-            it.color = editManager.backgroundColor.value
-        }
-        val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
-        val combinedCanvas = Canvas(combinedBitmap)
-        val matrix = Matrix().apply {
-            if (editManager.rotationAngles.isNotEmpty()) {
-                val centerX = size.width / 2
-                val centerY = size.height / 2
-                setRotate(
-                    editManager.rotationAngle.value,
-                    centerX.toFloat(),
-                    centerY.toFloat()
+
+        val time = measureTimeMillis {
+            val backgroundPaint = Paint().also {
+                it.color = editManager.backgroundColor.value
+            }
+            val drawCanvas = Canvas(drawBitmap)
+            val combinedCanvas = Canvas(combinedBitmap)
+            val matrix = Matrix().apply {
+                if (editManager.rotationAngles.isNotEmpty()) {
+                    val centerX = size.width / 2
+                    val centerY = size.height / 2
+                    setRotate(
+                        editManager.rotationAngle.value,
+                        centerX.toFloat(),
+                        centerY.toFloat()
+                    )
+                }
+            }
+            combinedCanvas.drawRect(
+                Rect(Offset.Zero, size.toSize()),
+                backgroundPaint
+            )
+            combinedCanvas.nativeCanvas.setMatrix(matrix)
+            editManager.backgroundImage.value?.let {
+                combinedCanvas.drawImage(
+                    it,
+                    Offset.Zero,
+                    Paint()
                 )
             }
+            editManager.drawPaths.forEach {
+                drawCanvas.drawPath(it.path, it.paint)
+            }
+            combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         }
-        combinedCanvas.drawRect(Rect(Offset.Zero, size.toSize()), backgroundPaint)
-        combinedCanvas.nativeCanvas.setMatrix(matrix)
-        editManager.backgroundImage.value?.let {
-            combinedCanvas.drawImage(
-                it,
-                Offset.Zero,
-                Paint()
-            )
-        }
-        editManager.drawPaths.forEach {
-            drawCanvas.drawPath(it.path, it.paint)
-        }
-        combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
+        Timber.tag("edit-viewmodel: getCombinedImageBitmap").d(
+            "processing edits took ${time / 1000} s ${time % 1000} ms"
+        )
         return combinedBitmap
     }
 
@@ -339,6 +348,9 @@ class EditViewModel(
                 }
             }
         }
+        Timber.tag("edit-viewmodel: getEditedImage").d(
+            "processing edits took ${time / 1000} s ${time % 1000} ms"
+        )
         return bitmap
     }
     fun confirmExit() = viewModelScope.launch {
