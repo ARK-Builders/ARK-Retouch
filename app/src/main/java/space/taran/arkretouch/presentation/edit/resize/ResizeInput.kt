@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,24 +41,24 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
     if (isVisible) {
         var width by remember {
             mutableStateOf(
-                editManager.availableDrawAreaSize.value.width.toString()
+                editManager.imageSize.width.toString()
             )
         }
 
         var height by remember {
             mutableStateOf(
-                editManager.availableDrawAreaSize.value.height.toString()
+                editManager.imageSize.height.toString()
             )
         }
 
         val widthHint = stringResource(
             R.string.width_too_large,
-            editManager.originalDrawAreaSize.width
+            editManager.imageSize.width
         )
         val digitsHint = stringResource(R.string.digits_only)
         val heightHint = stringResource(
             R.string.height_too_large,
-            editManager.originalDrawAreaSize.height
+            editManager.imageSize.height
         )
         var hint by remember {
             mutableStateOf("")
@@ -86,7 +87,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         if (
                             it.isNotEmpty() &&
                             it.isDigitsOnly() &&
-                            it.toInt() > editManager.originalDrawAreaSize.width
+                            it.toInt() > editManager.imageSize.width
                         ) {
                             hint = widthHint
                             showHint = true
@@ -130,7 +131,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         if (
                             it.isNotEmpty() &&
                             it.isDigitsOnly() &&
-                            it.toInt() > editManager.originalDrawAreaSize.height
+                            it.toInt() > editManager.imageSize.height
                         ) {
                             hint = heightHint
                             showHint = true
@@ -187,11 +188,13 @@ fun Hint(text: String, isVisible: (CoroutineScope) -> Boolean) {
         enter = fadeIn(),
         exit = fadeOut(tween(durationMillis = 500, delayMillis = 1000)),
         modifier = Modifier
+            .wrapContentSize()
             .background(Color.LightGray, RoundedCornerShape(10))
     ) {
         Text(
             text,
-            Modifier.padding(12.dp)
+            Modifier
+                .padding(12.dp)
         )
     }
 }

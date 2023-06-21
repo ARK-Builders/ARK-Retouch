@@ -15,14 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
@@ -63,17 +62,20 @@ fun EditCanvas(viewModel: EditViewModel) {
     }
 
     Box(
-        Modifier.background(Color.White),
+        Modifier.background(
+            if (
+                editManager.isCropMode.value ||
+                editManager.isResizeMode.value
+            ) Color.White
+            else editManager.backgroundColor.value
+        ),
         contentAlignment = Alignment.Center
     ) {
-        val modifier = if (
-            editManager.availableDrawAreaSize.value != IntSize.Zero
-        ) Modifier.size(
+        val modifier = Modifier.size(
             editManager.availableDrawAreaSize.value.width.toDp(),
             editManager.availableDrawAreaSize.value.height.toDp()
         )
-        else Modifier.fillMaxSize()
-        EditCanvasImage(modifier, editManager)
+        EditImageCanvas(modifier, editManager)
         EditDrawCanvas(
             modifier,
             viewModel
@@ -95,25 +97,15 @@ fun EditCanvas(viewModel: EditViewModel) {
 }
 
 @Composable
-fun EditCanvasImage(modifier: Modifier, editManager: EditManager) {
-    val imageModifier = with(editManager) {
-        when (true) {
-            isCropMode.value -> Modifier.size(
-                backgroundImage.value?.width?.toDp()!!,
-                backgroundImage.value?.height?.toDp()!!
-            )
-            else -> modifier
-        }
-    }
-
-    Canvas(imageModifier) {
+fun EditImageCanvas(modifier: Modifier, editManager: EditManager) {
+    Canvas(modifier) {
         editManager.apply {
             invalidatorTick.value
             var matrix = matrix
             drawIntoCanvas { canvas ->
-                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
-                    matrix = editMatrix
                 backgroundImage.value?.let {
+                    if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                        matrix = editMatrix
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
                         matrix,
@@ -201,6 +193,10 @@ fun EditDrawCanvas(
         }
     }
 
+    fun handleEyeDropEvent(action: Int, eventX: Float, eventY: Float) {
+        viewModel.applyEyeDropper(action, eventX.toInt(), eventY.toInt())
+    }
+
     Canvas(
         modifier = drawModifier
             // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
@@ -220,12 +216,20 @@ fun EditDrawCanvas(
                 val mappedY = mappedXY[1]
 
                 when (true) {
+
+                    editManager.isResizeMode.value -> {}
+
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
                         eventY
                     )
                     editManager.isRotateMode.value -> onRotate(
+                        event.action,
+                        event.x,
+                        event.y
+                    )
+                    editManager.isEyeDropperMode.value -> handleEyeDropEvent(
                         event.action,
                         event.x,
                         event.y
@@ -241,8 +245,9 @@ fun EditDrawCanvas(
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                if (isRotateMode.value || isResizeMode.value)
                     matrix = editMatrix
+                if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
                 if (isResizeMode.value) return@drawIntoCanvas
                 if (isCropMode.value) {

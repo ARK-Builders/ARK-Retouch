@@ -3,7 +3,6 @@ package space.taran.arkretouch.presentation.edit.crop
 import androidx.compose.ui.graphics.asImageBitmap
 import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.edit.Operation
-import space.taran.arkretouch.presentation.edit.resize
 import space.taran.arkretouch.presentation.utils.crop
 
 class CropOperation(
@@ -13,13 +12,9 @@ class CropOperation(
     override fun apply() {
         editManager.apply {
             cropWindow.apply {
-                val image = resize(
-                    getBitmap().crop(getCropParams()).asImageBitmap(),
-                    availableDrawAreaSize.value.width,
-                    availableDrawAreaSize.value.height
-                )
-                updateAvailableDrawArea(image)
+                val image = getBitmap().crop(getCropParams()).asImageBitmap()
                 backgroundImage.value = image
+                scaleToFit()
                 keepEditedPaths()
                 addCrop()
                 saveRotationAfterOtherOperation()
@@ -33,10 +28,10 @@ class CropOperation(
             if (cropStack.isNotEmpty()) {
                 val image = cropStack.pop()
                 redoCropStack.push(backgroundImage.value)
-                updateAvailableDrawArea(image)
                 restoreRotationAfterUndoOtherOperation()
                 backgroundImage.value = image
                 redrawEditedPaths()
+                scaleToFit()
                 updateRevised()
             }
         }
@@ -48,9 +43,9 @@ class CropOperation(
                 val image = redoCropStack.pop()
                 saveRotationAfterOtherOperation()
                 cropStack.push(backgroundImage.value)
-                updateAvailableDrawArea(image)
                 backgroundImage.value = image
                 keepEditedPaths()
+                scaleToFit()
                 updateRevised()
             }
         }
