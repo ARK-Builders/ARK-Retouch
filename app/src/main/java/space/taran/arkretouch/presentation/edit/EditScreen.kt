@@ -102,7 +102,9 @@ fun EditScreen(
         )
     val context = LocalContext.current
     val showDefaultsDialog = remember {
-        mutableStateOf(imagePath == null && imageUri == null)
+        mutableStateOf(
+            imagePath == null && imageUri == null && !viewModel.isLoaded
+        )
     }
 
     if (showDefaultsDialog.value) {
@@ -126,7 +128,10 @@ fun EditScreen(
     }
     ExitDialog(
         viewModel = viewModel,
-        navigateBack = { navigateBack() },
+        navigateBack = {
+            navigateBack()
+            viewModel.isLoaded = false
+        },
         launchedFromIntent = launchedFromIntent,
     )
 
@@ -304,12 +309,11 @@ private fun DrawContainer(
                     return@onSizeChanged
                 }
                 if (viewModel.showSavePathDialog) return@onSizeChanged
-                if (viewModel.imageLoaded.value) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
                 if (viewModel.isLoaded) {
                     viewModel.editManager.apply {
-                        val offset = calcImageOffset()
-                        if (isCropMode.value) cropWindow.updateOffset(offset)
+                        if (isCropMode.value)
+                            cropWindow.updateOnDrawAreaSizeChange(newSize)
                         return@onSizeChanged
                     }
                 }

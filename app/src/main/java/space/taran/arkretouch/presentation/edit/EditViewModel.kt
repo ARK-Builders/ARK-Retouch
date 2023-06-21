@@ -77,8 +77,6 @@ class EditViewModel(
 
     private val _usedColors = mutableListOf<Color>()
     val usedColors: List<Color> = _usedColors
-    private val _imageLoaded = mutableStateOf(false)
-    val imageLoaded: State<Boolean> = _imageLoaded
 
     init {
         if (imageUri == null && imagePath == null) {
@@ -113,7 +111,6 @@ class EditViewModel(
                 imagePath,
                 editManager
             )
-            _imageLoaded.value = true
             return
         }
         imageUri?.let {
@@ -122,7 +119,6 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
-            _imageLoaded.value = true
             return
         }
         editManager.scaleToFit()
@@ -277,8 +273,10 @@ class EditViewModel(
 
     fun confirmExit() = viewModelScope.launch {
         exitConfirmed = true
+        isLoaded = false
         delay(2_000)
         exitConfirmed = false
+        isLoaded = true
     }
 
     fun applyOperation(operation: Operation) {
