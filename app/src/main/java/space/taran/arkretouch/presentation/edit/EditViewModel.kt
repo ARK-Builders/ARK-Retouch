@@ -49,6 +49,7 @@ import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.outputStream
+import kotlin.system.measureTimeMillis
 
 class EditViewModel(
     private val primaryColor: Long,
@@ -129,7 +130,7 @@ class EditViewModel(
     fun saveImage(savePath: Path) =
         viewModelScope.launch(Dispatchers.IO) {
             isSavingImage = true
-            val combinedBitmap = getCombinedImageBitmap()
+            val combinedBitmap = getEditedImage()
 
             savePath.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
@@ -168,7 +169,7 @@ class EditViewModel(
     ): Uri {
         var uri: Uri? = null
         val imageCacheFolder = File(context.cacheDir, "images")
-        val imgBitmap = bitmap ?: getCombinedImageBitmap().asAndroidBitmap()
+        val imgBitmap = bitmap ?: getEditedImage().asAndroidBitmap()
         try {
             imageCacheFolder.mkdirs()
             val file = File(imageCacheFolder, "image$name.png")
@@ -211,7 +212,7 @@ class EditViewModel(
 
     fun applyEyeDropper(action: Int, x: Int, y: Int) {
         try {
-            val bitmap = getCombinedImageBitmap().asAndroidBitmap()
+            val bitmap = getEditedImage().asAndroidBitmap()
             val imageX = (x * editManager.bitmapScale.x).toInt()
             val imageY = (y * editManager.bitmapScale.y).toInt()
             val pixel = bitmap.getPixel(imageX, imageY)
@@ -239,40 +240,119 @@ class EditViewModel(
             size.height,
             ImageBitmapConfig.Argb8888
         )
-        val backgroundPaint = Paint().also {
-            it.color = editManager.backgroundColor.value
-        }
-        val drawCanvas = Canvas(drawBitmap)
         val combinedBitmap =
             ImageBitmap(size.width, size.height, ImageBitmapConfig.Argb8888)
-        val combinedCanvas = Canvas(combinedBitmap)
-        val matrix = Matrix().apply {
-            if (editManager.rotationAngles.isNotEmpty()) {
-                val centerX = size.width / 2
-                val centerY = size.height / 2
-                setRotate(
-                    editManager.rotationAngle.value,
-                    centerX.toFloat(),
-                    centerY.toFloat()
+
+        val time = measureTimeMillis {
+            val backgroundPaint = Paint().also {
+                it.color = editManager.backgroundColor.value
+            }
+            val drawCanvas = Canvas(drawBitmap)
+            val combinedCanvas = Canvas(combinedBitmap)
+            val matrix = Matrix().apply {
+                if (editManager.rotationAngles.isNotEmpty()) {
+                    val centerX = size.width / 2
+                    val centerY = size.height / 2
+                    setRotate(
+                        editManager.rotationAngle.value,
+                        centerX.toFloat(),
+                        centerY.toFloat()
+                    )
+                }
+            }
+            combinedCanvas.drawRect(
+                Rect(Offset.Zero, size.toSize()),
+                backgroundPaint
+            )
+            combinedCanvas.nativeCanvas.setMatrix(matrix)
+            editManager.backgroundImage.value?.let {
+                combinedCanvas.drawImage(
+                    it,
+                    Offset.Zero,
+                    Paint()
                 )
             }
+            editManager.drawPaths.forEach {
+                drawCanvas.drawPath(it.path, it.paint)
+            }
+            combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         }
-        combinedCanvas.drawRect(Rect(Offset.Zero, size.toSize()), backgroundPaint)
-        combinedCanvas.nativeCanvas.setMatrix(matrix)
-        editManager.backgroundImage.value?.let {
-            combinedCanvas.drawImage(
-                it,
-                Offset.Zero,
-                Paint()
-            )
-        }
-        editManager.drawPaths.forEach {
-            drawCanvas.drawPath(it.path, it.paint)
-        }
-        combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
+        Timber.tag("edit-viewmodel: getCombinedImageBitmap").d(
+            "processing edits took ${time / 1000} s ${time % 1000} ms"
+        )
         return combinedBitmap
     }
 
+    fun getEditedImage(): ImageBitmap {
+        var bitmap: ImageBitmap
+        val time = measureTimeMillis {
+            bitmap = with(editManager) {
+                backgroundImage.value?.let {
+                    var image = it
+                    var canvas = Canvas(image)
+                    if (rotationAngles.isNotEmpty()) {
+                        val matrix = Matrix().apply {
+                            val centerX = it.width / 2
+                            val centerY = it.height / 2
+                            setRotate(
+                                rotationAngle.value,
+                                centerX.toFloat(),
+                                centerY.toFloat()
+                            )
+                        }
+                        image = ImageBitmap(
+                            image.width,
+                            image.height,
+                            ImageBitmapConfig.Argb8888
+                        )
+                        canvas = Canvas(image)
+                        canvas.nativeCanvas.drawBitmap(
+                            it.asAndroidBitmap(),
+                            matrix,
+                            null
+                        )
+                    }
+                    if (drawPaths.isNotEmpty()) {
+                        drawPaths.forEach { pathData ->
+                            canvas.drawPath(pathData.path, pathData.paint)
+                        }
+                    }
+                    image
+                } ?: run {
+                    val size = availableDrawAreaSize.value
+                    val image =
+                        ImageBitmap(
+                            size.width,
+                            size.height,
+                            ImageBitmapConfig.Argb8888
+                        )
+                    val canvas = Canvas(image)
+                    if (rotationAngles.isNotEmpty()) {
+                        val matrix = Matrix().apply {
+                            val centerX = size.width / 2
+                            val centerY = size.height / 2
+                            setRotate(
+                                rotationAngle.value,
+                                centerX.toFloat(),
+                                centerY.toFloat()
+                            )
+                        }
+                        canvas.nativeCanvas.setMatrix(matrix)
+                    }
+                    if (drawPaths.isNotEmpty()) {
+                        drawPaths.forEach {
+                            canvas.drawPath(it.path, it.paint)
+                        }
+                    }
+                    image
+                }
+            }
+        }
+        Timber.tag("edit-viewmodel: getEditedImage").d(
+            "processing edits took ${time / 1000} s ${time % 1000} ms"
+        )
+        return bitmap
+    }
     fun confirmExit() = viewModelScope.launch {
         exitConfirmed = true
         delay(2_000)
