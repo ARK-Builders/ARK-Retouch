@@ -73,10 +73,17 @@ class CropWindow {
         height = drawAreaSize.height.toFloat() - VERTICAL_OFFSET
     }
 
-    private fun initOffset(width: Int, height: Int) {
-        val x = (drawAreaSize.width - width) / 2f
-        val y = (drawAreaSize.height - height) / 2f
+    private fun calcOffset() {
+        val x = ((drawAreaSize.width - cropAreaWidth) / 2f)
+            .coerceAtLeast(0f)
+        val y = ((drawAreaSize.height - cropAreaHeight) / 2f)
+            .coerceAtLeast(0f)
         offset = Offset(x, y)
+    }
+
+    fun updateOnDrawAreaSizeChange(newSize: IntSize) {
+        drawAreaSize = newSize
+        updateOnOffsetChange()
     }
 
     fun close() {
@@ -103,11 +110,31 @@ class CropWindow {
                 bitmap.width / cropAreaWidth,
                 bitmap.height / cropAreaHeight
             )
-            initOffset(cropAreaWidth.toInt(), cropAreaHeight.toInt())
+            calcOffset()
             isInitialized = true
         }
     }
 
+    private fun updateOnOffsetChange() {
+        val leftMove = rect.left - offset.x
+        val topMove = rect.top - offset.y
+        calcOffset()
+        val newLeft = offset.x + leftMove
+        val newTop = offset.y + topMove
+        Timber.tag("crop-window").d(
+            "left move = $leftMove\n" +
+                "top move = $topMove\n" +
+                "new left = $newLeft\n" +
+                "new top = $newTop" +
+                ""
+        )
+        create(
+            newLeft,
+            newTop,
+            newLeft + rect.width,
+            newTop + rect.height
+        )
+    }
     fun show(canvas: Canvas) {
         if (isInitialized) {
             update()

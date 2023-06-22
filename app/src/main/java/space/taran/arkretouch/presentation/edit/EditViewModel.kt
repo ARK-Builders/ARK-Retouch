@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import androidx.compose.runtime.State
 import android.view.MotionEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +69,7 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
     var showEyeDropperHint by mutableStateOf(false)
+    var isLoaded by mutableStateOf(false)
     var exitConfirmed = false
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
@@ -77,8 +77,6 @@ class EditViewModel(
 
     private val _usedColors = mutableListOf<Color>()
     val usedColors: List<Color> = _usedColors
-    private val _imageLoaded = mutableStateOf(false)
-    val imageLoaded: State<Boolean> = _imageLoaded
 
     init {
         if (imageUri == null && imagePath == null) {
@@ -106,13 +104,13 @@ class EditViewModel(
     }
 
     fun loadImage() {
+        isLoaded = true
         imagePath?.let {
             loadImageWithPath(
                 DIManager.component.app(),
                 imagePath,
                 editManager
             )
-            _imageLoaded.value = true
             return
         }
         imageUri?.let {
@@ -121,7 +119,6 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
-            _imageLoaded.value = true
             return
         }
         editManager.scaleToFit()
@@ -355,8 +352,10 @@ class EditViewModel(
     }
     fun confirmExit() = viewModelScope.launch {
         exitConfirmed = true
+        isLoaded = false
         delay(2_000)
         exitConfirmed = false
+        isLoaded = true
     }
 
     fun applyOperation(operation: Operation) {

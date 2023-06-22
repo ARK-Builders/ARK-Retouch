@@ -216,9 +216,7 @@ fun EditDrawCanvas(
                 val mappedY = mappedXY[1]
 
                 when (true) {
-
                     editManager.isResizeMode.value -> {}
-
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
