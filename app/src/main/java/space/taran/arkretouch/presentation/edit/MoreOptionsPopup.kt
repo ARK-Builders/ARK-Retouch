@@ -27,6 +27,7 @@ import space.taran.arkretouch.presentation.picker.toPx
 
 @Composable
 fun MoreOptionsPopup(
+    onClearEdits: () -> Unit,
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
     onDismissClick: () -> Unit
@@ -56,9 +57,35 @@ fun MoreOptionsPopup(
                         .padding(8.dp)
                         .clip(RoundedCornerShape(5))
                         .clickable {
+                            onClearEdits()
+                        }
+                ) {
+
+                    Icon(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(36.dp),
+                        imageVector =
+                        ImageVector.vectorResource(R.drawable.ic_clear),
+                        contentDescription = null
+                    )
+                    Text(
+                        text = stringResource(R.string.clear),
+                        Modifier
+                            .padding(bottom = 8.dp)
+                            .align(Alignment.CenterHorizontally),
+                        fontSize = 12.sp
+                    )
+                }
+                Column(
+                    Modifier
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(5))
+                        .clickable {
                             onShareClick()
                         }
                 ) {
+
                     Icon(
                         modifier = Modifier
                             .padding(8.dp)

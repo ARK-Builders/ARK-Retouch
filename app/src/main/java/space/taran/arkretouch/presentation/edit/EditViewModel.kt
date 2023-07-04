@@ -69,6 +69,7 @@ class EditViewModel(
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
     var showEyeDropperHint by mutableStateOf(false)
+    val showConfirmClearDialog = mutableStateOf(false)
     var isLoaded by mutableStateOf(false)
     var exitConfirmed = false
         private set
