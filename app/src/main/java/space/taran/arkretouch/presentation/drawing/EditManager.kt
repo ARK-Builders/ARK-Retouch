@@ -175,7 +175,7 @@ class EditManager {
         maxHeight: Int = drawAreaSize.value.height
     ): ImageViewParams {
         val viewParams = backgroundImage.value?.let {
-             fitImage(it, maxWidth, maxHeight)
+            fitImage(it, maxWidth, maxHeight)
         } ?: run {
             fitBackground(
                 resolution.value!!,
