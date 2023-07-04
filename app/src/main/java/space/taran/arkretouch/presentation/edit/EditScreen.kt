@@ -360,8 +360,26 @@ private fun BoxScope.TopMenu(
                     return@MoreOptionsPopup
                 }
                 viewModel.showSavePathDialog = true
+            },
+            onClearEdits = {
+                viewModel.showConfirmClearDialog.value = true
+                viewModel.showMoreOptionsPopup = false
             }
         )
+
+    ConfirmClearDialog(
+        viewModel.showConfirmClearDialog,
+        onConfirm = {
+            viewModel.editManager.apply {
+                if (
+                    !isRotateMode.value &&
+                    !isResizeMode.value &&
+                    !isCropMode.value &&
+                    !isEyeDropperMode.value
+                ) clearEdits()
+            }
+        }
+    )
 
     if (
         !viewModel.menusVisible &&
@@ -685,31 +703,6 @@ private fun EditMenuContent(
                     !editManager.isCropMode.value &&
                     !editManager.isEyeDropperMode.value
                 ) editManager.paintColor.value
-                else Color.Black,
-                contentDescription = null
-            )
-            Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        if (
-                            !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value
-                        )
-                            editManager.clearEdits()
-                    },
-                imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
-                tint = if (
-                    !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value &&
-                    !editManager.isCropMode.value &&
-                    !editManager.isEyeDropperMode.value
-                )
-                    MaterialTheme.colors.primary
                 else Color.Black,
                 contentDescription = null
             )
