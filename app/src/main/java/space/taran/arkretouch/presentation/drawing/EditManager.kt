@@ -384,7 +384,6 @@ class EditManager {
         if (rotationAngles.isNotEmpty()) {
             prevRotationAngle = rotationAngles.pop()
             rotationAngle.value = prevRotationAngle
-            // rotate(prevRotationAngle)
         }
     }
 
