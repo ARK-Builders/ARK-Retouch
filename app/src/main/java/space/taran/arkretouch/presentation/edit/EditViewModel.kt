@@ -64,6 +64,7 @@ class EditViewModel(
     var menusVisible by mutableStateOf(true)
     var strokeWidth by mutableStateOf(5f)
     var showSavePathDialog by mutableStateOf(false)
+    val showOverwriteCheckbox = mutableStateOf(imagePath != null)
     var showExitDialog by mutableStateOf(false)
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
