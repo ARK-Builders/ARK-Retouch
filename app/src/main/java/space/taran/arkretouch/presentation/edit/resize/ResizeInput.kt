@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,13 +40,13 @@ import space.taran.arkretouch.presentation.drawing.EditManager
 @Composable
 fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
     if (isVisible) {
-        var width by remember {
+        var width by rememberSaveable {
             mutableStateOf(
                 editManager.imageSize.width.toString()
             )
         }
 
-        var height by remember {
+        var height by rememberSaveable {
             mutableStateOf(
                 editManager.imageSize.height.toString()
             )

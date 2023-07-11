@@ -22,7 +22,6 @@ class RotateOperation(private val editManager: EditManager) : Operation {
                 redoRotationAngles.push(prevRotationAngle)
                 prevRotationAngle = rotationAngles.pop()
                 scaleToFit()
-                rotate(prevRotationAngle)
             }
         }
     }
@@ -33,7 +32,6 @@ class RotateOperation(private val editManager: EditManager) : Operation {
                 rotationAngles.push(prevRotationAngle)
                 prevRotationAngle = redoRotationAngles.pop()
                 scaleToFit()
-                rotate(prevRotationAngle)
             }
         }
     }

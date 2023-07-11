@@ -21,6 +21,7 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
         editManager.apply {
             addResize()
             saveRotationAfterOtherOperation()
+            scaleToFit()
             toggleResizeMode()
             editMatrix.reset()
             isApplied.value = true
@@ -32,8 +33,8 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
             if (resizes.isNotEmpty()) {
                 redoResize.push(backgroundImage.value)
                 backgroundImage.value = resizes.pop()
-                scaleToFit()
                 restoreRotationAfterUndoOtherOperation()
+                scaleToFit()
                 redrawEditedPaths()
             }
         }
@@ -56,6 +57,10 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
         aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
         editMatrixScale = editManager.scaleToFitOnEdit().scale
         isApplied.value = false
+    }
+
+    fun updateEditMatrixScale(scale: Scale) {
+        editMatrixScale = scale
     }
 
     fun isApplied() = isApplied.value
@@ -83,17 +88,11 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
                 ) {
                     val sx = newWidth.toFloat() / bitmap.width.toFloat()
                     val sy = newHeight.toFloat() / bitmap.height.toFloat()
-                    val downScale = Scale(
-                        sx,
-                        sy
-                    )
+                    val downScale = Scale(sx, sy)
                     val imgBitmap = bitmap.resize(downScale).asImageBitmap()
                     val drawWidth = imgBitmap.width * editMatrixScale.x
                     val drawHeight = imgBitmap.height * editMatrixScale.y
-                    val drawArea = IntSize(
-                        drawWidth.toInt(),
-                        drawHeight.toInt()
-                    )
+                    val drawArea = IntSize(drawWidth.toInt(), drawHeight.toInt())
                     updateAvailableDrawArea(drawArea)
                     updateImage(imgBitmap)
                 }
