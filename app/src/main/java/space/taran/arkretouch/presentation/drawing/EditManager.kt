@@ -60,7 +60,7 @@ class EditManager {
     val redoPaths = Stack<DrawPath>()
 
     var backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    private val _backgroundColor = mutableStateOf(Color.White)
+    private val _backgroundColor = mutableStateOf(Color.Transparent)
     val backgroundColor: State<Color> = _backgroundColor
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
@@ -72,7 +72,7 @@ class EditManager {
     lateinit var bitmapScale: ResizeOperation.Scale
         private set
 
-    val imageSize: IntSize
+    val imageSize: IntSize?
         get() {
             return if (isResizeMode.value)
                 backgroundImage2.value?.let {
@@ -160,9 +160,9 @@ class EditManager {
         scaleMatrix(viewParams.scale)
         updateAvailableDrawArea(viewParams.drawArea)
         val bitmapXScale =
-            imageSize.width.toFloat() / viewParams.drawArea.width.toFloat()
+            imageSize?.width?.toFloat()!! / viewParams.drawArea.width.toFloat()
         val bitmapYScale =
-            imageSize.height.toFloat() / viewParams.drawArea.height.toFloat()
+            imageSize?.height?.toFloat()!! / viewParams.drawArea.height.toFloat()
         bitmapScale = ResizeOperation.Scale(
             bitmapXScale,
             bitmapYScale

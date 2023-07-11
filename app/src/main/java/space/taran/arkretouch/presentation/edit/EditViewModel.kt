@@ -231,7 +231,7 @@ class EditViewModel(
         }
     }
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.imageSize
+        val size = editManager.imageSize!!
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -316,7 +316,7 @@ class EditViewModel(
                     }
                     image
                 } ?: run {
-                    val size = availableDrawAreaSize.value
+                    val size = imageSize!!
                     val image =
                         ImageBitmap(
                             size.width,

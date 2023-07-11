@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
@@ -62,13 +61,7 @@ fun EditCanvas(viewModel: EditViewModel) {
     }
 
     Box(
-        Modifier.background(
-            if (
-                editManager.isCropMode.value ||
-                editManager.isResizeMode.value
-            ) Color.White
-            else editManager.backgroundColor.value
-        ),
+        Modifier.background(editManager.backgroundColor.value),
         contentAlignment = Alignment.Center
     ) {
         val modifier = Modifier.size(
@@ -222,16 +215,19 @@ fun EditDrawCanvas(
                         eventX,
                         eventY
                     )
+
                     editManager.isRotateMode.value -> onRotate(
                         event.action,
                         event.x,
                         event.y
                     )
+
                     editManager.isEyeDropperMode.value -> handleEyeDropEvent(
                         event.action,
                         event.x,
                         event.y
                     )
+
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++
@@ -242,6 +238,12 @@ fun EditDrawCanvas(
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
+                /* canvas.drawRect(
+                    Rect(Offset.Zero, size),
+                    Paint().apply{
+                        color = backgroundColor.value
+                    }
+                )*/
                 var matrix = this.matrix
                 if (isRotateMode.value || isResizeMode.value)
                     matrix = editMatrix

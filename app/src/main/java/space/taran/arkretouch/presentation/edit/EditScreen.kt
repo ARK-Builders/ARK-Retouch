@@ -70,6 +70,7 @@ import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
 import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
+import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -293,7 +294,10 @@ private fun DrawContainer(
         modifier = Modifier
             .fillMaxSize()
             .padding(bottom = 32.dp)
-            .background(Color.Gray)
+            .background(
+                if (viewModel.editManager.isCropMode.value) Color.White
+                else Color.Gray
+            )
             .pointerInteropFilter { event ->
                 if (event.action == MotionEvent.ACTION_DOWN)
                     viewModel.strokeSliderExpanded = false
@@ -321,6 +325,11 @@ private fun DrawContainer(
             },
         contentAlignment = Alignment.Center
     ) {
+        val modifier = Modifier.size(
+            viewModel.editManager.availableDrawAreaSize.value.width.toDp(),
+            viewModel.editManager.availableDrawAreaSize.value.height.toDp()
+        )
+        TransparencyChessBoardCanvas(modifier)
         EditCanvas(viewModel)
     }
 }
