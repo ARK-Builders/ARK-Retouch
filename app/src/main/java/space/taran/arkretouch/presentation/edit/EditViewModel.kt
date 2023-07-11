@@ -64,11 +64,13 @@ class EditViewModel(
     var menusVisible by mutableStateOf(true)
     var strokeWidth by mutableStateOf(5f)
     var showSavePathDialog by mutableStateOf(false)
+    val showOverwriteCheckbox = mutableStateOf(imagePath != null)
     var showExitDialog by mutableStateOf(false)
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
     var showEyeDropperHint by mutableStateOf(false)
+    val showConfirmClearDialog = mutableStateOf(false)
     var isLoaded by mutableStateOf(false)
     var exitConfirmed = false
         private set
@@ -231,7 +233,7 @@ class EditViewModel(
         }
     }
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.imageSize!!
+        val size = editManager.imageSize
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -281,49 +283,46 @@ class EditViewModel(
     }
 
     fun getEditedImage(): ImageBitmap {
-        var bitmap: ImageBitmap
+        val size = editManager.imageSize
+        var bitmap = ImageBitmap(
+            size.width,
+            size.height,
+            ImageBitmapConfig.Argb8888
+        )
         val time = measureTimeMillis {
-            bitmap = with(editManager) {
+            editManager.apply {
                 backgroundImage.value?.let {
-                    var image = it
-                    var canvas = Canvas(image)
-                    if (rotationAngles.isNotEmpty()) {
-                        val matrix = Matrix().apply {
-                            val centerX = it.width / 2
-                            val centerY = it.height / 2
-                            setRotate(
-                                rotationAngle.value,
-                                centerX.toFloat(),
-                                centerY.toFloat()
-                            )
-                        }
-                        image = ImageBitmap(
-                            image.width,
-                            image.height,
-                            ImageBitmapConfig.Argb8888
-                        )
-                        canvas = Canvas(image)
-                        canvas.nativeCanvas.drawBitmap(
-                            it.asAndroidBitmap(),
-                            matrix,
-                            null
-                        )
+                    val canvas = Canvas(bitmap)
+                    val matrix = Matrix()
+                    if (rotationAngles.isEmpty() && drawPaths.isEmpty()) {
+                        bitmap = it
+                        return@let
                     }
+                    if (prevRotationAngle != 0f) {
+                        val centerX = size.width / 2f
+                        val centerY = size.height / 2f
+                        matrix.setRotate(prevRotationAngle, centerX, centerY)
+                    }
+                    canvas.nativeCanvas.drawBitmap(
+                        it.asAndroidBitmap(),
+                        matrix,
+                        null
+                    )
                     if (drawPaths.isNotEmpty()) {
+                        canvas.nativeCanvas.setMatrix(matrix)
                         drawPaths.forEach { pathData ->
                             canvas.drawPath(pathData.path, pathData.paint)
                         }
                     }
-                    image
                 } ?: run {
-                    val size = imageSize!!
-                    val image =
-                        ImageBitmap(
-                            size.width,
-                            size.height,
-                            ImageBitmapConfig.Argb8888
-                        )
-                    val canvas = Canvas(image)
+                    val canvas = Canvas(bitmap)
+                    val backgroundPaint = Paint().also {
+                        it.color = editManager.backgroundColor.value
+                    }
+                    canvas.drawRect(
+                        Rect(Offset.Zero, size.toSize()),
+                        backgroundPaint
+                    )
                     if (rotationAngles.isNotEmpty()) {
                         val matrix = Matrix().apply {
                             val centerX = size.width / 2
@@ -341,7 +340,6 @@ class EditViewModel(
                             canvas.drawPath(it.path, it.paint)
                         }
                     }
-                    image
                 }
             }
         }
@@ -360,6 +358,32 @@ class EditViewModel(
 
     fun applyOperation(operation: Operation) {
         editManager.applyOperation(operation)
+    }
+
+    fun cancelOperation() {
+        editManager.apply {
+            if (isRotateMode.value) {
+                toggleRotateMode()
+                cancelRotateMode()
+                menusVisible = true
+            }
+            if (isCropMode.value) {
+                toggleCropMode()
+                cancelCropMode()
+                menusVisible = true
+            }
+            if (isResizeMode.value) {
+                toggleResizeMode()
+                cancelResizeMode()
+                menusVisible = true
+            }
+            if (isEyeDropperMode.value) {
+                toggleEyeDropper()
+                cancelEyeDropper()
+                menusVisible = true
+            }
+            scaleToFit()
+        }
     }
 
     fun persistDefaults(color: Color, resolution: Resolution) {

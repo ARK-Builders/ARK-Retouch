@@ -138,44 +138,29 @@ fun EditScreen(
 
     BackHandler {
         val editManager = viewModel.editManager
-        if (editManager.isRotateMode.value) {
-            editManager.toggleRotateMode()
-            editManager.cancelRotateMode()
-            viewModel.menusVisible = true
-            return@BackHandler
-        }
-        if (editManager.isCropMode.value) {
-            editManager.toggleCropMode()
-            editManager.cancelCropMode()
-            viewModel.menusVisible = true
-            return@BackHandler
-        }
-        if (editManager.isResizeMode.value) {
-            editManager.toggleResizeMode()
-            editManager.cancelResizeMode()
-            viewModel.menusVisible = true
-            return@BackHandler
-        }
-        if (editManager.isEyeDropperMode.value) {
-            viewModel.toggleEyeDropper()
-            viewModel.cancelEyeDropper()
-            viewModel.menusVisible = true
+        if (
+            editManager.isCropMode.value || editManager.isRotateMode.value ||
+            editManager.isResizeMode.value || editManager.isEyeDropperMode.value
+        ) {
+            viewModel.cancelOperation()
             return@BackHandler
         }
         if (editManager.canUndo.value) {
             editManager.undo()
             return@BackHandler
         }
-
         if (viewModel.exitConfirmed) {
             if (launchedFromIntent)
                 context.getActivity()?.finish()
             else
                 navigateBack()
-        } else {
+            return@BackHandler
+        }
+        if (!viewModel.exitConfirmed) {
             Toast.makeText(context, "Tap back again to exit", Toast.LENGTH_SHORT)
                 .show()
             viewModel.confirmExit()
+            return@BackHandler
         }
     }
 
@@ -305,20 +290,42 @@ private fun DrawContainer(
             }
             .onSizeChanged { newSize ->
                 if (newSize == IntSize.Zero) return@onSizeChanged
-                if (
-                    viewModel.editManager.isResizeMode.value ||
-                    viewModel.editManager.resizeOperation.isApplied()
-                ) {
-                    viewModel.editManager.resizeOperation.resetApply()
-                    return@onSizeChanged
-                }
                 if (viewModel.showSavePathDialog) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
                 if (viewModel.isLoaded) {
                     viewModel.editManager.apply {
-                        if (isCropMode.value)
-                            cropWindow.updateOnDrawAreaSizeChange(newSize)
-                        return@onSizeChanged
+                        when (true) {
+                            isCropMode.value -> {
+                                cropWindow.updateOnDrawAreaSizeChange(newSize)
+                                return@onSizeChanged
+                            }
+                            isResizeMode.value -> {
+                                if (
+                                    backgroundImage.value?.width ==
+                                    imageSize.width &&
+                                    backgroundImage.value?.height ==
+                                    imageSize.height
+                                ) {
+                                    val editMatrixScale = scaleToFitOnEdit().scale
+                                    resizeOperation
+                                        .updateEditMatrixScale(editMatrixScale)
+                                }
+                                if (
+                                    resizeOperation.isApplied()
+                                ) {
+                                    resizeOperation.resetApply()
+                                }
+                                return@onSizeChanged
+                            }
+                            isRotateMode.value -> {
+                                scaleToFitOnEdit()
+                                return@onSizeChanged
+                            }
+                            else -> {
+                                scaleToFit()
+                                return@onSizeChanged
+                            }
+                        }
                     }
                 }
                 viewModel.loadImage()
@@ -369,8 +376,26 @@ private fun BoxScope.TopMenu(
                     return@MoreOptionsPopup
                 }
                 viewModel.showSavePathDialog = true
+            },
+            onClearEdits = {
+                viewModel.showConfirmClearDialog.value = true
+                viewModel.showMoreOptionsPopup = false
             }
         )
+
+    ConfirmClearDialog(
+        viewModel.showConfirmClearDialog,
+        onConfirm = {
+            viewModel.editManager.apply {
+                if (
+                    !isRotateMode.value &&
+                    !isResizeMode.value &&
+                    !isCropMode.value &&
+                    !isEyeDropperMode.value
+                ) clearEdits()
+            }
+        }
+    )
 
     if (
         !viewModel.menusVisible &&
@@ -388,28 +413,11 @@ private fun BoxScope.TopMenu(
             .clip(CircleShape)
             .clickable {
                 viewModel.editManager.apply {
-                    if (isRotateMode.value) {
-                        toggleRotateMode()
-                        cancelRotateMode()
-                        viewModel.menusVisible = true
-                        return@clickable
-                    }
-                    if (isCropMode.value) {
-                        toggleCropMode()
-                        cancelCropMode()
-                        viewModel.menusVisible = true
-                        return@clickable
-                    }
-                    if (isResizeMode.value) {
-                        toggleResizeMode()
-                        cancelResizeMode()
-                        viewModel.menusVisible = true
-                        return@clickable
-                    }
-                    if (isEyeDropperMode.value) {
-                        viewModel.toggleEyeDropper()
-                        viewModel.cancelEyeDropper()
-                        viewModel.menusVisible = true
+                    if (
+                        isCropMode.value || isRotateMode.value ||
+                        isResizeMode.value || isEyeDropperMode.value
+                    ) {
+                        viewModel.cancelOperation()
                         return@clickable
                     }
                     if (
@@ -709,31 +717,6 @@ private fun EditMenuContent(
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value
                         )
-                            editManager.clearEdits()
-                    },
-                imageVector = ImageVector.vectorResource(R.drawable.ic_clear),
-                tint = if (
-                    !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value &&
-                    !editManager.isCropMode.value &&
-                    !editManager.isEyeDropperMode.value
-                )
-                    MaterialTheme.colors.primary
-                else Color.Black,
-                contentDescription = null
-            )
-            Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        if (
-                            !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value
-                        )
                             editManager.toggleEraseMode()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
@@ -759,23 +742,23 @@ private fun EditMenuContent(
                                 !isRotateMode.value &&
                                 !isResizeMode.value &&
                                 !isEyeDropperMode.value
-                            )
+                            ) {
                                 toggleCropMode()
-                            else return@clickable
-                            viewModel.menusVisible =
-                                !editManager.isCropMode.value
-                            if (isCropMode.value) {
-                                val bitmap = viewModel.getEditedImage()
-                                setBackgroundImage2()
-                                backgroundImage.value = bitmap
-                                viewModel.editManager.cropWindow.init(
-                                    editManager,
-                                    bitmap.asAndroidBitmap()
-                                )
-                                return@clickable
+                                viewModel.menusVisible =
+                                    !editManager.isCropMode.value
+                                if (isCropMode.value) {
+                                    val bitmap = viewModel.getEditedImage()
+                                    setBackgroundImage2()
+                                    backgroundImage.value = bitmap
+                                    viewModel.editManager.cropWindow.init(
+                                        bitmap.asAndroidBitmap()
+                                    )
+                                    return@clickable
+                                }
+                                editManager.cancelCropMode()
+                                editManager.scaleToFit()
+                                editManager.cropWindow.close()
                             }
-                            editManager.cancelCropMode()
-                            editManager.cropWindow.close()
                         }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
@@ -797,16 +780,17 @@ private fun EditMenuContent(
                                 !isCropMode.value &&
                                 !isResizeMode.value &&
                                 !isEyeDropperMode.value
-                            )
+                            ) {
                                 toggleRotateMode()
-                            else return@clickable
-                            if (isRotateMode.value) {
-                                setBackgroundImage2()
-                                viewModel.menusVisible =
-                                    !editManager.isRotateMode.value
-                                return@clickable
+                                if (isRotateMode.value) {
+                                    setBackgroundImage2()
+                                    viewModel.menusVisible =
+                                        !editManager.isRotateMode.value
+                                    return@clickable
+                                }
+                                cancelRotateMode()
+                                scaleToFit()
                             }
-                            cancelRotateMode()
                         }
                     },
                 imageVector = ImageVector
@@ -833,7 +817,6 @@ private fun EditMenuContent(
                             else return@clickable
                             viewModel.menusVisible = !isResizeMode.value
                             if (isResizeMode.value) {
-
                                 setBackgroundImage2()
                                 val imgBitmap = viewModel.getEditedImage()
                                 backgroundImage.value = imgBitmap
@@ -843,6 +826,7 @@ private fun EditMenuContent(
                                 return@clickable
                             }
                             cancelResizeMode()
+                            scaleToFit()
                         }
                     },
                 imageVector = ImageVector

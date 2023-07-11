@@ -42,7 +42,7 @@ class EditManager {
         blendMode = BlendMode.SrcOut
     }
 
-    val cropWindow = CropWindow()
+    val cropWindow = CropWindow(this)
 
     val drawOperation = DrawOperation(this)
     val resizeOperation = ResizeOperation(this)
@@ -59,7 +59,8 @@ class EditManager {
     val drawPaths = Stack<DrawPath>()
     val redoPaths = Stack<DrawPath>()
 
-    var backgroundImage = mutableStateOf<ImageBitmap?>(null)
+    val backgroundImage = mutableStateOf<ImageBitmap?>(null)
+    val _backgroundImage: State<ImageBitmap?> = backgroundImage
     private val _backgroundColor = mutableStateOf(Color.Transparent)
     val backgroundColor: State<Color> = _backgroundColor
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
@@ -72,7 +73,7 @@ class EditManager {
     lateinit var bitmapScale: ResizeOperation.Scale
         private set
 
-    val imageSize: IntSize?
+    val imageSize: IntSize
         get() {
             return if (isResizeMode.value)
                 backgroundImage2.value?.let {
@@ -157,12 +158,12 @@ class EditManager {
             )
         }
         matrixScale = viewParams.scale
-        scaleMatrix(viewParams.scale)
+        scaleMatrix(viewParams)
         updateAvailableDrawArea(viewParams.drawArea)
         val bitmapXScale =
-            imageSize?.width?.toFloat()!! / viewParams.drawArea.width.toFloat()
+            imageSize.width.toFloat() / viewParams.drawArea.width.toFloat()
         val bitmapYScale =
-            imageSize?.height?.toFloat()!! / viewParams.drawArea.height.toFloat()
+            imageSize.height.toFloat() / viewParams.drawArea.height.toFloat()
         bitmapScale = ResizeOperation.Scale(
             bitmapXScale,
             bitmapYScale
@@ -173,20 +174,36 @@ class EditManager {
         maxWidth: Int = drawAreaSize.value.width,
         maxHeight: Int = drawAreaSize.value.height
     ): ImageViewParams {
-        return backgroundImage.value?.let {
-            val viewParams = fitImage(it, maxWidth, maxHeight)
-            scaleEditMatrix(viewParams.scale)
-            updateAvailableDrawArea(viewParams.drawArea)
-            viewParams
-        }!!
+        val viewParams = backgroundImage.value?.let {
+            fitImage(it, maxWidth, maxHeight)
+        } ?: run {
+            fitBackground(
+                resolution.value!!,
+                maxWidth,
+                maxHeight
+            )
+        }
+        scaleEditMatrix(viewParams)
+        updateAvailableDrawArea(viewParams.drawArea)
+        return viewParams
     }
 
-    fun scaleMatrix(scale: ResizeOperation.Scale) {
-        matrix.setScale(scale.x, scale.y)
+    private fun scaleMatrix(viewParams: ImageViewParams) {
+        matrix.setScale(viewParams.scale.x, viewParams.scale.y)
+        if (prevRotationAngle != 0f) {
+            val centerX = viewParams.drawArea.width / 2f
+            val centerY = viewParams.drawArea.height / 2f
+            matrix.postRotate(prevRotationAngle, centerX, centerY)
+        }
     }
 
-    fun scaleEditMatrix(scale: ResizeOperation.Scale) {
-        editMatrix.setScale(scale.x, scale.y)
+    private fun scaleEditMatrix(viewParams: ImageViewParams) {
+        editMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
+        if (prevRotationAngle != 0f && isRotateMode.value) {
+            val centerX = viewParams.drawArea.width / 2f
+            val centerY = viewParams.drawArea.height / 2f
+            editMatrix.postRotate(prevRotationAngle, centerX, centerY)
+        }
     }
 
     fun setBackgroundColor(color: Color) {
@@ -361,14 +378,12 @@ class EditManager {
     fun saveRotationAfterOtherOperation() {
         addAngle()
         resetRotation()
-        scaleToFit()
     }
 
     fun restoreRotationAfterUndoOtherOperation() {
         if (rotationAngles.isNotEmpty()) {
-            scaleToFit()
             prevRotationAngle = rotationAngles.pop()
-            rotate(prevRotationAngle)
+            rotationAngle.value = prevRotationAngle
         }
     }
 
@@ -471,7 +486,6 @@ class EditManager {
     fun cancelCropMode() {
         backgroundImage.value = backgroundImage2.value
         editMatrix.reset()
-        updateAvailableDrawAreaByMatrix()
     }
 
     fun cancelRotateMode() {
@@ -486,7 +500,6 @@ class EditManager {
     fun cancelResizeMode() {
         backgroundImage.value = backgroundImage2.value
         editMatrix.reset()
-        updateAvailableDrawAreaByMatrix()
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {

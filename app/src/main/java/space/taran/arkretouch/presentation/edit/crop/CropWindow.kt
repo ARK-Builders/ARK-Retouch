@@ -22,7 +22,7 @@ import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_9_16
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 
-class CropWindow {
+class CropWindow(private val editManager: EditManager) {
 
     private lateinit var bitmap: Bitmap
 
@@ -36,8 +36,12 @@ class CropWindow {
     private var cropAreaHeight: Float = MIN_HEIGHT
     private lateinit var matrixScale: ResizeOperation.Scale
     private lateinit var cropScale: ResizeOperation.Scale
+    private lateinit var rectScale: ResizeOperation.Scale
 
-    private var drawAreaSize = IntSize.Zero
+    private val drawAreaSize: IntSize
+        get() {
+            return editManager.drawAreaSize.value
+        }
 
     private lateinit var rect: Rect
 
@@ -82,7 +86,7 @@ class CropWindow {
     }
 
     fun updateOnDrawAreaSizeChange(newSize: IntSize) {
-        drawAreaSize = newSize
+        reInit()
         updateOnOffsetChange()
     }
 
@@ -91,13 +95,11 @@ class CropWindow {
     }
 
     fun init(
-        editManager: EditManager,
         bitmap: Bitmap
     ) {
         if (!isInitialized) {
             Timber.tag("crop-window").d("Initialising")
             this.bitmap = bitmap
-            this.drawAreaSize = editManager.drawAreaSize.value
             calcMaxDimens()
             val viewParams = editManager.scaleToFitOnEdit(
                 width.toInt(),
@@ -115,26 +117,43 @@ class CropWindow {
         }
     }
 
+    private fun reInit() {
+        calcMaxDimens()
+        val viewParams = editManager.scaleToFitOnEdit(
+            width.toInt(),
+            height.toInt()
+        )
+        val prevCropAreaWidth = cropAreaWidth
+        val prevCropAreaHeight = cropAreaHeight
+        matrixScale = viewParams.scale
+        cropAreaWidth = viewParams.drawArea.width.toFloat()
+        cropAreaHeight = viewParams.drawArea.height.toFloat()
+        cropScale = ResizeOperation.Scale(
+            bitmap.width / cropAreaWidth,
+            bitmap.height / cropAreaHeight
+        )
+        rectScale = ResizeOperation.Scale(
+            prevCropAreaWidth / cropAreaWidth,
+            prevCropAreaHeight / cropAreaHeight
+        )
+    }
+
     private fun updateOnOffsetChange() {
         val leftMove = rect.left - offset.x
         val topMove = rect.top - offset.y
         calcOffset()
-        val newLeft = offset.x + leftMove
-        val newTop = offset.y + topMove
-        Timber.tag("crop-window").d(
-            "left move = $leftMove\n" +
-                "top move = $topMove\n" +
-                "new left = $newLeft\n" +
-                "new top = $newTop" +
-                ""
-        )
+        val newLeft = offset.x + (leftMove / rectScale.x)
+        val newTop = offset.y + (topMove / rectScale.y)
+        val newRight = newLeft + (rect.width / rectScale.x)
+        val newBottom = newTop + (rect.height / rectScale.y)
         create(
             newLeft,
             newTop,
-            newLeft + rect.width,
-            newTop + rect.height
+            newRight,
+            newBottom
         )
     }
+
     fun show(canvas: Canvas) {
         if (isInitialized) {
             update()

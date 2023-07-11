@@ -14,10 +14,10 @@ class CropOperation(
             cropWindow.apply {
                 val image = getBitmap().crop(getCropParams()).asImageBitmap()
                 backgroundImage.value = image
-                scaleToFit()
                 keepEditedPaths()
                 addCrop()
                 saveRotationAfterOtherOperation()
+                scaleToFit()
                 toggleCropMode()
             }
         }
@@ -28,10 +28,10 @@ class CropOperation(
             if (cropStack.isNotEmpty()) {
                 val image = cropStack.pop()
                 redoCropStack.push(backgroundImage.value)
-                restoreRotationAfterUndoOtherOperation()
                 backgroundImage.value = image
-                redrawEditedPaths()
+                restoreRotationAfterUndoOtherOperation()
                 scaleToFit()
+                redrawEditedPaths()
                 updateRevised()
             }
         }
@@ -41,11 +41,11 @@ class CropOperation(
         editManager.apply {
             if (redoCropStack.isNotEmpty()) {
                 val image = redoCropStack.pop()
-                saveRotationAfterOtherOperation()
                 cropStack.push(backgroundImage.value)
                 backgroundImage.value = image
-                keepEditedPaths()
+                saveRotationAfterOtherOperation()
                 scaleToFit()
+                keepEditedPaths()
                 updateRevised()
             }
         }
