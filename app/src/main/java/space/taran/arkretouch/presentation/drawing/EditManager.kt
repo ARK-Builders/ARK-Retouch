@@ -61,7 +61,7 @@ class EditManager {
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
     val _backgroundImage: State<ImageBitmap?> = backgroundImage
-    private val _backgroundColor = mutableStateOf(Color.White)
+    private val _backgroundColor = mutableStateOf(Color.Transparent)
     val backgroundColor: State<Color> = _backgroundColor
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)

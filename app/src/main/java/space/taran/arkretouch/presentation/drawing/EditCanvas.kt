@@ -15,12 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
@@ -63,10 +63,7 @@ fun EditCanvas(viewModel: EditViewModel) {
 
     Box(
         Modifier.background(
-            if (
-                editManager.isCropMode.value ||
-                editManager.isResizeMode.value
-            ) Color.White
+            if (editManager.isCropMode.value) Color.Transparent
             else editManager.backgroundColor.value
         ),
         contentAlignment = Alignment.Center
@@ -222,16 +219,19 @@ fun EditDrawCanvas(
                         eventX,
                         eventY
                     )
+
                     editManager.isRotateMode.value -> onRotate(
                         event.action,
                         event.x,
                         event.y
                     )
+
                     editManager.isEyeDropperMode.value -> handleEyeDropEvent(
                         event.action,
                         event.x,
                         event.y
                     )
+
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++
