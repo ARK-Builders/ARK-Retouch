@@ -3,6 +3,7 @@ package space.taran.arkretouch.presentation.edit
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat
 import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -46,8 +47,11 @@ import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
+import java.net.URI
 import java.nio.file.Path
+import kotlin.io.path.extension
 import kotlin.io.path.outputStream
+import kotlin.io.path.toPath
 import kotlin.system.measureTimeMillis
 
 class EditViewModel(
@@ -72,6 +76,7 @@ class EditViewModel(
     var showEyeDropperHint by mutableStateOf(false)
     val showConfirmClearDialog = mutableStateOf(false)
     var isLoaded by mutableStateOf(false)
+    var compressionFormat by mutableStateOf(CompressFormat.PNG)
     var exitConfirmed = false
         private set
     val bottomButtonsScrollIsAtStart = mutableStateOf(true)
@@ -113,6 +118,7 @@ class EditViewModel(
                 imagePath,
                 editManager
             )
+            extractCompressionFormat(it.extension)
             return
         }
         imageUri?.let {
@@ -121,6 +127,7 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
+            extractCompressionFormat(URI.create(it).toPath().extension)
             return
         }
         editManager.scaleToFit()
@@ -133,7 +140,7 @@ class EditViewModel(
 
             savePath.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
-                    .compress(Bitmap.CompressFormat.PNG, 100, out)
+                    .compress(compressionFormat, 100, out)
             }
             imageSaved = true
             isSavingImage = false
@@ -389,6 +396,15 @@ class EditViewModel(
     fun persistDefaults(color: Color, resolution: Resolution) {
         viewModelScope.launch {
             prefs.persistDefaults(color, resolution)
+        }
+    }
+
+    private fun extractCompressionFormat(extension: String) {
+        compressionFormat = when (extension) {
+            ImageExtensions.PNG -> CompressFormat.PNG
+            ImageExtensions.JPEG -> CompressFormat.JPEG
+            ImageExtensions.WEBP -> CompressFormat.WEBP
+            else -> CompressFormat.PNG
         }
     }
 

@@ -1,5 +1,7 @@
 package space.taran.arkretouch.presentation.edit
 
+import android.graphics.Bitmap.CompressFormat
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
@@ -42,18 +45,22 @@ import space.taran.arkretouch.R
 import space.taran.arkretouch.presentation.utils.findNotExistCopyName
 import kotlin.io.path.name
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.key
-import androidx.compose.ui.ExperimentalComposeUiApi
 import java.nio.file.Files
+import java.util.Locale
 import kotlin.streams.toList
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SavePathDialog(
     initialImagePath: Path?,
     fragmentManager: FragmentManager,
     onDismissClick: () -> Unit,
-    onPositiveClick: (Path) -> Unit
+    onPositiveClick: (Path) -> Unit,
+    onCompressFormatChanged: (CompressFormat) -> Unit
 ) {
     var currentPath by remember { mutableStateOf(initialImagePath?.parent) }
     var imagePath by remember { mutableStateOf(initialImagePath) }
@@ -66,6 +73,8 @@ fun SavePathDialog(
             } ?: "image.png"
         )
     }
+    var compressionFormat by remember { mutableStateOf("PNG") }
+    var showCompressionFormats by remember { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -123,25 +132,48 @@ fun SavePathDialog(
                             ?: stringResource(R.string.pick_folder)
                     )
                 }
-                OutlinedTextField(
-                    modifier = Modifier.padding(5.dp),
-                    value = name,
-                    onValueChange = {
-                        name = it
-                        currentPath?.let { path ->
-                            imagePath = path.resolve(name)
-                            showOverwriteCheckbox.value = Files.list(path).toList()
-                                .contains(imagePath)
-                            if (showOverwriteCheckbox.value) {
-                                name = path.findNotExistCopyName(
-                                    imagePath?.fileName!!
-                                ).name
+                Row(Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        modifier = Modifier.padding(5.dp),
+                        value = name.substringBeforeLast('.'),
+                        onValueChange = {
+                            name = "$it." +
+                                compressionFormat.lowercase(Locale.getDefault())
+                            currentPath?.let { path ->
+                                imagePath = path.resolve(name)
+                                showOverwriteCheckbox.value =
+                                    Files.list(path).toList()
+                                        .contains(imagePath)
+                                if (showOverwriteCheckbox.value) {
+                                    name = path.findNotExistCopyName(
+                                        imagePath?.fileName!!
+                                    ).name
+                                }
+                            }
+                        },
+                        label = { Text(text = stringResource(R.string.name)) },
+                        singleLine = true
+                    )
+                    Column(
+                        Modifier.clickable {
+                            showCompressionFormats = !showCompressionFormats
+                        }
+                    ) {
+                        Text(compressionFormat)
+                        Icon(
+                            if (showCompressionFormats) Icons.Filled.KeyboardArrowUp
+                            else Icons.Filled.KeyboardArrowDown,
+                            null,
+                        )
+                        if (showCompressionFormats) {
+                            CompressionFormats { name, format ->
+                                compressionFormat = name
+                                onCompressFormatChanged(format)
+                                showCompressionFormats = false
                             }
                         }
-                    },
-                    label = { Text(text = stringResource(R.string.name)) },
-                    singleLine = true
-                )
+                    }
+                }
                 if (showOverwriteCheckbox.value) {
                     Row(
                         modifier = Modifier
@@ -175,7 +207,7 @@ fun SavePathDialog(
                     Button(
                         modifier = Modifier.padding(5.dp),
                         onClick = {
-                            if (currentPath != null && name != null)
+                            if (currentPath != null)
                                 onPositiveClick(currentPath!!.resolve(name))
                         }
                     ) {
@@ -202,9 +234,61 @@ fun SaveProgress() {
     }
 }
 
+@Composable
+fun CompressionFormats(onFormatClick: (String, CompressFormat) -> Unit) {
+    Column(
+        Modifier.wrapContentSize()
+    ) {
+        val png = stringResource(R.string.png)
+        val jpeg = stringResource(R.string.jpeg)
+        val webpLossless = stringResource(R.string.webp_lossless)
+        val webpLossy = stringResource(R.string.webp_lossy)
+        val webp = stringResource(R.string.webp)
+        Text(
+            png,
+            Modifier.clickable {
+                onFormatClick(png, CompressFormat.PNG)
+            }
+        )
+        Text(
+            jpeg,
+            Modifier.clickable {
+                onFormatClick(jpeg, CompressFormat.JPEG)
+            }
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Text(
+                webpLossless,
+                Modifier.clickable {
+                    onFormatClick(webpLossless, CompressFormat.WEBP_LOSSLESS)
+                }
+            )
+            Text(
+                webpLossy,
+                Modifier.clickable {
+                    onFormatClick(webpLossy, CompressFormat.WEBP_LOSSY)
+                }
+            )
+        } else {
+            Text(
+                webp,
+                Modifier.clickable {
+                    onFormatClick(webp, CompressFormat.WEBP)
+                }
+            )
+        }
+    }
+}
+
 fun folderFilePickerConfig(initialPath: Path?) = ArkFilePickerConfig(
     mode = ArkFilePickerMode.FOLDER,
     initialPath = initialPath,
     showRoots = true,
     rootsFirstPage = true
 )
+
+object ImageExtensions {
+    const val PNG = "png"
+    const val JPEG = "jpeg"
+    const val WEBP = "webp"
+}
