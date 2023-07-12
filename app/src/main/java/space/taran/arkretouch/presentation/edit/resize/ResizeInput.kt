@@ -42,24 +42,24 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
     if (isVisible) {
         var width by rememberSaveable {
             mutableStateOf(
-                editManager.imageSize?.width?.toString()!!
+                editManager.imageSize.width.toString()
             )
         }
 
         var height by rememberSaveable {
             mutableStateOf(
-                editManager.imageSize?.height?.toString()!!
+                editManager.imageSize.height.toString()
             )
         }
 
         val widthHint = stringResource(
             R.string.width_too_large,
-            editManager.imageSize?.width!!
+            editManager.imageSize.width
         )
         val digitsHint = stringResource(R.string.digits_only)
         val heightHint = stringResource(
             R.string.height_too_large,
-            editManager.imageSize?.height!!
+            editManager.imageSize.height
         )
         var hint by remember {
             mutableStateOf("")
@@ -88,7 +88,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         if (
                             it.isNotEmpty() &&
                             it.isDigitsOnly() &&
-                            it.toInt() > editManager.imageSize?.width!!
+                            it.toInt() > editManager.imageSize.width
                         ) {
                             hint = widthHint
                             showHint = true
@@ -132,7 +132,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         if (
                             it.isNotEmpty() &&
                             it.isDigitsOnly() &&
-                            it.toInt() > editManager.imageSize?.height!!
+                            it.toInt() > editManager.imageSize.height
                         ) {
                             hint = heightHint
                             showHint = true

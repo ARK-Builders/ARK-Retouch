@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -61,7 +62,10 @@ fun EditCanvas(viewModel: EditViewModel) {
     }
 
     Box(
-        Modifier.background(editManager.backgroundColor.value),
+        Modifier.background(
+            if (editManager.isCropMode.value) Color.Transparent
+            else editManager.backgroundColor.value
+        ),
         contentAlignment = Alignment.Center
     ) {
         val modifier = Modifier.size(
@@ -238,12 +242,6 @@ fun EditDrawCanvas(
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
-                /* canvas.drawRect(
-                    Rect(Offset.Zero, size),
-                    Paint().apply{
-                        color = backgroundColor.value
-                    }
-                )*/
                 var matrix = this.matrix
                 if (isRotateMode.value || isResizeMode.value)
                     matrix = editMatrix
