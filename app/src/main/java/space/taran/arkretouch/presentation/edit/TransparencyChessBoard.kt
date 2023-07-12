@@ -15,9 +15,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 
 private class TransparencyChessBoard {
     fun create(boardSize: Size, canvas: Canvas) {
-        val boxSize = Size(SQUARE_SIZE, SQUARE_SIZE)
-        val numberOfBoxesOnHeight = (boardSize.height / boxSize.width).toInt()
-        val numberOfBoxesOnWidth = (boardSize.width / boxSize.width).toInt()
+        val numberOfBoxesOnHeight = (boardSize.height / SQUARE_SIZE).toInt()
+        val numberOfBoxesOnWidth = (boardSize.width / SQUARE_SIZE).toInt()
         var color = DARK
         val paint = Paint().also {
             it.color = color
@@ -25,10 +24,10 @@ private class TransparencyChessBoard {
 
         0.rangeTo(numberOfBoxesOnWidth).forEach { i ->
             0.rangeTo(numberOfBoxesOnHeight).forEach { j ->
-                val offsetX = boxSize.width * i
-                val offsetY = boxSize.height * j
+                val offsetX = SQUARE_SIZE * i
+                val offsetY = SQUARE_SIZE * j
                 val offset = Offset(offsetX, offsetY)
-                val box = Rect(offset, boxSize)
+                val box = Rect(offset, Size(SQUARE_SIZE, SQUARE_SIZE))
                 if (j == 0) {
                     if (color == paint.color) {
                         switchPaintColor(paint)
