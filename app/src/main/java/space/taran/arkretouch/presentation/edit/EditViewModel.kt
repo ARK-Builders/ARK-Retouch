@@ -402,7 +402,7 @@ class EditViewModel(
     private fun extractCompressionFormat(extension: String) {
         compressionFormat = when (extension) {
             ImageExtensions.PNG -> CompressFormat.PNG
-            ImageExtensions.JPEG -> CompressFormat.JPEG
+            ImageExtensions.JPEG, ImageExtensions.JPG -> CompressFormat.JPEG
             ImageExtensions.WEBP -> CompressFormat.WEBP
             else -> CompressFormat.PNG
         }
