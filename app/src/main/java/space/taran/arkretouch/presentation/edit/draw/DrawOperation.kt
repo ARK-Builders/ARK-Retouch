@@ -31,8 +31,7 @@ class DrawOperation(private val editManager: EditManager) : Operation {
         }
     }
 
-    fun draw(path: Path): Operation {
+    fun draw(path: Path) {
         this.path = path
-        return this
     }
 }

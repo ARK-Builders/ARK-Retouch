@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalContext
 import space.taran.arkretouch.presentation.edit.EditViewModel
 import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
@@ -94,7 +95,10 @@ fun EditCanvas(viewModel: EditViewModel) {
 }
 
 @Composable
-fun EditImageCanvas(modifier: Modifier, editManager: EditManager) {
+fun EditImageCanvas(
+    modifier: Modifier,
+    editManager: EditManager
+) {
     Canvas(modifier) {
         editManager.apply {
             invalidatorTick.value
@@ -120,6 +124,7 @@ fun EditDrawCanvas(
     viewModel: EditViewModel,
     onRotate: (Int, Float, Float) -> Unit
 ) {
+    val context = LocalContext.current
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
@@ -134,7 +139,8 @@ fun EditDrawCanvas(
                 currentPoint.x = eventX
                 currentPoint.y = eventY
                 editManager.apply {
-                    applyOperation(drawOperation.draw(path))
+                    drawOperation.draw(path)
+                    applyOperation()
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -194,6 +200,29 @@ fun EditDrawCanvas(
         viewModel.applyEyeDropper(action, eventX.toInt(), eventY.toInt())
     }
 
+    fun handleBlurEvent(action: Int, eventX: Float, eventY: Float) {
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val position = Offset(
+                    currentPoint.x,
+                    currentPoint.y
+                )
+                val delta = Offset(
+                    computeDeltaX(currentPoint.x, eventX),
+                    computeDeltaY(currentPoint.y, eventY)
+                )
+                editManager.blurOperation.moveBrush(position, delta)
+                currentPoint.x = eventX
+                currentPoint.y = eventY
+            }
+            else -> {}
+        }
+    }
+
     Canvas(
         modifier = drawModifier
             // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
@@ -214,6 +243,11 @@ fun EditDrawCanvas(
 
                 when (true) {
                     editManager.isResizeMode.value -> {}
+                    editManager.isBlurMode.value -> handleBlurEvent(
+                        event.action,
+                        eventX,
+                        eventY
+                    )
                     editManager.isCropMode.value -> handleCropEvent(
                         event.action,
                         eventX,
@@ -248,6 +282,10 @@ fun EditDrawCanvas(
                 if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
                 if (isResizeMode.value) return@drawIntoCanvas
+                if (isBlurMode.value) {
+                    editManager.blurOperation.drawBrush(context, canvas)
+                    return@drawIntoCanvas
+                }
                 if (isCropMode.value) {
                     editManager.cropWindow.show(canvas)
                     return@drawIntoCanvas

@@ -18,6 +18,7 @@ import space.taran.arkretouch.data.ImageDefaults
 import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.presentation.edit.ImageViewParams
 import space.taran.arkretouch.presentation.edit.Operation
+import space.taran.arkretouch.presentation.edit.blur.BlurOperation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
 import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
@@ -41,6 +42,7 @@ class EditManager {
         style = PaintingStyle.Stroke
         blendMode = BlendMode.SrcOut
     }
+    val blurIntensity = mutableStateOf(12f)
 
     val cropWindow = CropWindow(this)
 
@@ -48,19 +50,18 @@ class EditManager {
     val resizeOperation = ResizeOperation(this)
     val rotateOperation = RotateOperation(this)
     val cropOperation = CropOperation(this)
+    val blurOperation = BlurOperation(this)
 
     private val currentPaint: Paint
-        get() = if (isEraseMode.value) {
-            erasePaint
-        } else {
-            drawPaint.value
+        get() = when (true) {
+            isEraseMode.value -> erasePaint
+            else -> drawPaint.value
         }
 
     val drawPaths = Stack<DrawPath>()
     val redoPaths = Stack<DrawPath>()
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    val _backgroundImage: State<ImageBitmap?> = backgroundImage
     private val _backgroundColor = mutableStateOf(Color.Transparent)
     val backgroundColor: State<Color> = _backgroundColor
     private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
@@ -84,7 +85,7 @@ class EditManager {
             else
                 backgroundImage.value?.let {
                     IntSize(it.width, it.height)
-                } ?: resolution.value?.toIntSize()!!
+                } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
         }
 
     private val _resolution = mutableStateOf<Resolution?>(null)
@@ -112,6 +113,9 @@ class EditManager {
     private val _isEyeDropperMode = mutableStateOf(false)
     val isEyeDropperMode = _isEyeDropperMode
 
+    private val _isBlurMode = mutableStateOf(false)
+    val isBlurMode = _isBlurMode
+
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
 
@@ -131,7 +135,15 @@ class EditManager {
     val cropStack = Stack<ImageBitmap>()
     val redoCropStack = Stack<ImageBitmap>()
 
-    fun applyOperation(operation: Operation) {
+    fun applyOperation() {
+        val operation: Operation =
+            when (true) {
+                isRotateMode.value -> rotateOperation
+                isCropMode.value -> cropOperation
+                isBlurMode.value -> blurOperation
+                isResizeMode.value -> resizeOperation
+                else -> drawOperation
+            }
         operation.apply()
     }
 
@@ -346,10 +358,17 @@ class EditManager {
         updateRevised()
     }
 
-    fun operationByTask(task: String) = when (task) {
+    fun addBlur() {
+        if (canRedo.value) clearRedo()
+        undoStack.add(BLUR)
+        updateRevised()
+    }
+
+    private fun operationByTask(task: String) = when (task) {
         ROTATE -> rotateOperation
         RESIZE -> resizeOperation
         CROP -> cropOperation
+        BLUR -> blurOperation
         else -> drawOperation
     }
 
@@ -434,6 +453,7 @@ class EditManager {
         clearResizes()
         clearRotations()
         clearCrop()
+        blurOperation.clear()
         undoStack.clear()
         redoStack.clear()
         restoreOriginalBackgroundImage()
@@ -502,6 +522,9 @@ class EditManager {
         editMatrix.reset()
     }
 
+    fun toggleBlurMode() {
+        _isBlurMode.value = !isBlurMode.value
+    }
     fun setPaintStrokeWidth(strokeWidth: Float) {
         drawPaint.value.strokeWidth = strokeWidth
     }
@@ -522,6 +545,7 @@ class EditManager {
         private const val CROP = "crop"
         private const val RESIZE = "resize"
         private const val ROTATE = "rotate"
+        private const val BLUR = "blur"
     }
 }
 
@@ -546,6 +570,9 @@ fun Paint.copy(): Paint {
         shader = from.shader
         colorFilter = from.colorFilter
         pathEffect = from.pathEffect
+        asFrameworkPaint().apply {
+            maskFilter = from.asFrameworkPaint().maskFilter
+        }
     }
 }
 
