@@ -356,8 +356,9 @@ class EditViewModel(
         isLoaded = true
     }
 
-    fun applyOperation(operation: Operation) {
-        editManager.applyOperation(operation)
+    fun applyOperation() {
+        editManager.applyOperation()
+        menusVisible = true
     }
 
     fun cancelOperation() {

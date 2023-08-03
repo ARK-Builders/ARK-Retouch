@@ -66,6 +66,7 @@ import space.taran.arkretouch.R
 import space.taran.arkretouch.data.Resolution
 import space.taran.arkretouch.di.DIManager
 import space.taran.arkretouch.presentation.drawing.EditCanvas
+import space.taran.arkretouch.presentation.edit.blur.BlurIntensityPopup
 import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
@@ -143,6 +144,10 @@ fun EditScreen(
             editManager.isResizeMode.value || editManager.isEyeDropperMode.value
         ) {
             viewModel.cancelOperation()
+            return@BackHandler
+        }
+        if (editManager.isBlurMode.value) {
+            editManager.toggleBlurMode()
             return@BackHandler
         }
         if (editManager.canUndo.value) {
@@ -299,6 +304,7 @@ private fun DrawContainer(
                                 cropWindow.updateOnDrawAreaSizeChange(newSize)
                                 return@onSizeChanged
                             }
+
                             isResizeMode.value -> {
                                 if (
                                     backgroundImage.value?.width ==
@@ -317,10 +323,12 @@ private fun DrawContainer(
                                 }
                                 return@onSizeChanged
                             }
+
                             isRotateMode.value -> {
                                 scaleToFitOnEdit()
                                 return@onSizeChanged
                             }
+
                             else -> {
                                 scaleToFit()
                                 return@onSizeChanged
@@ -420,6 +428,10 @@ private fun BoxScope.TopMenu(
                         viewModel.cancelOperation()
                         return@clickable
                     }
+                    if (isBlurMode.value) {
+                        toggleBlurMode()
+                        return@clickable
+                    }
                     if (
                         !viewModel.editManager.canUndo.value
                     ) {
@@ -453,16 +465,9 @@ private fun BoxScope.TopMenu(
                     viewModel.editManager.apply {
                         if (
                             isCropMode.value || isRotateMode.value ||
-                            isResizeMode.value
+                            isResizeMode.value || isBlurMode.value
                         ) {
-                            val operation: Operation =
-                                when (true) {
-                                    isRotateMode.value -> rotateOperation
-                                    isCropMode.value -> cropOperation
-                                    else -> resizeOperation
-                                }
-                            viewModel.applyOperation(operation)
-                            viewModel.menusVisible = true
+                            viewModel.applyOperation()
                             return@clickable
                         }
                     }
@@ -471,7 +476,8 @@ private fun BoxScope.TopMenu(
             imageVector = if (
                 viewModel.editManager.isCropMode.value ||
                 viewModel.editManager.isRotateMode.value ||
-                viewModel.editManager.isResizeMode.value
+                viewModel.editManager.isResizeMode.value ||
+                viewModel.editManager.isBlurMode.value
             )
                 ImageVector.vectorResource(R.drawable.ic_check)
             else ImageVector.vectorResource(R.drawable.ic_more_vert),
@@ -589,6 +595,8 @@ private fun EditMenuContent(
     ) {
         StrokeWidthPopup(Modifier, viewModel)
 
+        BlurIntensityPopup(editManager)
+
         Row(
             Modifier
                 .wrapContentHeight()
@@ -602,21 +610,27 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        if (!editManager.isRotateMode.value &&
+                        if (
+                            !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isBlurMode.value &&
+                            !editManager.isEraseMode.value
                         ) {
                             editManager.undo()
                         }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (
-                    editManager.canUndo.value &&
-                    !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value &&
-                    !editManager.isCropMode.value &&
-                    !editManager.isEyeDropperMode.value
+                    editManager.canUndo.value && (
+                        !editManager.isRotateMode.value &&
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isEraseMode.value &&
+                            !editManager.isBlurMode.value
+                        )
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
@@ -630,7 +644,9 @@ private fun EditMenuContent(
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isEraseMode.value &&
+                            !editManager.isBlurMode.value
                         ) editManager.redo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
@@ -638,9 +654,11 @@ private fun EditMenuContent(
                     editManager.canRedo.value &&
                     (
                         !editManager.isRotateMode.value &&
-                            !editManager.isCropMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isEyeDropperMode.value
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isEraseMode.value &&
+                            !editManager.isBlurMode.value
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
@@ -661,7 +679,9 @@ private fun EditMenuContent(
                         if (
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value
+                            !editManager.isCropMode.value &&
+                            !editManager.isEraseMode.value &&
+                            !editManager.isBlurMode.value
                         )
                             colorDialogExpanded.value = true
                     }
@@ -689,7 +709,9 @@ private fun EditMenuContent(
                             !editManager.isRotateMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isResizeMode.value &&
-                            !editManager.isEyeDropperMode.value
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isEraseMode.value &&
+                            !editManager.isBlurMode.value
                         )
                             viewModel.strokeSliderExpanded =
                                 !viewModel.strokeSliderExpanded
@@ -700,7 +722,9 @@ private fun EditMenuContent(
                     !editManager.isRotateMode.value &&
                     !editManager.isResizeMode.value &&
                     !editManager.isCropMode.value &&
-                    !editManager.isEyeDropperMode.value
+                    !editManager.isEyeDropperMode.value &&
+                    !editManager.isEraseMode.value &&
+                    !editManager.isBlurMode.value
                 ) editManager.paintColor.value
                 else Color.Black,
                 contentDescription = null
@@ -715,16 +739,14 @@ private fun EditMenuContent(
                             !editManager.isRotateMode.value &&
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isBlurMode.value
                         )
                             editManager.toggleEraseMode()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
                 tint = if (
-                    editManager.isEraseMode.value &&
-                    !editManager.isRotateMode.value &&
-                    !editManager.isResizeMode.value &&
-                    !editManager.isEyeDropperMode.value
+                    editManager.isEraseMode.value
                 )
                     MaterialTheme.colors.primary
                 else
@@ -741,7 +763,9 @@ private fun EditMenuContent(
                             if (
                                 !isRotateMode.value &&
                                 !isResizeMode.value &&
-                                !isEyeDropperMode.value
+                                !isEyeDropperMode.value &&
+                                !isEraseMode.value &&
+                                !isBlurMode.value
                             ) {
                                 toggleCropMode()
                                 viewModel.menusVisible =
@@ -779,7 +803,9 @@ private fun EditMenuContent(
                             if (
                                 !isCropMode.value &&
                                 !isResizeMode.value &&
-                                !isEyeDropperMode.value
+                                !isEyeDropperMode.value &&
+                                !isEraseMode.value &&
+                                !isBlurMode.value
                             ) {
                                 toggleRotateMode()
                                 if (isRotateMode.value) {
@@ -811,7 +837,9 @@ private fun EditMenuContent(
                             if (
                                 !isRotateMode.value &&
                                 !isCropMode.value &&
-                                !isEyeDropperMode.value
+                                !isEyeDropperMode.value &&
+                                !isEraseMode.value &&
+                                !isBlurMode.value
                             )
                                 toggleResizeMode()
                             else return@clickable
@@ -837,6 +865,36 @@ private fun EditMenuContent(
                     Color.Black,
                 contentDescription = null
             )
+            if (editManager.backgroundImage.value != null) {
+                Icon(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            editManager.apply {
+                                if (
+                                    !isRotateMode.value &&
+                                    !isCropMode.value &&
+                                    !isEyeDropperMode.value &&
+                                    !isResizeMode.value &&
+                                    !isEraseMode.value &&
+                                    !viewModel.strokeSliderExpanded
+                                ) toggleBlurMode()
+                                if (isBlurMode.value) {
+                                    blurOperation.init()
+                                }
+                            }
+                        },
+                    imageVector = ImageVector
+                        .vectorResource(R.drawable.ic_blur_on),
+                    tint = if (editManager.isBlurMode.value)
+                        MaterialTheme.colors.primary
+                    else
+                        Color.Black,
+                    contentDescription = null
+                )
+            }
         }
     }
     viewModel.bottomButtonsScrollIsAtStart.value = scrollState.value == 0
