@@ -47,11 +47,10 @@ import space.taran.arkretouch.presentation.drawing.EditManager
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
-import java.net.URI
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.io.path.outputStream
-import kotlin.io.path.toPath
 import kotlin.system.measureTimeMillis
 
 class EditViewModel(
@@ -127,7 +126,9 @@ class EditViewModel(
                 imageUri,
                 editManager
             )
-            extractCompressionFormat(URI.create(it).toPath().extension)
+            Uri.parse(it)?.path?.let { path ->
+                extractCompressionFormat(Path(path).extension)
+            }
             return
         }
         editManager.scaleToFit()
