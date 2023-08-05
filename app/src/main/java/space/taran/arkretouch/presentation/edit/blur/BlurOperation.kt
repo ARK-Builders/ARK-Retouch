@@ -2,6 +2,7 @@ package space.taran.arkretouch.presentation.edit.blur
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
@@ -24,46 +25,64 @@ class BlurOperation(private val editManager: EditManager) : Operation {
     private var offset = Offset.Zero
     private var bitmapPosition = IntOffset.Zero
 
+    val blurSize = mutableStateOf(BRUSH_SIZE.toFloat())
+
     fun init() {
         editManager.apply {
             backgroundImage.value?.let {
                 bitmapPosition = IntOffset(
-                    (it.width / 2) - (BRUSH_SIZE / 2),
-                    (it.height / 2) - (BRUSH_SIZE / 2)
+                    (it.width / 2) - (blurSize.value.toInt() / 2),
+                    (it.height / 2) - (blurSize.value.toInt() / 2)
                 )
                 brushBitmap = Bitmap.createBitmap(
                     it.asAndroidBitmap(),
                     bitmapPosition.x,
                     bitmapPosition.y,
-                    BRUSH_SIZE,
-                    BRUSH_SIZE
+                    blurSize.value.toInt(),
+                    blurSize.value.toInt()
                 )
             }
         }
     }
 
-    fun drawBrush(context: Context, canvas: Canvas) {
+    fun resize() {
         editManager.backgroundImage.value?.let {
-            this.context = context
             if (isWithinBounds(it)) {
-                offset = Offset(
-                    bitmapPosition.x.toFloat(),
-                    bitmapPosition.y.toFloat()
+                brushBitmap = Bitmap.createBitmap(
+                    it.asAndroidBitmap(),
+                    bitmapPosition.x,
+                    bitmapPosition.y,
+                    blurSize.value.toInt(),
+                    blurSize.value.toInt()
                 )
             }
-            blur(context)
-            canvas.drawImage(
-                blurredBitmap.asImageBitmap(),
-                offset,
-                Paint()
-            )
         }
     }
 
-    fun moveBrush(brushPosition: Offset, delta: Offset) {
+    fun draw(context: Context, canvas: Canvas) {
+        if (blurSize.value in MIN_SIZE..MAX_SIZE) {
+            editManager.backgroundImage.value?.let {
+                this.context = context
+                if (isWithinBounds(it)) {
+                    offset = Offset(
+                        bitmapPosition.x.toFloat(),
+                        bitmapPosition.y.toFloat()
+                    )
+                }
+                blur(context)
+                canvas.drawImage(
+                    blurredBitmap.asImageBitmap(),
+                    offset,
+                    Paint()
+                )
+            }
+        }
+    }
+
+    fun move(blurPosition: Offset, delta: Offset) {
         val position = Offset(
-            brushPosition.x * editManager.bitmapScale.x,
-            brushPosition.y * editManager.bitmapScale.y
+            blurPosition.x * editManager.bitmapScale.x,
+            blurPosition.y * editManager.bitmapScale.y
         )
         if (isBrushTouched(position)) {
             editManager.apply {
@@ -77,8 +96,8 @@ class BlurOperation(private val editManager: EditManager) : Operation {
                             it.asAndroidBitmap(),
                             bitmapPosition.x,
                             bitmapPosition.y,
-                            BRUSH_SIZE,
-                            BRUSH_SIZE
+                            blurSize.value.toInt(),
+                            blurSize.value.toInt()
                         )
                     }
                 }
@@ -92,13 +111,17 @@ class BlurOperation(private val editManager: EditManager) : Operation {
         editManager.updateRevised()
     }
 
+    fun cancel() {
+        editManager.redrawBackgroundImage2()
+    }
+
     private fun isWithinBounds(image: ImageBitmap) = bitmapPosition.x >= 0 &&
-        (bitmapPosition.x + BRUSH_SIZE) <= image.width && bitmapPosition.y >= 0 &&
-        (bitmapPosition.y + BRUSH_SIZE) <= image.height
+        (bitmapPosition.x + blurSize.value) <= image.width &&
+        bitmapPosition.y >= 0 && (bitmapPosition.y + blurSize.value) <= image.height
 
     private fun isBrushTouched(position: Offset): Boolean {
-        return position.x >= offset.x && position.x <= (offset.x + BRUSH_SIZE) &&
-            position.y >= offset.y && position.y <= (offset.y + BRUSH_SIZE)
+        return position.x >= offset.x && position.x <= (offset.x + blurSize.value) &&
+            position.y >= offset.y && position.y <= (offset.y + blurSize.value)
     }
 
     override fun apply() {
@@ -119,9 +142,10 @@ class BlurOperation(private val editManager: EditManager) : Operation {
                 offset,
                 Paint()
             )
-            blurs.add(it)
+            blurs.add(editManager.backgroundImage2.value)
             editManager.addBlur()
         }
+        editManager.keepEditedPaths()
         editManager.toggleBlurMode()
         editManager.backgroundImage.value = image
     }
@@ -130,12 +154,14 @@ class BlurOperation(private val editManager: EditManager) : Operation {
         val bitmap = blurs.pop()
         redoBlurs.push(editManager.backgroundImage.value)
         editManager.backgroundImage.value = bitmap
+        editManager.redrawEditedPaths()
     }
 
     override fun redo() {
         val bitmap = redoBlurs.pop()
         blurs.push(editManager.backgroundImage.value)
         editManager.backgroundImage.value = bitmap
+        editManager.keepEditedPaths()
     }
 
     private fun blur(context: Context) {
@@ -150,5 +176,7 @@ class BlurOperation(private val editManager: EditManager) : Operation {
 
     companion object {
         private const val BRUSH_SIZE = 250
+        const val MAX_SIZE = 500f
+        const val MIN_SIZE = 100f
     }
 }

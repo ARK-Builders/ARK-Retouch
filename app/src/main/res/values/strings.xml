@@ -34,4 +34,6 @@
     <string name="width_not_accepted">Width cannot be %s</string>
     <string name="width_empty">Please enter width</string>
     <string name="height_empty">Please enter height</string>
+    <string name="blur_intensity">Intensity</string>
+    <string name="blur_size">Size</string>
 </resources>

@@ -64,7 +64,7 @@ class EditManager {
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
     private val _backgroundColor = mutableStateOf(Color.Transparent)
     val backgroundColor: State<Color> = _backgroundColor
-    private val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
+    val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
@@ -478,6 +478,10 @@ class EditManager {
 
     fun setBackgroundImage2() {
         backgroundImage2.value = backgroundImage.value
+    }
+
+    fun redrawBackgroundImage2() {
+        backgroundImage.value = backgroundImage2.value
     }
 
     fun setOriginalBackgroundImage(imgBitmap: ImageBitmap?) {

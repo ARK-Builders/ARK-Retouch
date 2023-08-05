@@ -215,7 +215,7 @@ fun EditDrawCanvas(
                     computeDeltaX(currentPoint.x, eventX),
                     computeDeltaY(currentPoint.y, eventY)
                 )
-                editManager.blurOperation.moveBrush(position, delta)
+                editManager.blurOperation.move(position, delta)
                 currentPoint.x = eventX
                 currentPoint.y = eventY
             }
@@ -283,7 +283,7 @@ fun EditDrawCanvas(
                 canvas.nativeCanvas.setMatrix(matrix)
                 if (isResizeMode.value) return@drawIntoCanvas
                 if (isBlurMode.value) {
-                    editManager.blurOperation.drawBrush(context, canvas)
+                    editManager.blurOperation.draw(context, canvas)
                     return@drawIntoCanvas
                 }
                 if (isCropMode.value) {
