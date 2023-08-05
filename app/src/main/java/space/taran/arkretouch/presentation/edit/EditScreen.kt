@@ -359,6 +359,9 @@ private fun BoxScope.TopMenu(
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath)
                 viewModel.showSavePathDialog = false
+            },
+            onCompressFormatChanged = {
+                viewModel.compressionFormat = it
             }
         )
     if (viewModel.showMoreOptionsPopup)

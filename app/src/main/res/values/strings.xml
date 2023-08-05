@@ -34,4 +34,9 @@
     <string name="width_not_accepted">Width cannot be %s</string>
     <string name="width_empty">Please enter width</string>
     <string name="height_empty">Please enter height</string>
+    <string name="webp_lossy">WEBP_LOSSY</string>
+    <string name="webp_lossless">WEBP_LOSSLESS</string>
+    <string name="jpeg">JPEG</string>
+    <string name="png">PNG</string>
+    <string name="webp">WEBP</string>
 </resources>
