@@ -98,6 +98,29 @@ fun SavePathDialog(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    fun updateImagePath(imageName: String) {
+        var extension =
+            compressionFormat.lowercase(Locale.getDefault())
+        if (
+            extension == ImageExtensions.Webp.WEBP_LOSSLESS ||
+            extension == ImageExtensions.Webp.WEBP_LOSSY
+        ) extension = ImageExtensions.WEBP
+
+        name = "$imageName.$extension"
+
+        currentPath?.let { path ->
+            imagePath = path.resolve(name)
+            showOverwriteCheckbox.value =
+                Files.list(path).toList()
+                    .contains(imagePath)
+            if (showOverwriteCheckbox.value) {
+                name = path.findNotExistCopyName(
+                    imagePath?.fileName!!
+                ).name
+            }
+        }
+    }
+
     LaunchedEffect(overwriteOriginalPath) {
         if (overwriteOriginalPath) {
             imagePath?.let {
@@ -160,27 +183,11 @@ fun SavePathDialog(
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .padding(5.dp),
-                        value = name.substringBeforeLast('.'),
+                        value = name.substringBeforeLast(
+                            ImageExtensions.Delimeters.PERIOD
+                        ),
                         onValueChange = {
-                            var extension =
-                                compressionFormat.lowercase(Locale.getDefault())
-                            if (
-                                extension == ImageExtensions.Webp.WEBP_LOSSLESS ||
-                                extension == ImageExtensions.Webp.WEBP_LOSSY
-                            ) extension = ImageExtensions.WEBP
-
-                            name = "$it.$extension"
-                            currentPath?.let { path ->
-                                imagePath = path.resolve(name)
-                                showOverwriteCheckbox.value =
-                                    Files.list(path).toList()
-                                        .contains(imagePath)
-                                if (showOverwriteCheckbox.value) {
-                                    name = path.findNotExistCopyName(
-                                        imagePath?.fileName!!
-                                    ).name
-                                }
-                            }
+                            updateImagePath(it)
                         },
                         label = { Text(text = stringResource(R.string.name)) },
                         singleLine = true
@@ -201,7 +208,7 @@ fun SavePathDialog(
                             null,
                             Modifier.size(32.dp)
                         )
-                        Text(compressionFormat)
+                        Text(compressionFormat, maxLines = 1)
                     }
                 }
                 if (showOverwriteCheckbox.value) {
@@ -247,8 +254,13 @@ fun SavePathDialog(
             }
             if (showCompressionFormats) {
                 CompressionFormats(
-                    { name, format ->
-                        compressionFormat = name
+                    { formatName, format ->
+                        compressionFormat = formatName
+                        updateImagePath(
+                            name.substringBeforeLast(
+                                ImageExtensions.Delimeters.PERIOD
+                            )
+                        )
                         onCompressFormatChanged(format)
                         showCompressionFormats = false
                     },
@@ -361,5 +373,9 @@ object ImageExtensions {
     object Webp {
         const val WEBP_LOSSLESS = "webp_lossless"
         const val WEBP_LOSSY = "webp_lossy"
+    }
+
+    object Delimeters {
+        const val PERIOD = '.'
     }
 }
