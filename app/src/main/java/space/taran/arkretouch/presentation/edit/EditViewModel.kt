@@ -383,6 +383,11 @@ class EditViewModel(
                 cancelEyeDropper()
                 menusVisible = true
             }
+            if (isBlurMode.value) {
+                toggleBlurMode()
+                blurOperation.cancel()
+                menusVisible = true
+            }
             scaleToFit()
         }
     }

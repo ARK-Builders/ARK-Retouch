@@ -141,13 +141,10 @@ fun EditScreen(
         val editManager = viewModel.editManager
         if (
             editManager.isCropMode.value || editManager.isRotateMode.value ||
-            editManager.isResizeMode.value || editManager.isEyeDropperMode.value
+            editManager.isResizeMode.value || editManager.isEyeDropperMode.value ||
+            editManager.isBlurMode.value
         ) {
             viewModel.cancelOperation()
-            return@BackHandler
-        }
-        if (editManager.isBlurMode.value) {
-            editManager.toggleBlurMode()
             return@BackHandler
         }
         if (editManager.canUndo.value) {
@@ -423,13 +420,10 @@ private fun BoxScope.TopMenu(
                 viewModel.editManager.apply {
                     if (
                         isCropMode.value || isRotateMode.value ||
-                        isResizeMode.value || isEyeDropperMode.value
+                        isResizeMode.value || isEyeDropperMode.value ||
+                        isBlurMode.value
                     ) {
                         viewModel.cancelOperation()
-                        return@clickable
-                    }
-                    if (isBlurMode.value) {
-                        toggleBlurMode()
                         return@clickable
                     }
                     if (
@@ -865,36 +859,39 @@ private fun EditMenuContent(
                     Color.Black,
                 contentDescription = null
             )
-            if (editManager.backgroundImage.value != null) {
-                Icon(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            editManager.apply {
-                                if (
-                                    !isRotateMode.value &&
-                                    !isCropMode.value &&
-                                    !isEyeDropperMode.value &&
-                                    !isResizeMode.value &&
-                                    !isEraseMode.value &&
-                                    !viewModel.strokeSliderExpanded
-                                ) toggleBlurMode()
-                                if (isBlurMode.value) {
-                                    blurOperation.init()
-                                }
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        editManager.apply {
+                            if (
+                                !isRotateMode.value &&
+                                !isCropMode.value &&
+                                !isEyeDropperMode.value &&
+                                !isResizeMode.value &&
+                                !isEraseMode.value &&
+                                !viewModel.strokeSliderExpanded
+                            ) toggleBlurMode()
+                            if (isBlurMode.value) {
+                                setBackgroundImage2()
+                                backgroundImage.value =
+                                    viewModel.getEditedImage()
+                                blurOperation.init()
+                                return@clickable
                             }
-                        },
-                    imageVector = ImageVector
-                        .vectorResource(R.drawable.ic_blur_on),
-                    tint = if (editManager.isBlurMode.value)
-                        MaterialTheme.colors.primary
-                    else
-                        Color.Black,
-                    contentDescription = null
-                )
-            }
+                            blurOperation.cancel()
+                        }
+                    },
+                imageVector = ImageVector
+                    .vectorResource(R.drawable.ic_blur_on),
+                tint = if (editManager.isBlurMode.value)
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
         }
     }
     viewModel.bottomButtonsScrollIsAtStart.value = scrollState.value == 0
