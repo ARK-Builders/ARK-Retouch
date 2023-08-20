@@ -17,10 +17,11 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
     private lateinit var editMatrixScale: Scale
     private val isApplied = mutableStateOf(false)
 
-    override fun apply() {
+    override fun apply(extraBlock: () -> Unit) {
         editManager.apply {
             addResize()
             saveRotationAfterOtherOperation()
+            extraBlock()
             scaleToFit()
             toggleResizeMode()
             editMatrix.reset()

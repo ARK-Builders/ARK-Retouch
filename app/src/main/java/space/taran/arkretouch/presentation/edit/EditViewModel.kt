@@ -123,7 +123,12 @@ class EditViewModel(
             )
             return
         }
+        editManager.updateImageSize()
         editManager.scaleToFit()
+    }
+
+    fun updateImageSize() {
+        editManager.updateImageSize()
     }
 
     fun saveImage(savePath: Path) =
@@ -301,7 +306,9 @@ class EditViewModel(
                     if (prevRotationAngle != 0f) {
                         val centerX = size.width / 2f
                         val centerY = size.height / 2f
-                        matrix.setRotate(prevRotationAngle, centerX, centerY)
+                        val offset = editManager.calcOffset(size)
+                        matrix.setTranslate(offset.x, offset.y)
+                        matrix.postRotate(prevRotationAngle, centerX, centerY)
                     }
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
@@ -327,7 +334,9 @@ class EditViewModel(
                         val matrix = Matrix().apply {
                             val centerX = size.width / 2
                             val centerY = size.height / 2
-                            setRotate(
+                            val offset = editManager.calcOffset(size)
+                            setTranslate(offset.x, offset.y)
+                            postRotate(
                                 rotationAngle.value,
                                 centerX.toFloat(),
                                 centerY.toFloat()
@@ -472,6 +481,7 @@ private fun RequestBuilder<Bitmap>.loadInto(
                 val image = bitmap.asImageBitmap()
                 backgroundImage.value = image
                 setOriginalBackgroundImage(image)
+                updateImageSize()
                 scaleToFit()
             }
         }
@@ -545,6 +555,37 @@ fun fitBackground(
 
     val width = resolution.width
     val height = resolution.height
+
+    val resolutionRatio = width.toFloat() / height.toFloat()
+    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+
+    var finalWidth = maxWidth
+    var finalHeight = maxHeight
+
+    if (maxRatio > resolutionRatio) {
+        finalWidth = (maxHeight.toFloat() * resolutionRatio).toInt()
+    } else {
+        finalHeight = (maxWidth.toFloat() / resolutionRatio).toInt()
+    }
+    return ImageViewParams(
+        IntSize(
+            finalWidth,
+            finalHeight,
+        ),
+        ResizeOperation.Scale(
+            finalWidth.toFloat() / width.toFloat(),
+            finalHeight.toFloat() / height.toFloat()
+        )
+    )
+}
+fun fit(
+    imageSize: IntSize,
+    maxWidth: Int,
+    maxHeight: Int
+): ImageViewParams {
+
+    val width = imageSize.width
+    val height = imageSize.height
 
     val resolutionRatio = width.toFloat() / height.toFloat()
     val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()

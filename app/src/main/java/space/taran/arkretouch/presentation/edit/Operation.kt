@@ -1,7 +1,7 @@
 package space.taran.arkretouch.presentation.edit
 
 interface Operation {
-    fun apply()
+    fun apply(extraBlock: () -> Unit)
 
     fun undo()
 

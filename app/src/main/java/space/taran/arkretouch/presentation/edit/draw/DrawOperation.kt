@@ -7,7 +7,7 @@ import space.taran.arkretouch.presentation.edit.Operation
 class DrawOperation(private val editManager: EditManager) : Operation {
     private var path = Path()
 
-    override fun apply() {
+    override fun apply(extraBlock: () -> Unit) {
         editManager.addDrawPath(path)
     }
 

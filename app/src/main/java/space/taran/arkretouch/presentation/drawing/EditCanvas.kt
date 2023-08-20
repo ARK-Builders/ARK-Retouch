@@ -53,6 +53,7 @@ fun EditCanvas(viewModel: EditViewModel) {
                     editManager.rotate(degreesAngle.toFloat())
                 currentPoint.x = eventX
                 currentPoint.y = eventY
+                if (degreesAngle.toInt() % 45 == 0) return
             }
             MotionEvent.ACTION_DOWN -> {
                 currentPoint.x = eventX
@@ -105,7 +106,10 @@ fun EditImageCanvas(
             var matrix = matrix
             drawIntoCanvas { canvas ->
                 backgroundImage.value?.let {
-                    if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                    if (
+                        isCropMode.value || isRotateMode.value ||
+                        isResizeMode.value || isBlurMode.value
+                    )
                         matrix = editMatrix
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
@@ -253,19 +257,16 @@ fun EditDrawCanvas(
                         eventX,
                         eventY
                     )
-
                     editManager.isRotateMode.value -> onRotate(
                         event.action,
                         event.x,
                         event.y
                     )
-
                     editManager.isEyeDropperMode.value -> handleEyeDropEvent(
                         event.action,
                         event.x,
                         event.y
                     )
-
                     else -> handleDrawEvent(event.action, mappedX, mappedY)
                 }
                 editManager.invalidatorTick.value++
@@ -277,7 +278,9 @@ fun EditDrawCanvas(
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isRotateMode.value || isResizeMode.value)
+                if (
+                    isRotateMode.value || isResizeMode.value || isBlurMode.value
+                )
                     matrix = editMatrix
                 if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
