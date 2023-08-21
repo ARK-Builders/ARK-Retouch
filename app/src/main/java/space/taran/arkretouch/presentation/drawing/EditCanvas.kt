@@ -53,7 +53,6 @@ fun EditCanvas(viewModel: EditViewModel) {
                     editManager.rotate(degreesAngle.toFloat())
                 currentPoint.x = eventX
                 currentPoint.y = eventY
-                if (degreesAngle.toInt() % 45 == 0) return
             }
             MotionEvent.ACTION_DOWN -> {
                 currentPoint.x = eventX

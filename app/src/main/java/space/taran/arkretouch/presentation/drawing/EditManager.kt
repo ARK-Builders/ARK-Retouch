@@ -148,14 +148,18 @@ class EditManager {
     }
 
     private fun undoOperation(operation: Operation) {
-        redoImageSizes.push(imageSize)
-        imageSize = imageSizes.pop()
+        if (imageSizes.isNotEmpty()) {
+            redoImageSizes.push(imageSize)
+            imageSize = imageSizes.pop()
+        }
         operation.undo()
     }
 
     private fun redoOperation(operation: Operation) {
-        imageSizes.push(imageSize)
-        imageSize = redoImageSizes.pop()
+        if (redoImageSizes.isNotEmpty()) {
+            imageSizes.push(imageSize)
+            imageSize = redoImageSizes.pop()
+        }
         operation.redo()
     }
 
@@ -267,15 +271,12 @@ class EditManager {
         drawArea: IntSize = availableDrawAreaSize.value,
         scale: ResizeOperation.Scale = ResizeOperation.Scale(1f, 1f)
     ): Offset {
-        var offset = Offset.Zero
-        backgroundImage.value?.let {
-            val xOffset =
-                (drawArea.width - (it.width * scale.x)) / 2
-            val yOffset =
-                (drawArea.height - (it.height * scale.y)) / 2
-            offset = Offset(xOffset, yOffset)
-        }
-        return offset
+        val imageSize = backgroundImage.value?.let {
+            IntSize(it.width, it.height)
+        } ?: resolution.value.let { IntSize(it?.width!!, it.height) }
+        val xOffset = (drawArea.width - (imageSize.width * scale.x)) / 2
+        val yOffset = (drawArea.height - (imageSize.height * scale.y)) / 2
+        return Offset(xOffset, yOffset)
     }
     fun updateAvailableDrawAreaByMatrix() {
         val drawArea = backgroundImage.value?.let {

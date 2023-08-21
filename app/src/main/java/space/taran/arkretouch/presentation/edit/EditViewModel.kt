@@ -297,6 +297,14 @@ class EditViewModel(
         var pathBitmap: ImageBitmap? = null
         val time = measureTimeMillis {
             editManager.apply {
+                val matrix = Matrix()
+                if (prevRotationAngle != 0f) {
+                    val centerX = size.width / 2f
+                    val centerY = size.height / 2f
+                    val offset = editManager.calcOffset(size)
+                    matrix.setTranslate(offset.x, offset.y)
+                    matrix.postRotate(prevRotationAngle, centerX, centerY)
+                }
                 if (editManager.drawPaths.isNotEmpty()) {
                     pathBitmap = ImageBitmap(
                         size.width,
@@ -304,23 +312,16 @@ class EditViewModel(
                         ImageBitmapConfig.Argb8888
                     )
                     val pathCanvas = Canvas(pathBitmap!!)
+                    pathCanvas.nativeCanvas.setMatrix(matrix)
                     editManager.drawPaths.forEach {
                         pathCanvas.drawPath(it.path, it.paint)
                     }
                 }
                 backgroundImage.value?.let {
                     val canvas = Canvas(bitmap)
-                    val matrix = Matrix()
                     if (prevRotationAngle == 0f && drawPaths.isEmpty()) {
                         bitmap = it
                         return@let
-                    }
-                    if (prevRotationAngle != 0f) {
-                        val centerX = size.width / 2f
-                        val centerY = size.height / 2f
-                        val offset = editManager.calcOffset(size)
-                        matrix.setTranslate(offset.x, offset.y)
-                        matrix.postRotate(prevRotationAngle, centerX, centerY)
                     }
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
@@ -330,7 +331,7 @@ class EditViewModel(
                     if (drawPaths.isNotEmpty()) {
                         canvas.nativeCanvas.drawBitmap(
                             pathBitmap?.asAndroidBitmap()!!,
-                            matrix,
+                            Matrix(),
                             null
                         )
                     }
@@ -346,24 +347,10 @@ class EditViewModel(
                     if (prevRotationAngle == 0f && drawPaths.isEmpty()) {
                         return@run
                     }
-                    if (prevRotationAngle != 0f) {
-                        val matrix = Matrix().apply {
-                            val centerX = size.width / 2
-                            val centerY = size.height / 2
-                            val offset = editManager.calcOffset(size)
-                            setTranslate(offset.x, offset.y)
-                            postRotate(
-                                rotationAngle.value,
-                                centerX.toFloat(),
-                                centerY.toFloat()
-                            )
-                        }
-                        canvas.nativeCanvas.setMatrix(matrix)
-                    }
                     if (drawPaths.isNotEmpty()) {
                         canvas.nativeCanvas.drawBitmap(
                             pathBitmap?.asAndroidBitmap()!!,
-                            matrix,
+                            Matrix(),
                             null
                         )
                     }

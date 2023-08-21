@@ -9,6 +9,7 @@ class DrawOperation(private val editManager: EditManager) : Operation {
 
     override fun apply(extraBlock: () -> Unit) {
         editManager.addDrawPath(path)
+        extraBlock()
     }
 
     override fun undo() {
