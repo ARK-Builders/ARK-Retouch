@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.unit.toSize
+import space.taran.arkretouch.presentation.drawing.EditManager
 
 private class TransparencyChessBoard {
     fun create(boardSize: Size, canvas: Canvas) {
@@ -21,13 +24,24 @@ private class TransparencyChessBoard {
         val paint = Paint().also {
             it.color = color
         }
-
+        val width = SQUARE_SIZE * (numberOfBoxesOnWidth + 1)
+        val height = SQUARE_SIZE * (numberOfBoxesOnHeight + 1)
+        val widthDelta = width - boardSize.width
+        val heightDelta = height - boardSize.height
         0.rangeTo(numberOfBoxesOnWidth).forEach { i ->
             0.rangeTo(numberOfBoxesOnHeight).forEach { j ->
+                var rectWidth = SQUARE_SIZE
+                var rectHeight = SQUARE_SIZE
                 val offsetX = SQUARE_SIZE * i
                 val offsetY = SQUARE_SIZE * j
+                if (i == numberOfBoxesOnWidth && widthDelta > 0) {
+                    rectWidth = SQUARE_SIZE - widthDelta
+                }
+                if (j == numberOfBoxesOnHeight && heightDelta > 0) {
+                    rectHeight = SQUARE_SIZE - heightDelta
+                }
                 val offset = Offset(offsetX, offsetY)
-                val box = Rect(offset, Size(SQUARE_SIZE, SQUARE_SIZE))
+                val box = Rect(offset, Size(rectWidth, rectHeight))
                 if (j == 0) {
                     if (color == paint.color) {
                         switchPaintColor(paint)
@@ -58,14 +72,16 @@ private fun transparencyChessBoard(canvas: Canvas, size: Size) {
 }
 
 @Composable
-fun TransparencyChessBoardCanvas(modifier: Modifier) {
+fun TransparencyChessBoardCanvas(modifier: Modifier, editManager: EditManager) {
     Canvas(
         modifier
             .background(Color.Transparent)
             .graphicsLayer(alpha = 0.99f)
     ) {
+        editManager.invalidatorTick.value++
         drawIntoCanvas { canvas ->
-            transparencyChessBoard(canvas, size)
+            canvas.nativeCanvas.setMatrix(editManager.backgroundMatrix)
+            transparencyChessBoard(canvas, editManager.imageSize.toSize())
         }
     }
 }

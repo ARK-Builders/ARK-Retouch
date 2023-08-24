@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.data.ImageDefaults
 import space.taran.arkretouch.data.Resolution
@@ -20,13 +20,13 @@ import space.taran.arkretouch.presentation.edit.ImageViewParams
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.blur.BlurOperation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
-import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.draw.DrawOperation
 import space.taran.arkretouch.presentation.edit.fitBackground
 import space.taran.arkretouch.presentation.edit.fitImage
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
+import timber.log.Timber
 import java.util.Stack
 
 class EditManager {
@@ -69,6 +69,8 @@ class EditManager {
 
     val matrix = Matrix()
     val editMatrix = Matrix()
+    val backgroundMatrix = Matrix()
+
     lateinit var matrixScale: ResizeOperation.Scale
         private set
     lateinit var bitmapScale: ResizeOperation.Scale
@@ -105,16 +107,21 @@ class EditManager {
     val canRedo: State<Boolean> = _canRedo
 
     private val _isRotateMode = mutableStateOf(false)
-    val isRotateMode = _isRotateMode
+    val isRotateMode: State<Boolean> = _isRotateMode
 
     private val _isResizeMode = mutableStateOf(false)
-    val isResizeMode = _isResizeMode
+    val isResizeMode: State<Boolean> = _isResizeMode
 
     private val _isEyeDropperMode = mutableStateOf(false)
-    val isEyeDropperMode = _isEyeDropperMode
+    val isEyeDropperMode: State<Boolean> = _isEyeDropperMode
 
     private val _isBlurMode = mutableStateOf(false)
-    val isBlurMode = _isBlurMode
+    val isBlurMode: State<Boolean> = _isBlurMode
+
+    private val _isZoomMode = mutableStateOf(false)
+    val isZoomMode: State<Boolean> = _isZoomMode
+    private val _isPanMode = mutableStateOf(false)
+    val isPanMode: State<Boolean> = _isPanMode
 
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
@@ -164,7 +171,7 @@ class EditManager {
             )
         } ?: run {
             fitBackground(
-                resolution.value!!,
+                imageSize,
                 drawAreaSize.value.width,
                 drawAreaSize.value.height
             )
@@ -190,7 +197,7 @@ class EditManager {
             fitImage(it, maxWidth, maxHeight)
         } ?: run {
             fitBackground(
-                resolution.value!!,
+                imageSize,
                 maxWidth,
                 maxHeight
             )
@@ -202,6 +209,7 @@ class EditManager {
 
     private fun scaleMatrix(viewParams: ImageViewParams) {
         matrix.setScale(viewParams.scale.x, viewParams.scale.y)
+        backgroundMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
         if (prevRotationAngle != 0f) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
@@ -211,11 +219,25 @@ class EditManager {
 
     private fun scaleEditMatrix(viewParams: ImageViewParams) {
         editMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
+        backgroundMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
         if (prevRotationAngle != 0f && isRotateMode.value) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
             editMatrix.postRotate(prevRotationAngle, centerX, centerY)
         }
+    }
+
+    fun isMinScale(scale: Float): Boolean {
+        val scaledWidth = imageSize.width * scale
+        val scaledHeight = imageSize.height * scale
+        Timber.tag("edit-canvas").d(
+            "min width = " +
+                "$scaledWidth\n" +
+                "min height = " +
+                "$scaledHeight"
+        )
+        return availableDrawAreaSize.value.width > scaledWidth &&
+            availableDrawAreaSize.value.height > scaledHeight
     }
 
     fun setBackgroundColor(color: Color) {
@@ -408,7 +430,7 @@ class EditManager {
 
     fun addDrawPath(path: Path) {
         drawPaths.add(
-            DrawPath(
+            space.taran.arkretouch.presentation.drawing.DrawPath(
                 path,
                 currentPaint.copy().apply {
                     strokeWidth = drawPaint.value.strokeWidth
@@ -505,6 +527,14 @@ class EditManager {
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
         if (!isCropMode.value) cropWindow.close()
+    }
+
+    fun toggleZoomMode() {
+        _isZoomMode.value = !isZoomMode.value
+    }
+
+    fun togglePanMode() {
+        _isPanMode.value = !isPanMode.value
     }
 
     fun cancelCropMode() {

@@ -292,6 +292,7 @@ class EditViewModel(
         var pathBitmap: ImageBitmap? = null
         val time = measureTimeMillis {
             editManager.apply {
+                val matrix = Matrix()
                 if (editManager.drawPaths.isNotEmpty()) {
                     pathBitmap = ImageBitmap(
                         size.width,
@@ -305,7 +306,6 @@ class EditViewModel(
                 }
                 backgroundImage.value?.let {
                     val canvas = Canvas(bitmap)
-                    val matrix = Matrix()
                     if (prevRotationAngle == 0f && drawPaths.isEmpty()) {
                         bitmap = it
                         return@let
@@ -340,16 +340,13 @@ class EditViewModel(
                         return@run
                     }
                     if (prevRotationAngle != 0f) {
-                        val matrix = Matrix().apply {
-                            val centerX = size.width / 2
-                            val centerY = size.height / 2
-                            setRotate(
-                                prevRotationAngle,
-                                centerX.toFloat(),
-                                centerY.toFloat()
-                            )
-                        }
-                        canvas.nativeCanvas.setMatrix(matrix)
+                        val centerX = size.width / 2
+                        val centerY = size.height / 2
+                        matrix.setRotate(
+                            prevRotationAngle,
+                            centerX.toFloat(),
+                            centerY.toFloat()
+                        )
                     }
                     if (drawPaths.isNotEmpty()) {
                         canvas.nativeCanvas.drawBitmap(
@@ -556,7 +553,7 @@ fun fitImage(
 }
 
 fun fitBackground(
-    resolution: Resolution,
+    resolution: IntSize,
     maxWidth: Int,
     maxHeight: Int
 ): ImageViewParams {
