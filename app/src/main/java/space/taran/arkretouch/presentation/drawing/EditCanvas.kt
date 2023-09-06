@@ -18,7 +18,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -29,16 +29,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.toSize
 import androidx.core.view.GestureDetectorCompat
 import space.taran.arkretouch.presentation.edit.EditViewModel
-import space.taran.arkretouch.presentation.picker.toDp
 import kotlin.math.atan2
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
+import space.taran.arkretouch.presentation.picker.toDp
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
     val context = LocalContext.current
     val currentPoint = PointF(0f, 0f)
     val editManager = viewModel.editManager
+    val modifier = Modifier.size(
+        editManager.availableDrawAreaSize.value.width.toDp(),
+        editManager.availableDrawAreaSize.value.height.toDp()
+    ).graphicsLayer(alpha = 0.99f)
     val tmpPointerList = remember {
         mutableListOf<PointF>()
     }
@@ -119,10 +123,6 @@ fun EditCanvas(viewModel: EditViewModel) {
     }
 
     Box(contentAlignment = Alignment.Center) {
-        val modifier = Modifier.size(
-            editManager.availableDrawAreaSize.value.width.toDp(),
-            editManager.availableDrawAreaSize.value.height.toDp()
-        )
         BackgroundCanvas(modifier, editManager)
         DrawCanvas(modifier, viewModel)
     }
@@ -143,6 +143,7 @@ fun EditCanvas(viewModel: EditViewModel) {
                     when (true) {
                         editManager.isRotateMode.value ->
                             handleRotateEvent(it.action, it.x, it.y)
+
                         else -> {
                             if (editManager.isZoomMode.value)
                                 scaleGestureDetector.onTouchEvent(it)
@@ -162,26 +163,21 @@ fun BackgroundCanvas(
     modifier: Modifier,
     editManager: EditManager
 ) {
-    Canvas(modifier.graphicsLayer(alpha = 0.99f)) {
+    Canvas(modifier) {
         editManager.apply {
             invalidatorTick.value
             var matrix = matrix
             drawIntoCanvas { canvas ->
                 backgroundImage.value?.let {
-                    if (isCropMode.value || isRotateMode.value || isResizeMode.value)
+                    if (
+                        isCropMode.value || isRotateMode.value ||
+                        isResizeMode.value || isBlurMode.value
+                    )
                         matrix = editMatrix
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
                         matrix,
                         null
-                    )
-                } ?: run {
-                    canvas.nativeCanvas.setMatrix(backgroundMatrix)
-                    canvas.drawRect(
-                        Rect(Offset.Zero, imageSize.toSize()),
-                        Paint().also {
-                            it.color = backgroundColor.value
-                        }
                     )
                 }
             }
@@ -297,7 +293,6 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             // Provide a slight opacity to for compositing into an
             // offscreen buffer to ensure blend modes are applied to empty pixel information
             // By default any alpha != 1.0f will use a compositing layer by default
-            .graphicsLayer(alpha = 0.99f)
             .pointerInteropFilter { event ->
                 val eventX = event.x
                 val eventY = event.y
@@ -339,7 +334,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isRotateMode.value || isResizeMode.value)
+                if (isRotateMode.value || isResizeMode.value || isBlurMode.value)
                     matrix = editMatrix
                 if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
@@ -352,6 +347,9 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     editManager.cropWindow.show(canvas)
                     return@drawIntoCanvas
                 }
+                val rect = Rect(Offset.Zero, imageSize.toSize())
+                canvas.drawRect(rect, backgroundPaint)
+                canvas.clipRect(rect, ClipOp.Intersect)
                 drawPaths.forEach {
                     canvas.drawPath(it.path, it.paint)
                 }

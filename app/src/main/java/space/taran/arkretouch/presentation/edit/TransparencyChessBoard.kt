@@ -78,7 +78,7 @@ fun TransparencyChessBoardCanvas(modifier: Modifier, editManager: EditManager) {
             .background(Color.Transparent)
             .graphicsLayer(alpha = 0.99f)
     ) {
-        editManager.invalidatorTick.value++
+        editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.setMatrix(editManager.backgroundMatrix)
             transparencyChessBoard(canvas, editManager.imageSize.toSize())

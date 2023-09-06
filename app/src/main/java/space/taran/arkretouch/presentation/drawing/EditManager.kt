@@ -42,6 +42,16 @@ class EditManager {
         style = PaintingStyle.Stroke
         blendMode = BlendMode.SrcOut
     }
+
+    val backgroundPaint: Paint
+        get() {
+            return Paint().apply {
+                color = backgroundImage.value?.let {
+                    Color.Transparent
+                } ?: backgroundColor.value
+            }
+        }
+
     val blurIntensity = mutableStateOf(12f)
 
     val cropWindow = CropWindow(this)
@@ -59,6 +69,7 @@ class EditManager {
         }
 
     val drawPaths = Stack<DrawPath>()
+
     val redoPaths = Stack<DrawPath>()
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
@@ -70,7 +81,6 @@ class EditManager {
     val matrix = Matrix()
     val editMatrix = Matrix()
     val backgroundMatrix = Matrix()
-
     lateinit var matrixScale: ResizeOperation.Scale
         private set
     lateinit var bitmapScale: ResizeOperation.Scale
@@ -225,19 +235,6 @@ class EditManager {
             val centerY = viewParams.drawArea.height / 2f
             editMatrix.postRotate(prevRotationAngle, centerX, centerY)
         }
-    }
-
-    fun isMinScale(scale: Float): Boolean {
-        val scaledWidth = imageSize.width * scale
-        val scaledHeight = imageSize.height * scale
-        Timber.tag("edit-canvas").d(
-            "min width = " +
-                "$scaledWidth\n" +
-                "min height = " +
-                "$scaledHeight"
-        )
-        return availableDrawAreaSize.value.width > scaledWidth &&
-            availableDrawAreaSize.value.height > scaledHeight
     }
 
     fun setBackgroundColor(color: Color) {
@@ -565,13 +562,12 @@ class EditManager {
 
     fun calcImageOffset(): Offset {
         val drawArea = drawAreaSize.value
-        var offset = Offset.Zero
-        backgroundImage.value?.let { bitmap ->
-            val xOffset = ((drawArea.width - bitmap.width) / 2).coerceAtLeast(0)
-            val yOffset = ((drawArea.height - bitmap.height) / 2).coerceAtLeast(0)
-            offset = Offset(xOffset.toFloat(), yOffset.toFloat())
-        }
-        return offset
+        val allowedArea = imageSize
+        val xOffset = ((drawArea.width - allowedArea.width) / 2f)
+            .coerceAtLeast(0f)
+        val yOffset = ((drawArea.height - allowedArea.height) / 2f)
+            .coerceAtLeast(0f)
+        return Offset(xOffset, yOffset)
     }
 
     private companion object {

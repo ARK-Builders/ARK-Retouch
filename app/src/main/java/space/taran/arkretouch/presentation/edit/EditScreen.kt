@@ -287,8 +287,8 @@ private fun DrawContainer(
 ) {
     Box(
         modifier = Modifier
-            .fillMaxSize()
             .padding(bottom = 32.dp)
+            .fillMaxSize()
             .background(
                 if (viewModel.editManager.isCropMode.value) Color.White
                 else Color.Gray
@@ -333,6 +333,8 @@ private fun DrawContainer(
                                 scaleToFitOnEdit()
                                 return@onSizeChanged
                             }
+
+                            isZoomMode.value -> { return@onSizeChanged }
 
                             else -> {
                                 scaleToFit()
@@ -659,9 +661,7 @@ private fun EditMenuContent(
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isEraseMode.value &&
-                            !editManager.isBlurMode.value &&
-                            !editManager.isZoomMode.value &&
-                            !editManager.isPanMode.value
+                            !editManager.isBlurMode.value
                         ) editManager.redo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
@@ -877,6 +877,7 @@ private fun EditMenuContent(
                                     setBackgroundImage2()
                                     viewModel.menusVisible =
                                         !editManager.isRotateMode.value
+                                    scaleToFitOnEdit()
                                     return@clickable
                                 }
                                 cancelRotateMode()
@@ -947,12 +948,12 @@ private fun EditMenuContent(
                             ) toggleBlurMode()
                             if (isBlurMode.value) {
                                 setBackgroundImage2()
-                                backgroundImage.value =
-                                    viewModel.getEditedImage()
+                                backgroundImage.value = viewModel.getEditedImage()
                                 blurOperation.init()
                                 return@clickable
                             }
                             blurOperation.cancel()
+                            scaleToFit()
                         }
                     },
                 imageVector = ImageVector
