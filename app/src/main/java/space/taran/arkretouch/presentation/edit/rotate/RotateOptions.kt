@@ -1,21 +1,20 @@
 package space.taran.arkretouch.presentation.edit.rotate
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,20 +22,29 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import space.taran.arkretouch.R
 import space.taran.arkretouch.presentation.edit.EditViewModel
 
 @Composable
 fun RotateOptions(viewModel: EditViewModel) {
-    Column(
-        Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        Modifier.fillMaxWidth().wrapContentHeight(),
+        contentAlignment = Alignment.Center
     ) {
-        if (viewModel.editManager.isRotateMode.value) {
-            SwitchLayoutDialog(viewModel.editManager.showSwitchLayoutDialog) {
-                viewModel.editManager.switchLayout()
+        if (viewModel.editManager.showSwitchLayoutButton.value)
+            Button(
+                modifier = Modifier.align(Alignment.BottomEnd)
+                    .padding(end = 8.dp, bottom = 8.dp),
+                onClick = {
+                    viewModel.editManager.switchLayout()
+                }
+            ) {
+                Text("Switch")
             }
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = viewModel.editManager.smartLayout.value,
@@ -53,10 +61,8 @@ fun RotateOptions(viewModel: EditViewModel) {
                         .size(40.dp)
                         .clip(CircleShape)
                         .clickable {
-                            viewModel.editManager.apply {
-                                rotate(-90f)
-                                invalidatorTick.value++
-                            }
+                            viewModel.rotate(-90f)
+                            viewModel.editManager.invalidatorTick.value++
                         },
                     imageVector = ImageVector
                         .vectorResource(R.drawable.ic_rotate_left),
@@ -69,10 +75,8 @@ fun RotateOptions(viewModel: EditViewModel) {
                         .size(40.dp)
                         .clip(CircleShape)
                         .clickable {
-                            viewModel.editManager.apply {
-                                rotate(90f)
-                                invalidatorTick.value++
-                            }
+                            viewModel.rotate(90f)
+                            viewModel.editManager.invalidatorTick.value++
                         },
                     imageVector = ImageVector
                         .vectorResource(R.drawable.ic_rotate_right),
@@ -82,44 +86,4 @@ fun RotateOptions(viewModel: EditViewModel) {
             }
         }
     }
-}
-
-@Composable
-fun SwitchLayoutDialog(
-    show: MutableState<Boolean>,
-    onConfirm: () -> Unit
-) {
-    if (!show.value) return
-
-    AlertDialog(
-        onDismissRequest = {
-            show.value = false
-        },
-        title = {
-            Text(
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-                text = "Do you want to switch layout?",
-                fontSize = 16.sp
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    show.value = false
-                    onConfirm()
-                }
-            ) {
-                Text("Switch")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    show.value = false
-                }
-            ) {
-                Text("Cancel")
-            }
-        }
-    )
 }

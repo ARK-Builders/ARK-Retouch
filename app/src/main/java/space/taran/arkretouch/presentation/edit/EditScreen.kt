@@ -508,7 +508,7 @@ private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit
             isVisible = viewModel.editManager.isResizeMode.value,
             viewModel.editManager
         )
-        RotateOptions(viewModel)
+        if (viewModel.editManager.isRotateMode.value) RotateOptions(viewModel)
 
         Box(
             Modifier

@@ -44,7 +44,8 @@ class EditManager {
 
     private val _smartLayout = mutableStateOf(false)
     val smartLayout: State<Boolean> = _smartLayout
-    var showSwitchLayoutDialog = mutableStateOf(false)
+    var smartSwitchInitiated = false
+    var showSwitchLayoutButton = mutableStateOf(false)
 
     val blurIntensity = mutableStateOf(12f)
 
@@ -330,7 +331,7 @@ class EditManager {
             backgroundImage.value = it
         }
 
-    fun rotate(angle: Float) {
+    fun rotate(angle: Float, toggleLayoutSwitch: () -> Unit) {
         val centerX = availableDrawAreaSize.value.width / 2
         val centerY = availableDrawAreaSize.value.height / 2
         if (isRotateMode.value) {
@@ -339,16 +340,16 @@ class EditManager {
                 editMatrix,
                 angle,
                 centerX.toFloat(),
-                centerY.toFloat()
+                centerY.toFloat(),
+                toggleLayoutSwitch
             )
-            return
         }
         rotateOperation.rotate(
             matrix,
             angle,
             centerX.toFloat(),
-            centerY.toFloat()
-        )
+            centerY.toFloat(),
+        ) {}
     }
 
     fun addRotation(scale: ResizeOperation.Scale) {
@@ -553,6 +554,7 @@ class EditManager {
         _isRotateMode.value = !isRotateMode.value
         if (isRotateMode.value) {
             editMatrix.set(matrix)
+            smartSwitchInitiated = false
         }
     }
 
