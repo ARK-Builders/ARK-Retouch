@@ -413,13 +413,7 @@ class EditViewModel(
     }
 
     fun rotate(angle: Float) {
-        editManager.rotate(angle) {
-            viewModelScope.launch {
-                editManager.showSwitchLayoutButton.value = true
-                delay(2000)
-                editManager.showSwitchLayoutButton.value = false
-            }
-        }
+        editManager.rotate(angle)
     }
     companion object {
         private const val KEEP_USED_COLORS = 20

@@ -15,6 +15,10 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,20 +31,21 @@ import space.taran.arkretouch.presentation.edit.EditViewModel
 
 @Composable
 fun RotateOptions(viewModel: EditViewModel) {
+    var enableManualSwitch by remember { mutableStateOf(true) }
     Box(
         Modifier.fillMaxWidth().wrapContentHeight(),
         contentAlignment = Alignment.Center
     ) {
-        if (viewModel.editManager.showSwitchLayoutButton.value)
-            Button(
-                modifier = Modifier.align(Alignment.BottomEnd)
-                    .padding(end = 8.dp, bottom = 8.dp),
-                onClick = {
-                    viewModel.editManager.switchLayout()
-                }
-            ) {
-                Text("Switch")
+        Button(
+            modifier = Modifier.align(Alignment.BottomEnd)
+                .padding(end = 8.dp, bottom = 8.dp),
+            enabled = enableManualSwitch,
+            onClick = {
+                viewModel.editManager.switchLayout()
             }
+        ) {
+            Text("Switch")
+        }
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -50,6 +55,7 @@ fun RotateOptions(viewModel: EditViewModel) {
                     checked = viewModel.editManager.smartLayout.value,
                     onCheckedChange = {
                         viewModel.editManager.toggleSmartLayout()
+                        enableManualSwitch = !it
                     }
                 )
                 Text(stringResource(R.string.smart_layout_switch))

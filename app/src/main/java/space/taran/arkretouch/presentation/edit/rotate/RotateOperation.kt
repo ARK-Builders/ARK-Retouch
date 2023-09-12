@@ -48,13 +48,7 @@ class RotateOperation(private val editManager: EditManager) : Operation {
         }
     }
 
-    fun rotate(
-        matrix: Matrix,
-        angle: Float,
-        px: Float,
-        py: Float,
-        toggleLayoutSwitch: () -> Unit
-    ) {
+    fun rotate(matrix: Matrix, angle: Float, px: Float, py: Float) {
         matrix.rotate(angle, Center(px, py))
         val shouldSwitchLayout = editManager.rotationAngle.value.toInt() !=
             cumulativeAngle && editManager.rotationAngle.value.toInt() % 45 == 0
@@ -63,9 +57,7 @@ class RotateOperation(private val editManager: EditManager) : Operation {
             if (editManager.smartLayout.value) {
                 val viewParams = editManager.switchLayout()
                 scale = viewParams.scale
-                return
             }
-            toggleLayoutSwitch()
         }
     }
 
