@@ -35,10 +35,12 @@ class EditManager {
     private val _paintColor: MutableState<Color> =
         mutableStateOf(drawPaint.value.color)
     val paintColor: State<Color> = _paintColor
+    private val _backgroundColor = mutableStateOf(Color.Transparent)
+    val backgroundColor: State<Color> = _backgroundColor
 
     private val erasePaint: Paint = Paint().apply {
         shader = null
-        color = Color.Transparent
+        color = backgroundColor.value
         style = PaintingStyle.Stroke
         blendMode = BlendMode.SrcOut
     }
@@ -73,16 +75,16 @@ class EditManager {
     val redoPaths = Stack<DrawPath>()
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    private val _backgroundColor = mutableStateOf(Color.Transparent)
-    val backgroundColor: State<Color> = _backgroundColor
     val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
     val editMatrix = Matrix()
     val backgroundMatrix = Matrix()
-    lateinit var matrixScale: ResizeOperation.Scale
-        private set
+    val rectMatrix = Matrix()
+
+    private val matrixScale = mutableStateOf(1f)
+    var zoomScale = 1f
     lateinit var bitmapScale: ResizeOperation.Scale
         private set
 
@@ -186,7 +188,7 @@ class EditManager {
                 drawAreaSize.value.height
             )
         }
-        matrixScale = viewParams.scale
+        matrixScale.value = viewParams.scale.x
         scaleMatrix(viewParams)
         updateAvailableDrawArea(viewParams.drawArea)
         val bitmapXScale =
@@ -256,15 +258,15 @@ class EditManager {
 
     fun updateAvailableDrawAreaByMatrix() {
         val drawArea = backgroundImage.value?.let {
-            val drawWidth = it.width * matrixScale.x
-            val drawHeight = it.height * matrixScale.y
+            val drawWidth = it.width * matrixScale.value
+            val drawHeight = it.height * matrixScale.value
             IntSize(
                 drawWidth.toInt(),
                 drawHeight.toInt()
             )
         } ?: run {
-            val drawWidth = resolution.value?.width!! * matrixScale.x
-            val drawHeight = resolution.value?.height!! * matrixScale.y
+            val drawWidth = resolution.value?.width!! * matrixScale.value
+            val drawHeight = resolution.value?.height!! * matrixScale.value
             IntSize(
                 drawWidth.toInt(),
                 drawHeight.toInt()
@@ -562,7 +564,7 @@ class EditManager {
 
     fun calcImageOffset(): Offset {
         val drawArea = drawAreaSize.value
-        val allowedArea = imageSize
+        val allowedArea = availableDrawAreaSize.value
         val xOffset = ((drawArea.width - allowedArea.width) / 2f)
             .coerceAtLeast(0f)
         val yOffset = ((drawArea.height - allowedArea.height) / 2f)
@@ -570,6 +572,10 @@ class EditManager {
         return Offset(xOffset, yOffset)
     }
 
+    fun calcCenter() = Offset(
+        availableDrawAreaSize.value.width / 2f,
+        availableDrawAreaSize.value.height / 2f
+    )
     private companion object {
         private const val DRAW = "draw"
         private const val CROP = "crop"

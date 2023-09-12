@@ -329,16 +329,6 @@ class EditViewModel(
                     }
                 } ?: run {
                     val canvas = Canvas(bitmap)
-                    val backgroundPaint = Paint().also {
-                        it.color = editManager.backgroundColor.value
-                    }
-                    canvas.drawRect(
-                        Rect(Offset.Zero, size.toSize()),
-                        backgroundPaint
-                    )
-                    if (prevRotationAngle == 0f && drawPaths.isEmpty()) {
-                        return@run
-                    }
                     if (prevRotationAngle != 0f) {
                         val centerX = size.width / 2
                         val centerY = size.height / 2
@@ -347,12 +337,17 @@ class EditViewModel(
                             centerX.toFloat(),
                             centerY.toFloat()
                         )
+                        canvas.nativeCanvas.setMatrix(matrix)
                     }
+                    canvas.drawRect(
+                        Rect(Offset.Zero, size.toSize()),
+                        backgroundPaint
+                    )
                     if (drawPaths.isNotEmpty()) {
-                        canvas.nativeCanvas.drawBitmap(
-                            pathBitmap?.asAndroidBitmap()!!,
-                            matrix,
-                            null
+                        canvas.drawImage(
+                            pathBitmap!!,
+                            Offset.Zero,
+                            Paint()
                         )
                     }
                 }

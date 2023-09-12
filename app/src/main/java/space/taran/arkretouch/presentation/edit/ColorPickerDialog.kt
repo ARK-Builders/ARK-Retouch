@@ -1,6 +1,5 @@
 package space.taran.arkretouch.presentation.edit
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -40,9 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,19 +61,12 @@ fun ColorPickerDialog(
 ) {
     if (!isVisible.value) return
 
-    val context = LocalContext.current
-
     var currentColor by remember {
         mutableStateOf(HsvColor.from(initialColor))
     }
 
     val finish = {
         onColorChanged(currentColor.toColor())
-        Toast.makeText(
-            context,
-            "${currentColor.toColor().toArgb()}",
-            Toast.LENGTH_LONG
-        ).show()
         isVisible.value = false
     }
 

@@ -71,7 +71,6 @@ import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
 import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
-import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -347,14 +346,6 @@ private fun DrawContainer(
             },
         contentAlignment = Alignment.Center
     ) {
-        val modifier = Modifier.size(
-            viewModel.editManager.availableDrawAreaSize.value.width.toDp(),
-            viewModel.editManager.availableDrawAreaSize.value.height.toDp()
-        )
-        TransparencyChessBoardCanvas(
-            modifier,
-            viewModel.editManager
-        )
         EditCanvas(viewModel)
     }
 }
@@ -630,8 +621,7 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value &&
-                            !editManager.isEraseMode.value
+                            !editManager.isBlurMode.value
                         ) {
                             editManager.undo()
                         }
@@ -643,7 +633,6 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
@@ -660,7 +649,6 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         ) editManager.redo()
                     },
@@ -672,7 +660,6 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
@@ -725,7 +712,6 @@ private fun EditMenuContent(
                             !editManager.isCropMode.value &&
                             !editManager.isResizeMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         )
                             viewModel.strokeSliderExpanded =
@@ -738,7 +724,6 @@ private fun EditMenuContent(
                     !editManager.isResizeMode.value &&
                     !editManager.isCropMode.value &&
                     !editManager.isEyeDropperMode.value &&
-                    !editManager.isEraseMode.value &&
                     !editManager.isBlurMode.value
                 ) editManager.paintColor.value
                 else Color.Black,
