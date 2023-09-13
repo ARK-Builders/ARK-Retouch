@@ -9,8 +9,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
-import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import space.taran.arkretouch.BuildConfig
@@ -18,6 +19,7 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
+import kotlin.math.atan2
 
 fun Path.findNotExistCopyName(name: Path): Path {
     val parent = this
@@ -73,10 +75,26 @@ fun Context.getActivity(): AppCompatActivity? = when (this) {
 
 typealias Degrees = Float
 
-object ImageUtils {
-    fun getRotationAngleFromMotion(event: MotionEvent):
-        Degrees {
-        val xMotion = event.getX(0) - event.x
-        return xMotion
+fun PointerEvent.calculateRotationFromOneFingerGesture(
+    center: Offset
+): Degrees {
+    var angleDelta = 0.0
+    changes.forEach { change ->
+        if (change.pressed) {
+            val currentPosition = change.position
+            val prevPosition = change.previousPosition
+            val prevOffset = prevPosition - center
+            val currentOffset = currentPosition - center
+            val prevAngle = atan2(
+                prevOffset.y.toDouble(),
+                prevOffset.x.toDouble()
+            )
+            val currentAngle = atan2(
+                currentOffset.y.toDouble(),
+                currentOffset.x.toDouble()
+            )
+            angleDelta = Math.toDegrees(currentAngle - prevAngle)
+        }
     }
+    return angleDelta.toFloat()
 }

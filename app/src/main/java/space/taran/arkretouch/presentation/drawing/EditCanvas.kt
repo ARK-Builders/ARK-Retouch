@@ -6,112 +6,151 @@ import android.graphics.Matrix
 import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.toSize
 import space.taran.arkretouch.presentation.edit.EditViewModel
-import space.taran.arkretouch.presentation.picker.toDp
-import kotlin.math.atan2
+import space.taran.arkretouch.presentation.edit.TransparencyChessBoardCanvas
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
 import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
+import space.taran.arkretouch.presentation.picker.toDp
+import space.taran.arkretouch.presentation.utils.calculateRotationFromOneFingerGesture
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {
-    val currentPoint = PointF(0f, 0f)
     val editManager = viewModel.editManager
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
 
-    fun handleRotateEvent(action: Int, eventX: Float, eventY: Float) {
-        when (action) {
-            MotionEvent.ACTION_MOVE -> {
-                val centerX = editManager.drawAreaSize.value.width / 2
-                val centerY = editManager.drawAreaSize.value.height / 2
-                val prevDX = currentPoint.x - centerX
-                val prevDY = currentPoint.y - centerY
-                val dx = eventX - centerX
-                val dy = eventY - centerY
-                val angle1 = atan2(prevDY, prevDX)
-                val angle2 = atan2(dy, dx)
-                val degreesAngle =
-                    Math.toDegrees(
-                        (angle2 - angle1).toDouble()
-                    )
-                if (degreesAngle != 0.0)
-                    editManager.rotate(degreesAngle.toFloat())
-                currentPoint.x = eventX
-                currentPoint.y = eventY
+    fun resetScaleAndTranslate() {
+        editManager.apply {
+            if (
+                isRotateMode.value || isCropMode.value || isResizeMode.value ||
+                isBlurMode.value
+            ) {
+                scale = 1f; zoomScale = scale; offset = Offset.Zero
             }
-            MotionEvent.ACTION_DOWN -> {
-                currentPoint.x = eventX
-                currentPoint.y = eventY
-            }
-            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {}
         }
     }
 
-    Box(
-        Modifier.background(
-            if (editManager.isCropMode.value) Color.Transparent
-            else editManager.backgroundColor.value
-        ),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(contentAlignment = Alignment.Center) {
         val modifier = Modifier.size(
             editManager.availableDrawAreaSize.value.width.toDp(),
             editManager.availableDrawAreaSize.value.height.toDp()
-        )
-        EditImageCanvas(modifier, editManager)
-        EditDrawCanvas(
-            modifier,
-            viewModel
-        ) { action, x, y ->
-            handleRotateEvent(action, x, y)
+        ).graphicsLayer {
+            resetScaleAndTranslate()
+
+            // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
+            // https://stackoverflow.com/questions/65653560/jetpack-compose-applying-porterduffmode-to-image
+            // Provide a slight opacity to for compositing into an
+            // offscreen buffer to ensure blend modes are applied to empty pixel information
+            // By default any alpha != 1.0f will use a compositing layer by default
+            alpha = 0.99f
+
+            scaleX = scale
+            scaleY = scale
+            translationX = offset.x
+            translationY = offset.y
         }
+        TransparencyChessBoardCanvas(modifier, editManager)
+        BackgroundCanvas(modifier, editManager)
+        DrawCanvas(modifier, viewModel)
     }
-    if (editManager.isRotateMode.value) {
+    if (
+        editManager.isRotateMode.value || editManager.isZoomMode.value ||
+        editManager.isPanMode.value
+    ) {
         Canvas(
-            Modifier
-                .fillMaxSize()
-                .pointerInteropFilter {
-                    handleRotateEvent(it.action, it.x, it.y)
-                    editManager.invalidatorTick.value++
-                    true
+            Modifier.fillMaxSize()
+                .pointerInput(Any()) {
+                    forEachGesture {
+                        awaitPointerEventScope {
+                            awaitFirstDown()
+                            do {
+                                val event = awaitPointerEvent()
+                                when (true) {
+                                    (editManager.isRotateMode.value) -> {
+                                        val angle = event
+                                            .calculateRotationFromOneFingerGesture(
+                                                editManager.calcCenter()
+                                            )
+                                        editManager.rotate(angle)
+                                        editManager.invalidatorTick.value++
+                                    }
+                                    else -> {
+                                        if (editManager.isZoomMode.value) {
+                                            scale *= event.calculateZoom()
+                                            editManager.zoomScale = scale
+                                        }
+                                        if (editManager.isPanMode.value) {
+                                            val pan = event.calculatePan()
+                                            offset = Offset(
+                                                offset.x + pan.x,
+                                                offset.y + pan.y
+                                            )
+                                        }
+                                    }
+                                }
+                            } while (event.changes.any { it.pressed })
+                        }
+                    }
                 }
         ) {}
     }
 }
 
 @Composable
-fun EditImageCanvas(
-    modifier: Modifier,
-    editManager: EditManager
-) {
+fun BackgroundCanvas(modifier: Modifier, editManager: EditManager) {
     Canvas(modifier) {
         editManager.apply {
             invalidatorTick.value
             var matrix = matrix
+            if (
+                isCropMode.value || isRotateMode.value ||
+                isResizeMode.value || isBlurMode.value
+            )
+                matrix = editMatrix
             drawIntoCanvas { canvas ->
                 backgroundImage.value?.let {
-                    if (isCropMode.value || isRotateMode.value || isResizeMode.value)
-                        matrix = editMatrix
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
                         matrix,
                         null
                     )
+                } ?: run {
+                    val rect = Rect(
+                        Offset.Zero,
+                        imageSize.toSize()
+                    )
+                    canvas.nativeCanvas.setMatrix(matrix)
+                    canvas.drawRect(rect, backgroundPaint)
+                    canvas.clipRect(rect, ClipOp.Intersect)
                 }
             }
         }
@@ -119,11 +158,7 @@ fun EditImageCanvas(
 }
 
 @Composable
-fun EditDrawCanvas(
-    modifier: Modifier,
-    viewModel: EditViewModel,
-    onRotate: (Int, Float, Float) -> Unit
-) {
+fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     val context = LocalContext.current
     val editManager = viewModel.editManager
     var path = Path()
@@ -224,60 +259,51 @@ fun EditDrawCanvas(
     }
 
     Canvas(
-        modifier = drawModifier
-            // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
-            // https://stackoverflow.com/questions/65653560/jetpack-compose-applying-porterduffmode-to-image
-            // Provide a slight opacity to for compositing into an
-            // offscreen buffer to ensure blend modes are applied to empty pixel information
-            // By default any alpha != 1.0f will use a compositing layer by default
-            .graphicsLayer(alpha = 0.99f)
-            .pointerInteropFilter { event ->
-                val eventX = event.x
-                val eventY = event.y
-                val tmpMatrix = Matrix()
-                editManager.matrix.invert(tmpMatrix)
-                val mappedXY = floatArrayOf(event.x, event.y)
-                tmpMatrix.mapPoints(mappedXY)
-                val mappedX = mappedXY[0]
-                val mappedY = mappedXY[1]
+        modifier = drawModifier.pointerInteropFilter { event ->
+            val eventX = event.x
+            val eventY = event.y
+            val tmpMatrix = Matrix()
+            editManager.matrix.invert(tmpMatrix)
+            val mappedXY = floatArrayOf(
+                event.x / editManager.zoomScale,
+                event.y / editManager.zoomScale
+            )
+            tmpMatrix.mapPoints(mappedXY)
+            val mappedX = mappedXY[0]
+            val mappedY = mappedXY[1]
 
-                when (true) {
-                    editManager.isResizeMode.value -> {}
-                    editManager.isBlurMode.value -> handleBlurEvent(
-                        event.action,
-                        eventX,
-                        eventY
-                    )
-                    editManager.isCropMode.value -> handleCropEvent(
-                        event.action,
-                        eventX,
-                        eventY
-                    )
+            when (true) {
+                editManager.isResizeMode.value -> {}
+                editManager.isBlurMode.value -> handleBlurEvent(
+                    event.action,
+                    eventX,
+                    eventY
+                )
 
-                    editManager.isRotateMode.value -> onRotate(
-                        event.action,
-                        event.x,
-                        event.y
-                    )
+                editManager.isCropMode.value -> handleCropEvent(
+                    event.action,
+                    eventX,
+                    eventY
+                )
 
-                    editManager.isEyeDropperMode.value -> handleEyeDropEvent(
-                        event.action,
-                        event.x,
-                        event.y
-                    )
+                editManager.isEyeDropperMode.value -> handleEyeDropEvent(
+                    event.action,
+                    event.x,
+                    event.y
+                )
 
-                    else -> handleDrawEvent(event.action, mappedX, mappedY)
-                }
-                editManager.invalidatorTick.value++
-                true
+                else -> handleDrawEvent(event.action, mappedX, mappedY)
             }
+            editManager.invalidatorTick.value++
+            true
+        }
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isRotateMode.value || isResizeMode.value)
+                if (isRotateMode.value || isResizeMode.value || isBlurMode.value)
                     matrix = editMatrix
                 if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
@@ -290,8 +316,19 @@ fun EditDrawCanvas(
                     editManager.cropWindow.show(canvas)
                     return@drawIntoCanvas
                 }
-                drawPaths.forEach {
-                    canvas.drawPath(it.path, it.paint)
+                val rect = Rect(
+                    Offset.Zero,
+                    imageSize.toSize()
+                )
+                canvas.drawRect(
+                    rect,
+                    Paint().also { it.color = Color.Transparent }
+                )
+                canvas.clipRect(rect, ClipOp.Intersect)
+                if (drawPaths.isNotEmpty()) {
+                    drawPaths.forEach {
+                        canvas.drawPath(it.path, it.paint)
+                    }
                 }
             }
         }

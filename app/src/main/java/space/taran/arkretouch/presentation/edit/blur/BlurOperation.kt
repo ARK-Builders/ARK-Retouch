@@ -42,6 +42,7 @@ class BlurOperation(private val editManager: EditManager) : Operation {
                     blurSize.value.toInt()
                 )
             }
+            scaleToFitOnEdit()
         }
     }
 
