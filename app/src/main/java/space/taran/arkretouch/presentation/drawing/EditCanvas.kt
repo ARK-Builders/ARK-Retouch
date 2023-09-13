@@ -65,7 +65,14 @@ fun EditCanvas(viewModel: EditViewModel) {
             editManager.availableDrawAreaSize.value.height.toDp()
         ).graphicsLayer {
             resetScaleAndTranslate()
+
+            // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
+            // https://stackoverflow.com/questions/65653560/jetpack-compose-applying-porterduffmode-to-image
+            // Provide a slight opacity to for compositing into an
+            // offscreen buffer to ensure blend modes are applied to empty pixel information
+            // By default any alpha != 1.0f will use a compositing layer by default
             alpha = 0.99f
+
             scaleX = scale
             scaleY = scale
             translationX = offset.x
@@ -252,50 +259,44 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     }
 
     Canvas(
-        modifier = drawModifier
-            // Eraser leaves black line instead of erasing without this hack, it uses BlendMode.SrcOut
-            // https://stackoverflow.com/questions/65653560/jetpack-compose-applying-porterduffmode-to-image
-            // Provide a slight opacity to for compositing into an
-            // offscreen buffer to ensure blend modes are applied to empty pixel information
-            // By default any alpha != 1.0f will use a compositing layer by default
-            .pointerInteropFilter { event ->
-                val eventX = event.x
-                val eventY = event.y
-                val tmpMatrix = Matrix()
-                editManager.matrix.invert(tmpMatrix)
-                val mappedXY = floatArrayOf(
-                    event.x / editManager.zoomScale,
-                    event.y / editManager.zoomScale
+        modifier = drawModifier.pointerInteropFilter { event ->
+            val eventX = event.x
+            val eventY = event.y
+            val tmpMatrix = Matrix()
+            editManager.matrix.invert(tmpMatrix)
+            val mappedXY = floatArrayOf(
+                event.x / editManager.zoomScale,
+                event.y / editManager.zoomScale
+            )
+            tmpMatrix.mapPoints(mappedXY)
+            val mappedX = mappedXY[0]
+            val mappedY = mappedXY[1]
+
+            when (true) {
+                editManager.isResizeMode.value -> {}
+                editManager.isBlurMode.value -> handleBlurEvent(
+                    event.action,
+                    eventX,
+                    eventY
                 )
-                tmpMatrix.mapPoints(mappedXY)
-                val mappedX = mappedXY[0]
-                val mappedY = mappedXY[1]
 
-                when (true) {
-                    editManager.isResizeMode.value -> {}
-                    editManager.isBlurMode.value -> handleBlurEvent(
-                        event.action,
-                        eventX,
-                        eventY
-                    )
+                editManager.isCropMode.value -> handleCropEvent(
+                    event.action,
+                    eventX,
+                    eventY
+                )
 
-                    editManager.isCropMode.value -> handleCropEvent(
-                        event.action,
-                        eventX,
-                        eventY
-                    )
+                editManager.isEyeDropperMode.value -> handleEyeDropEvent(
+                    event.action,
+                    event.x,
+                    event.y
+                )
 
-                    editManager.isEyeDropperMode.value -> handleEyeDropEvent(
-                        event.action,
-                        event.x,
-                        event.y
-                    )
-
-                    else -> handleDrawEvent(event.action, mappedX, mappedY)
-                }
-                editManager.invalidatorTick.value++
-                true
+                else -> handleDrawEvent(event.action, mappedX, mappedY)
             }
+            editManager.invalidatorTick.value++
+            true
+        }
     ) {
         // force recomposition on invalidatorTick change
         editManager.invalidatorTick.value
