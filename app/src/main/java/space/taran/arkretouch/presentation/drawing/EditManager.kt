@@ -342,12 +342,6 @@ class EditManager {
                 centerY.toFloat()
             )
         }
-        rotateOperation.rotate(
-            matrix,
-            angle,
-            centerX.toFloat(),
-            centerY.toFloat(),
-        )
     }
 
     fun addRotation(scale: ResizeOperation.Scale) {

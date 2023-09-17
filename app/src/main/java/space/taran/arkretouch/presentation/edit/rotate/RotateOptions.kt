@@ -68,7 +68,10 @@ fun RotateOptions(viewModel: EditViewModel) {
                         .clip(CircleShape)
                         .clickable {
                             viewModel.rotate(-90f)
-                            viewModel.editManager.invalidatorTick.value++
+                            viewModel.editManager.apply {
+                                if (smartLayout.value) switchLayout()
+                                invalidatorTick.value++
+                            }
                         },
                     imageVector = ImageVector
                         .vectorResource(R.drawable.ic_rotate_left),
@@ -82,7 +85,10 @@ fun RotateOptions(viewModel: EditViewModel) {
                         .clip(CircleShape)
                         .clickable {
                             viewModel.rotate(90f)
-                            viewModel.editManager.invalidatorTick.value++
+                            viewModel.editManager.apply {
+                                if (smartLayout.value) switchLayout()
+                                invalidatorTick.value++
+                            }
                         },
                     imageVector = ImageVector
                         .vectorResource(R.drawable.ic_rotate_right),
