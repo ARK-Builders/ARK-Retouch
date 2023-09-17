@@ -18,6 +18,7 @@ class RotateOperation(private val editManager: EditManager) : Operation {
     fun init() {
         imageSize = editManager.imageSize
         cumulativeAngle = 0
+        direction = 0
     }
 
     override fun apply(extraBlock: () -> Unit) {
