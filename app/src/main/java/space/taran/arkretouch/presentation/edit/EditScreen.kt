@@ -148,6 +148,14 @@ fun EditScreen(
             viewModel.cancelOperation()
             return@BackHandler
         }
+        if (editManager.isZoomMode.value) {
+            editManager.toggleZoomMode()
+            return@BackHandler
+        }
+        if (editManager.isPanMode.value) {
+            editManager.togglePanMode()
+            return@BackHandler
+        }
         if (editManager.canUndo.value) {
             editManager.undo()
             return@BackHandler
@@ -293,6 +301,8 @@ private fun DrawContainer(
 
                             isBlurMode.value -> {}
 
+                            isZoomMode.value -> { return@onSizeChanged }
+
                             else -> {
                                 scaleToFit()
                                 return@onSizeChanged
@@ -304,11 +314,6 @@ private fun DrawContainer(
             },
         contentAlignment = Alignment.Center
     ) {
-        val modifier = Modifier.size(
-            viewModel.editManager.availableDrawAreaSize.value.width.toDp(),
-            viewModel.editManager.availableDrawAreaSize.value.height.toDp()
-        )
-        TransparencyChessBoardCanvas(modifier)
         EditCanvas(viewModel)
     }
 }
@@ -391,6 +396,14 @@ private fun BoxScope.TopMenu(
                         isBlurMode.value
                     ) {
                         viewModel.cancelOperation()
+                        return@clickable
+                    }
+                    if (isZoomMode.value) {
+                        toggleZoomMode()
+                        return@clickable
+                    }
+                    if (isPanMode.value) {
+                        togglePanMode()
                         return@clickable
                     }
                     if (
@@ -577,8 +590,7 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value &&
-                            !editManager.isEraseMode.value
+                            !editManager.isBlurMode.value
                         ) {
                             editManager.undo()
                         }
@@ -590,7 +602,6 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
@@ -607,7 +618,6 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         ) editManager.redo()
                     },
@@ -619,7 +629,6 @@ private fun EditMenuContent(
                             !editManager.isResizeMode.value &&
                             !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
@@ -672,7 +681,6 @@ private fun EditMenuContent(
                             !editManager.isCropMode.value &&
                             !editManager.isResizeMode.value &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
                         )
                             viewModel.strokeSliderExpanded =
@@ -685,7 +693,6 @@ private fun EditMenuContent(
                     !editManager.isResizeMode.value &&
                     !editManager.isCropMode.value &&
                     !editManager.isEyeDropperMode.value &&
-                    !editManager.isEraseMode.value &&
                     !editManager.isBlurMode.value
                 ) editManager.paintColor.value
                 else Color.Black,
@@ -709,6 +716,56 @@ private fun EditMenuContent(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
                 tint = if (
                     editManager.isEraseMode.value
+                )
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        if (
+                            !editManager.isRotateMode.value &&
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isBlurMode.value &&
+                            !editManager.isEraseMode.value
+                        )
+                            editManager.toggleZoomMode()
+                    },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_zoom_in),
+                tint = if (
+                    editManager.isZoomMode.value
+                )
+                    MaterialTheme.colors.primary
+                else
+                    Color.Black,
+                contentDescription = null
+            )
+            Icon(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        if (
+                            !editManager.isRotateMode.value &&
+                            !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value &&
+                            !editManager.isEyeDropperMode.value &&
+                            !editManager.isBlurMode.value &&
+                            !editManager.isEraseMode.value
+                        )
+                            editManager.togglePanMode()
+                    },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_pan_tool),
+                tint = if (
+                    editManager.isPanMode.value
                 )
                     MaterialTheme.colors.primary
                 else
@@ -775,6 +832,7 @@ private fun EditMenuContent(
                                     rotateOperation.init()
                                     viewModel.menusVisible =
                                         !editManager.isRotateMode.value
+                                    scaleToFitOnEdit()
                                     return@clickable
                                 }
                                 cancelRotateMode()
@@ -850,6 +908,7 @@ private fun EditMenuContent(
                                 return@clickable
                             }
                             blurOperation.cancel()
+                            scaleToFit()
                         }
                     },
                 imageVector = ImageVector

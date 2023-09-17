@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
 import space.taran.arkretouch.data.ImageDefaults
 import space.taran.arkretouch.data.Resolution
@@ -20,12 +20,12 @@ import space.taran.arkretouch.presentation.edit.ImageViewParams
 import space.taran.arkretouch.presentation.edit.Operation
 import space.taran.arkretouch.presentation.edit.blur.BlurOperation
 import space.taran.arkretouch.presentation.edit.crop.CropOperation
-import timber.log.Timber
 import space.taran.arkretouch.presentation.edit.crop.CropWindow
 import space.taran.arkretouch.presentation.edit.draw.DrawOperation
 import space.taran.arkretouch.presentation.edit.fit
 import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
 import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
+import timber.log.Timber
 import java.util.Stack
 
 class EditManager {
@@ -34,6 +34,8 @@ class EditManager {
     private val _paintColor: MutableState<Color> =
         mutableStateOf(drawPaint.value.color)
     val paintColor: State<Color> = _paintColor
+    private val _backgroundColor = mutableStateOf(Color.Transparent)
+    val backgroundColor: State<Color> = _backgroundColor
 
     private val erasePaint: Paint = Paint().apply {
         shader = null
@@ -42,9 +44,17 @@ class EditManager {
         blendMode = BlendMode.SrcOut
     }
 
+    val backgroundPaint: Paint
+        get() {
+            return Paint().apply {
+                color = backgroundImage.value?.let {
+                    Color.Transparent
+                } ?: backgroundColor.value
+            }
+        }
+
     private val _smartLayout = mutableStateOf(false)
     val smartLayout: State<Boolean> = _smartLayout
-    var smartSwitchInitiated = false
 
     val blurIntensity = mutableStateOf(12f)
 
@@ -63,18 +73,19 @@ class EditManager {
         }
 
     val drawPaths = Stack<DrawPath>()
+
     val redoPaths = Stack<DrawPath>()
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
-    private val _backgroundColor = mutableStateOf(Color.Transparent)
-    val backgroundColor: State<Color> = _backgroundColor
     val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
     private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
     val editMatrix = Matrix()
-    lateinit var matrixScale: ResizeOperation.Scale
-        private set
+    val backgroundMatrix = Matrix()
+
+    private val matrixScale = mutableStateOf(1f)
+    var zoomScale = 1f
     lateinit var bitmapScale: ResizeOperation.Scale
         private set
 
@@ -100,16 +111,21 @@ class EditManager {
     val canRedo: State<Boolean> = _canRedo
 
     private val _isRotateMode = mutableStateOf(false)
-    val isRotateMode = _isRotateMode
+    val isRotateMode: State<Boolean> = _isRotateMode
 
     private val _isResizeMode = mutableStateOf(false)
-    val isResizeMode = _isResizeMode
+    val isResizeMode: State<Boolean> = _isResizeMode
 
     private val _isEyeDropperMode = mutableStateOf(false)
-    val isEyeDropperMode = _isEyeDropperMode
+    val isEyeDropperMode: State<Boolean> = _isEyeDropperMode
 
     private val _isBlurMode = mutableStateOf(false)
-    val isBlurMode = _isBlurMode
+    val isBlurMode: State<Boolean> = _isBlurMode
+
+    private val _isZoomMode = mutableStateOf(false)
+    val isZoomMode: State<Boolean> = _isZoomMode
+    private val _isPanMode = mutableStateOf(false)
+    val isPanMode: State<Boolean> = _isPanMode
 
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
@@ -186,7 +202,7 @@ class EditManager {
             drawAreaSize.value.width,
             drawAreaSize.value.height
         )
-        matrixScale = viewParams.scale
+        matrixScale.value = viewParams.scale.x
         scaleMatrix(viewParams)
         updateAvailableDrawArea(viewParams.drawArea)
         updateBitmapScale(viewParams)
@@ -205,6 +221,7 @@ class EditManager {
 
     private fun scaleMatrix(viewParams: ImageViewParams) {
         matrix.setScale(viewParams.scale.x, viewParams.scale.y)
+        backgroundMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
         if (prevRotationAngle != 0f) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
@@ -216,7 +233,8 @@ class EditManager {
 
     private fun scaleEditMatrix(viewParams: ImageViewParams) {
         editMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
-        if (isRotateMode.value) {
+        backgroundMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
+        if (prevRotationAngle != 0f && isRotateMode.value) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
             val offset = calcOffset(scale = viewParams.scale)
@@ -280,15 +298,15 @@ class EditManager {
     }
     fun updateAvailableDrawAreaByMatrix() {
         val drawArea = backgroundImage.value?.let {
-            val drawWidth = it.width * matrixScale.x
-            val drawHeight = it.height * matrixScale.y
+            val drawWidth = it.width * matrixScale.value
+            val drawHeight = it.height * matrixScale.value
             IntSize(
                 drawWidth.toInt(),
                 drawHeight.toInt()
             )
         } ?: run {
-            val drawWidth = resolution.value?.width!! * matrixScale.x
-            val drawHeight = resolution.value?.height!! * matrixScale.y
+            val drawWidth = resolution.value?.width!! * matrixScale.value
+            val drawHeight = resolution.value?.height!! * matrixScale.value
             IntSize(
                 drawWidth.toInt(),
                 drawHeight.toInt()
@@ -349,7 +367,7 @@ class EditManager {
         rotationAngles.add(prevRotationAngle)
         undoStack.add(ROTATE)
         prevRotationAngle = rotationAngle.value
-        matrixScale = scale
+        matrixScale.value = scale.x
         updateRevised()
     }
 
@@ -445,7 +463,7 @@ class EditManager {
 
     fun addDrawPath(path: Path) {
         drawPaths.add(
-            DrawPath(
+            space.taran.arkretouch.presentation.drawing.DrawPath(
                 path,
                 currentPaint.copy().apply {
                     strokeWidth = drawPaint.value.strokeWidth
@@ -544,15 +562,20 @@ class EditManager {
 
     fun toggleRotateMode() {
         _isRotateMode.value = !isRotateMode.value
-        if (isRotateMode.value) {
-            editMatrix.set(matrix)
-            smartSwitchInitiated = false
-        }
+        if (isRotateMode.value) editMatrix.set(matrix)
     }
 
     fun toggleCropMode() {
         _isCropMode.value = !isCropMode.value
         if (!isCropMode.value) cropWindow.close()
+    }
+
+    fun toggleZoomMode() {
+        _isZoomMode.value = !isZoomMode.value
+    }
+
+    fun togglePanMode() {
+        _isPanMode.value = !isPanMode.value
     }
 
     fun cancelCropMode() {
@@ -584,30 +607,24 @@ class EditManager {
 
     fun calcImageOffset(): Offset {
         val drawArea = drawAreaSize.value
-        var offset = Offset.Zero
-        backgroundImage.value?.let {
-            val xOffset = (
-                (drawArea.width - it.width) / 2f
-                ).coerceAtLeast(0f)
-            val yOffset = (
-                (drawArea.height - it.height) / 2f
-                ).coerceAtLeast(0f)
-            offset = Offset(xOffset, yOffset)
-        }
-        return offset
+        val allowedArea = availableDrawAreaSize.value
+        val xOffset = ((drawArea.width - allowedArea.width) / 2f)
+            .coerceAtLeast(0f)
+        val yOffset = ((drawArea.height - allowedArea.height) / 2f)
+            .coerceAtLeast(0f)
+        return Offset(xOffset, yOffset)
     }
 
+    fun calcCenter() = Offset(
+        availableDrawAreaSize.value.width / 2f,
+        availableDrawAreaSize.value.height / 2f
+    )
     private companion object {
         private const val DRAW = "draw"
         private const val CROP = "crop"
         private const val RESIZE = "resize"
         private const val ROTATE = "rotate"
         private const val BLUR = "blur"
-    }
-
-    object Layout {
-        const val PORTRAIT = "portrait"
-        const val LANDSCAPE = "landscape"
     }
 }
 
