@@ -94,6 +94,15 @@ class EditManager {
     val imageSizes = Stack<IntSize>()
     private val redoImageSizes = Stack<IntSize>()
 
+    val boundRectSize: IntSize
+        get() {
+            return backgroundImage.value?.let {
+                IntSize(it.width, it.height)
+            } ?: resolution.value?.let {
+                IntSize(it.width, it.height)
+            } ?: drawAreaSize.value
+        }
+
     private val _resolution = mutableStateOf<Resolution?>(null)
     val resolution: State<Resolution?> = _resolution
     var drawAreaSize = mutableStateOf(IntSize.Zero)
@@ -158,7 +167,11 @@ class EditManager {
         operation.apply {
             if (!isRotateMode.value) {
                 imageSizes.push(imageSize)
-                updateImageSize()
+                if (isCropMode.value || isResizeMode.value) {
+                    updateImageSize()
+                    return@apply
+                }
+                updateImageSize(imageSize)
             }
         }
     }
@@ -225,7 +238,7 @@ class EditManager {
         if (prevRotationAngle != 0f) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
-            val offset = calcOffset(scale = viewParams.scale)
+            val offset = calcOffset(viewParams.drawArea, scale = viewParams.scale)
             matrix.postTranslate(offset.x, offset.y)
             matrix.postRotate(prevRotationAngle, centerX, centerY)
         }
@@ -234,7 +247,7 @@ class EditManager {
     private fun scaleEditMatrix(viewParams: ImageViewParams) {
         editMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
         backgroundMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
-        if (prevRotationAngle != 0f && isRotateMode.value) {
+        if (isRotateMode.value) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
             val offset = calcOffset(scale = viewParams.scale)
@@ -278,6 +291,7 @@ class EditManager {
             drawAreaSize.value.height
         )
         updateAvailableDrawArea(viewParams.drawArea)
+        scaleToFitOnEdit()
         return viewParams
     }
 
@@ -296,24 +310,7 @@ class EditManager {
         val yOffset = (drawArea.height - (imageSize.height * scale.y)) / 2
         return Offset(xOffset, yOffset)
     }
-    fun updateAvailableDrawAreaByMatrix() {
-        val drawArea = backgroundImage.value?.let {
-            val drawWidth = it.width * matrixScale.value
-            val drawHeight = it.height * matrixScale.value
-            IntSize(
-                drawWidth.toInt(),
-                drawHeight.toInt()
-            )
-        } ?: run {
-            val drawWidth = resolution.value?.width!! * matrixScale.value
-            val drawHeight = resolution.value?.height!! * matrixScale.value
-            IntSize(
-                drawWidth.toInt(),
-                drawHeight.toInt()
-            )
-        }
-        updateAvailableDrawArea(drawArea)
-    }
+
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
         if (bitmap == null) {
             resolution.value?.let {
@@ -463,7 +460,7 @@ class EditManager {
 
     fun addDrawPath(path: Path) {
         drawPaths.add(
-            space.taran.arkretouch.presentation.drawing.DrawPath(
+            DrawPath(
                 path,
                 currentPaint.copy().apply {
                     strokeWidth = drawPaint.value.strokeWidth
@@ -603,16 +600,6 @@ class EditManager {
     }
     fun setPaintStrokeWidth(strokeWidth: Float) {
         drawPaint.value.strokeWidth = strokeWidth
-    }
-
-    fun calcImageOffset(): Offset {
-        val drawArea = drawAreaSize.value
-        val allowedArea = availableDrawAreaSize.value
-        val xOffset = ((drawArea.width - allowedArea.width) / 2f)
-            .coerceAtLeast(0f)
-        val yOffset = ((drawArea.height - allowedArea.height) / 2f)
-            .coerceAtLeast(0f)
-        return Offset(xOffset, yOffset)
     }
 
     fun calcCenter() = Offset(

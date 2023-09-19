@@ -72,7 +72,6 @@ import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
 import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
 import space.taran.arkretouch.presentation.edit.rotate.RotateOptions
-import space.taran.arkretouch.presentation.picker.toDp
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -294,12 +293,9 @@ private fun DrawContainer(
                                 return@onSizeChanged
                             }
 
-                            isRotateMode.value -> {
-                                scaleToFitOnEdit()
-                                return@onSizeChanged
-                            }
+                            isRotateMode.value -> { return@onSizeChanged }
 
-                            isBlurMode.value -> {}
+                            isBlurMode.value -> { return@onSizeChanged }
 
                             isZoomMode.value -> { return@onSizeChanged }
 

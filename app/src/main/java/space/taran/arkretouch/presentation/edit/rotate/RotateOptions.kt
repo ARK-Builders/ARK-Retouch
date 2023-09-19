@@ -31,7 +31,10 @@ import space.taran.arkretouch.presentation.edit.EditViewModel
 
 @Composable
 fun RotateOptions(viewModel: EditViewModel) {
-    var enableManualSwitch by remember { mutableStateOf(true) }
+    var enableManualSwitch by remember {
+        mutableStateOf(!viewModel.editManager.smartLayout.value)
+    }
+
     Box(
         Modifier.fillMaxWidth().wrapContentHeight(),
         contentAlignment = Alignment.Center

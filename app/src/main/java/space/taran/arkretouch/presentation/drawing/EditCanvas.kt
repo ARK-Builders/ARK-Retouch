@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -147,7 +146,7 @@ fun BackgroundCanvas(modifier: Modifier, editManager: EditManager) {
                 } ?: run {
                     val rect = Rect(
                         Offset.Zero,
-                        imageSize.toSize()
+                        boundRectSize.toSize()
                     )
                     canvas.nativeCanvas.setMatrix(matrix)
                     canvas.drawRect(rect, backgroundPaint)
@@ -286,11 +285,11 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     eventX,
                     eventY
                 )
-                    editManager.isEyeDropperMode.value -> handleEyeDropEvent(
-                        event.action,
-                        event.x,
-                        event.y
-                    )
+                editManager.isEyeDropperMode.value -> handleEyeDropEvent(
+                    event.action,
+                    event.x,
+                    event.y
+                )
                 else -> handleDrawEvent(event.action, mappedX, mappedY)
             }
             editManager.invalidatorTick.value++
@@ -319,7 +318,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 }
                 val rect = Rect(
                     Offset.Zero,
-                    imageSize.toSize()
+                    boundRectSize.toSize()
                 )
                 canvas.drawRect(
                     rect,
