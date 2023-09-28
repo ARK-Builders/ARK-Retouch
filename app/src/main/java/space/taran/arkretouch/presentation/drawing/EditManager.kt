@@ -603,8 +603,8 @@ class EditManager {
     }
 
     fun calcCenter() = Offset(
-        availableDrawAreaSize.value.width / 2f,
-        availableDrawAreaSize.value.height / 2f
+        drawAreaSize.value.width / 2f,
+        drawAreaSize.value.height / 2f
     )
     private companion object {
         private const val DRAW = "draw"

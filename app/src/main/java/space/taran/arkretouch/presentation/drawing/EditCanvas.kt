@@ -6,7 +6,6 @@ import android.graphics.Matrix
 import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.forEachGesture
@@ -91,7 +90,6 @@ fun EditCanvas(viewModel: EditViewModel) {
                 .pointerInput(Any()) {
                     forEachGesture {
                         awaitPointerEventScope {
-                            awaitFirstDown()
                             do {
                                 val event = awaitPointerEvent()
                                 when (true) {
