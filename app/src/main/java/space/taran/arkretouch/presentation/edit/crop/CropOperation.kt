@@ -9,7 +9,7 @@ class CropOperation(
     private val editManager: EditManager
 ) : Operation {
 
-    override fun apply() {
+    override fun apply(extraBlock: () -> Unit) {
         editManager.apply {
             cropWindow.apply {
                 val image = getBitmap().crop(getCropParams()).asImageBitmap()
@@ -17,6 +17,7 @@ class CropOperation(
                 keepEditedPaths()
                 addCrop()
                 saveRotationAfterOtherOperation()
+                extraBlock()
                 scaleToFit()
                 toggleCropMode()
             }

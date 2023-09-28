@@ -36,4 +36,5 @@
     <string name="height_empty">Please enter height</string>
     <string name="blur_intensity">Intensity</string>
     <string name="blur_size">Size</string>
+    <string name="smart_layout_switch">Smart layout</string>
 </resources>

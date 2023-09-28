@@ -125,7 +125,7 @@ class BlurOperation(private val editManager: EditManager) : Operation {
             position.y >= offset.y && position.y <= (offset.y + blurSize.value)
     }
 
-    override fun apply() {
+    override fun apply(extraBlock: () -> Unit) {
         val image = ImageBitmap(
             editManager.imageSize.width,
             editManager.imageSize.height,
@@ -146,23 +146,32 @@ class BlurOperation(private val editManager: EditManager) : Operation {
             blurs.add(editManager.backgroundImage2.value)
             editManager.addBlur()
         }
+        editManager.backgroundImage.value = image
+        editManager.saveRotationAfterOtherOperation()
+        extraBlock()
+        editManager.scaleToFit()
         editManager.keepEditedPaths()
         editManager.toggleBlurMode()
-        editManager.backgroundImage.value = image
     }
 
     override fun undo() {
         val bitmap = blurs.pop()
         redoBlurs.push(editManager.backgroundImage.value)
         editManager.backgroundImage.value = bitmap
+        editManager.restoreRotationAfterUndoOtherOperation()
+        editManager.scaleToFit()
         editManager.redrawEditedPaths()
+        editManager.updateRevised()
     }
 
     override fun redo() {
         val bitmap = redoBlurs.pop()
         blurs.push(editManager.backgroundImage.value)
         editManager.backgroundImage.value = bitmap
+        editManager.saveRotationAfterOtherOperation()
+        editManager.scaleToFit()
         editManager.keepEditedPaths()
+        editManager.updateRevised()
     }
 
     private fun blur(context: Context) {

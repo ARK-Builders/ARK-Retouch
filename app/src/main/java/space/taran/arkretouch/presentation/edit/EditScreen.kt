@@ -71,6 +71,7 @@ import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
 import space.taran.arkretouch.presentation.edit.resize.Hint
 import space.taran.arkretouch.presentation.edit.resize.ResizeInput
 import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
+import space.taran.arkretouch.presentation.edit.rotate.RotateOptions
 import space.taran.arkretouch.presentation.picker.toPx
 import space.taran.arkretouch.presentation.theme.Gray
 import space.taran.arkretouch.presentation.utils.askWritePermissions
@@ -238,42 +239,6 @@ private fun Menus(
                 .height(IntrinsicSize.Min),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (viewModel.editManager.isRotateMode.value)
-                Row {
-                    Icon(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                viewModel.editManager.apply {
-                                    rotate(-90f)
-                                    invalidatorTick.value++
-                                }
-                            },
-                        imageVector = ImageVector
-                            .vectorResource(R.drawable.ic_rotate_left),
-                        tint = MaterialTheme.colors.primary,
-                        contentDescription = null
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                viewModel.editManager.apply {
-                                    rotate(90f)
-                                    invalidatorTick.value++
-                                }
-                            },
-                        imageVector = ImageVector
-                            .vectorResource(R.drawable.ic_rotate_right),
-                        tint = MaterialTheme.colors.primary,
-                        contentDescription = null
-                    )
-                }
-
             EditMenuContainer(viewModel, navigateBack)
         }
     }
@@ -286,8 +251,8 @@ private fun DrawContainer(
 ) {
     Box(
         modifier = Modifier
-            .padding(bottom = 32.dp)
             .fillMaxSize()
+            .padding(bottom = 32.dp)
             .background(
                 if (viewModel.editManager.isCropMode.value) Color.White
                 else Color.Gray
@@ -328,10 +293,9 @@ private fun DrawContainer(
                                 return@onSizeChanged
                             }
 
-                            isRotateMode.value -> {
-                                scaleToFitOnEdit()
-                                return@onSizeChanged
-                            }
+                            isRotateMode.value -> { return@onSizeChanged }
+
+                            isBlurMode.value -> { return@onSizeChanged }
 
                             isZoomMode.value -> { return@onSizeChanged }
 
@@ -553,6 +517,7 @@ private fun EditMenuContainer(viewModel: EditViewModel, navigateBack: () -> Unit
             isVisible = viewModel.editManager.isResizeMode.value,
             viewModel.editManager
         )
+        if (viewModel.editManager.isRotateMode.value) RotateOptions(viewModel)
 
         Box(
             Modifier
@@ -860,6 +825,7 @@ private fun EditMenuContent(
                                 toggleRotateMode()
                                 if (isRotateMode.value) {
                                     setBackgroundImage2()
+                                    rotateOperation.init()
                                     viewModel.menusVisible =
                                         !editManager.isRotateMode.value
                                     scaleToFitOnEdit()

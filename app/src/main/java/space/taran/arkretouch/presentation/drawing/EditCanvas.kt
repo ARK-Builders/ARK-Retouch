@@ -6,7 +6,6 @@ import android.graphics.Matrix
 import android.graphics.PointF
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.forEachGesture
@@ -91,7 +90,6 @@ fun EditCanvas(viewModel: EditViewModel) {
                 .pointerInput(Any()) {
                     forEachGesture {
                         awaitPointerEventScope {
-                            awaitFirstDown()
                             do {
                                 val event = awaitPointerEvent()
                                 when (true) {
@@ -146,7 +144,7 @@ fun BackgroundCanvas(modifier: Modifier, editManager: EditManager) {
                 } ?: run {
                     val rect = Rect(
                         Offset.Zero,
-                        imageSize.toSize()
+                        boundRectSize.toSize()
                     )
                     canvas.nativeCanvas.setMatrix(matrix)
                     canvas.drawRect(rect, backgroundPaint)
@@ -285,13 +283,11 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     eventX,
                     eventY
                 )
-
                 editManager.isEyeDropperMode.value -> handleEyeDropEvent(
                     event.action,
                     event.x,
                     event.y
                 )
-
                 else -> handleDrawEvent(event.action, mappedX, mappedY)
             }
             editManager.invalidatorTick.value++
@@ -303,7 +299,9 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isRotateMode.value || isResizeMode.value || isBlurMode.value)
+                if (
+                    isRotateMode.value || isResizeMode.value || isBlurMode.value
+                )
                     matrix = editMatrix
                 if (isCropMode.value) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
@@ -318,7 +316,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 }
                 val rect = Rect(
                     Offset.Zero,
-                    imageSize.toSize()
+                    boundRectSize.toSize()
                 )
                 canvas.drawRect(
                     rect,
