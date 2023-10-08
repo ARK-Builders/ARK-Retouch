@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.picker.toPx
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.presentation.picker.toPx
 
 @Composable
 fun MoreOptionsPopup(

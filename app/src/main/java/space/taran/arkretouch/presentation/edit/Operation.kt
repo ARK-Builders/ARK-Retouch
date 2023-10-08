@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 interface Operation {
     fun apply()

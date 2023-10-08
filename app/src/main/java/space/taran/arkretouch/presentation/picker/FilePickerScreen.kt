@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.picker
+package dev.arkbuilders.arkretouch.presentation.picker
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,16 +33,16 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentManager
-import space.taran.arkfilepicker.ArkFilePickerConfig
-import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
-import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerMode
-import space.taran.arkfilepicker.presentation.onArkPathPicked
-import space.taran.arkretouch.R
-import space.taran.arkretouch.data.Resolution
-import space.taran.arkretouch.presentation.utils.askWritePermissions
-import space.taran.arkretouch.presentation.utils.isWritePermGranted
-import space.taran.arkretouch.presentation.theme.Purple500
-import space.taran.arkretouch.presentation.theme.Purple700
+import dev.arkbuilders.arkfilepicker.ArkFilePickerConfig
+import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
+import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerMode
+import dev.arkbuilders.arkfilepicker.presentation.onArkPathPicked
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.data.Resolution
+import dev.arkbuilders.arkretouch.presentation.utils.askWritePermissions
+import dev.arkbuilders.arkretouch.presentation.utils.isWritePermGranted
+import dev.arkbuilders.arkretouch.presentation.theme.Purple500
+import dev.arkbuilders.arkretouch.presentation.theme.Purple700
 import java.nio.file.Path
 
 @Composable

@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit.blur
+package dev.arkbuilders.arkretouch.presentation.edit.blur
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntOffset
 import com.hoko.blur.processor.HokoBlurBuild
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.Operation
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.Operation
 import java.util.Stack
 
 class BlurOperation(private val editManager: EditManager) : Operation {

@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit.blur
+package dev.arkbuilders.arkretouch.presentation.edit.blur
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
 
 @Composable
 fun BlurIntensityPopup(

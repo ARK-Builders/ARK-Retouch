@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="space.taran.arkretouch">
+    package="dev.arkbuilders.arkretouch">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission
@@ -41,7 +41,7 @@
         </activity>
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="space.taran.arkretouch2.fileprovider"
+            android:authorities="dev.arkbuilders.arkretouch2.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true"
             >

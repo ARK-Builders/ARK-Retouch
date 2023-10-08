@@ -1,9 +1,9 @@
-package space.taran.arkretouch.presentation.edit.crop
+package dev.arkbuilders.arkretouch.presentation.edit.crop
 
 import androidx.compose.ui.graphics.asImageBitmap
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.Operation
-import space.taran.arkretouch.presentation.utils.crop
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.Operation
+import dev.arkbuilders.arkretouch.presentation.utils.crop
 
 class CropOperation(
     private val editManager: EditManager

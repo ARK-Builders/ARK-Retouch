@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit.resize
+package dev.arkbuilders.arkretouch.presentation.edit.resize
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -34,8 +34,8 @@ import androidx.core.text.isDigitsOnly
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
 
 @Composable
 fun ResizeInput(isVisible: Boolean, editManager: EditManager) {

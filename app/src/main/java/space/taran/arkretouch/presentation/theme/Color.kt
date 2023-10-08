@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.theme
+package dev.arkbuilders.arkretouch.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

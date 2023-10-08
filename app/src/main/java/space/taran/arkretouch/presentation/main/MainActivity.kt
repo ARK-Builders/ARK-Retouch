@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.main
+package dev.arkbuilders.arkretouch.presentation.main
 
 import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,12 +17,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import space.taran.arkretouch.data.Resolution
-import space.taran.arkretouch.presentation.utils.PermissionsHelper
-import space.taran.arkretouch.presentation.edit.EditScreen
-import space.taran.arkretouch.presentation.utils.isWritePermGranted
-import space.taran.arkretouch.presentation.picker.PickerScreen
-import space.taran.arkretouch.presentation.theme.ARKRetouchTheme
+import dev.arkbuilders.arkretouch.data.Resolution
+import dev.arkbuilders.arkretouch.presentation.utils.PermissionsHelper
+import dev.arkbuilders.arkretouch.presentation.edit.EditScreen
+import dev.arkbuilders.arkretouch.presentation.utils.isWritePermGranted
+import dev.arkbuilders.arkretouch.presentation.picker.PickerScreen
+import dev.arkbuilders.arkretouch.presentation.theme.ARKRetouchTheme
 import kotlin.io.path.Path
 
 private const val REAL_PATH_KEY = "real_file_path_2"

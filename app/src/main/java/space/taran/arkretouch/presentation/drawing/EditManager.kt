@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.drawing
+package dev.arkbuilders.arkretouch.presentation.drawing
 
 import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
@@ -14,18 +14,18 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.unit.IntSize
-import space.taran.arkretouch.data.ImageDefaults
-import space.taran.arkretouch.data.Resolution
-import space.taran.arkretouch.presentation.edit.ImageViewParams
-import space.taran.arkretouch.presentation.edit.Operation
-import space.taran.arkretouch.presentation.edit.blur.BlurOperation
-import space.taran.arkretouch.presentation.edit.crop.CropOperation
-import space.taran.arkretouch.presentation.edit.crop.CropWindow
-import space.taran.arkretouch.presentation.edit.draw.DrawOperation
-import space.taran.arkretouch.presentation.edit.fitBackground
-import space.taran.arkretouch.presentation.edit.fitImage
-import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
-import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
+import dev.arkbuilders.arkretouch.data.ImageDefaults
+import dev.arkbuilders.arkretouch.data.Resolution
+import dev.arkbuilders.arkretouch.presentation.edit.ImageViewParams
+import dev.arkbuilders.arkretouch.presentation.edit.Operation
+import dev.arkbuilders.arkretouch.presentation.edit.blur.BlurOperation
+import dev.arkbuilders.arkretouch.presentation.edit.crop.CropOperation
+import dev.arkbuilders.arkretouch.presentation.edit.crop.CropWindow
+import dev.arkbuilders.arkretouch.presentation.edit.draw.DrawOperation
+import dev.arkbuilders.arkretouch.presentation.edit.fitBackground
+import dev.arkbuilders.arkretouch.presentation.edit.fitImage
+import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
 import timber.log.Timber
 import java.util.Stack
 
@@ -429,7 +429,7 @@ class EditManager {
 
     fun addDrawPath(path: Path) {
         drawPaths.add(
-            space.taran.arkretouch.presentation.drawing.DrawPath(
+            dev.arkbuilders.arkretouch.presentation.drawing.DrawPath(
                 path,
                 currentPaint.copy().apply {
                     strokeWidth = drawPaint.value.strokeWidth

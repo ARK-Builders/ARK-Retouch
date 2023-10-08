@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation
+package dev.arkbuilders.arkretouch.presentation
 
 import android.app.Application
 import org.acra.config.dialog
@@ -6,10 +6,10 @@ import org.acra.config.httpSender
 import org.acra.data.StringFormat
 import org.acra.ktx.initAcra
 import org.acra.sender.HttpSender
-import space.taran.arkretouch.BuildConfig
-import space.taran.arkretouch.R
-import space.taran.arkfilepicker.folders.FoldersRepo
-import space.taran.arkretouch.di.DIManager
+import dev.arkbuilders.arkretouch.BuildConfig
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkfilepicker.folders.FoldersRepo
+import dev.arkbuilders.arkretouch.di.DIManager
 import timber.log.Timber
 
 class App : Application() {

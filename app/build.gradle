@@ -16,7 +16,7 @@ android {
         def password = System.getenv("ACRA_PASS") ?: ""
         def uri = System.getenv("ACRA_URI") ?: ""
 
-        applicationId "space.taran.arkretouch2"
+        applicationId "dev.arkbuilders.arkretouch2"
         minSdk 26
         targetSdk 32
         versionCode 1

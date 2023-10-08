@@ -1,4 +1,4 @@
-package space.taran.arkretouch.data
+package dev.arkbuilders.arkretouch.data
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntSize

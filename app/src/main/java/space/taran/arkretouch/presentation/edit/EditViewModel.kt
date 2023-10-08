@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import android.content.Context
 import android.content.Intent
@@ -38,12 +38,12 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import space.taran.arkretouch.R
-import space.taran.arkretouch.data.Preferences
-import space.taran.arkretouch.data.Resolution
-import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.data.Preferences
+import dev.arkbuilders.arkretouch.data.Resolution
+import dev.arkbuilders.arkretouch.di.DIManager
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path

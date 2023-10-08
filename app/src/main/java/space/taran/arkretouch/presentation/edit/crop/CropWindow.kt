@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit.crop
+package dev.arkbuilders.arkretouch.presentation.edit.crop
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.mutableStateOf
@@ -9,17 +9,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.unit.IntSize
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.CROP_2_3
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.CROP_4_5
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.CROP_9_16
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.CROP_SQUARE
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropFree
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCropSquare
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_2_3
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_4_5
-import space.taran.arkretouch.presentation.edit.crop.AspectRatio.isCrop_9_16
-import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.CROP_2_3
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.CROP_4_5
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.CROP_9_16
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.CROP_SQUARE
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.isCropFree
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.isCropSquare
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.isCrop_2_3
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.isCrop_4_5
+import dev.arkbuilders.arkretouch.presentation.edit.crop.AspectRatio.isCrop_9_16
+import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 
 class CropWindow(private val editManager: EditManager) {

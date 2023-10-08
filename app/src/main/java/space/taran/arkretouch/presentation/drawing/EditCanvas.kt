@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalComposeUiApi::class)
 
-package space.taran.arkretouch.presentation.drawing
+package dev.arkbuilders.arkretouch.presentation.drawing
 
 import android.graphics.Matrix
 import android.graphics.PointF
@@ -35,12 +35,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.toSize
-import space.taran.arkretouch.presentation.edit.EditViewModel
-import space.taran.arkretouch.presentation.edit.TransparencyChessBoardCanvas
-import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
-import space.taran.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
-import space.taran.arkretouch.presentation.picker.toDp
-import space.taran.arkretouch.presentation.utils.calculateRotationFromOneFingerGesture
+import dev.arkbuilders.arkretouch.presentation.edit.EditViewModel
+import dev.arkbuilders.arkretouch.presentation.edit.TransparencyChessBoardCanvas
+import dev.arkbuilders.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaX
+import dev.arkbuilders.arkretouch.presentation.edit.crop.CropWindow.Companion.computeDeltaY
+import dev.arkbuilders.arkretouch.presentation.picker.toDp
+import dev.arkbuilders.arkretouch.presentation.utils.calculateRotationFromOneFingerGesture
 
 @Composable
 fun EditCanvas(viewModel: EditViewModel) {

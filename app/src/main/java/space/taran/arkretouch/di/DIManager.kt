@@ -1,4 +1,4 @@
-package space.taran.arkretouch.di
+package dev.arkbuilders.arkretouch.di
 
 import android.app.Application
 

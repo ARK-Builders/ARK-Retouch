@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,12 +34,12 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import space.taran.arkfilepicker.ArkFilePickerConfig
-import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
-import space.taran.arkfilepicker.presentation.filepicker.ArkFilePickerMode
-import space.taran.arkfilepicker.presentation.onArkPathPicked
-import space.taran.arkretouch.R
-import space.taran.arkretouch.presentation.utils.findNotExistCopyName
+import dev.arkbuilders.arkfilepicker.ArkFilePickerConfig
+import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerFragment
+import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerMode
+import dev.arkbuilders.arkfilepicker.presentation.onArkPathPicked
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.presentation.utils.findNotExistCopyName
 import kotlin.io.path.name
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.key

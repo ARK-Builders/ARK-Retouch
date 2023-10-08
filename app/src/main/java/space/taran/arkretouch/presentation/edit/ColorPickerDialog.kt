@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -48,7 +48,7 @@ import com.godaddy.android.colorpicker.ClassicColorPicker
 import com.godaddy.android.colorpicker.HsvColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import space.taran.arkretouch.R
+import dev.arkbuilders.arkretouch.R
 
 @Composable
 fun ColorPickerDialog(

@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.utils
+package dev.arkbuilders.arkretouch.presentation.utils
 
 import android.Manifest
 import android.content.Context
@@ -14,7 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import space.taran.arkretouch.BuildConfig
+import dev.arkbuilders.arkretouch.BuildConfig
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.extension

@@ -1,13 +1,13 @@
-package space.taran.arkretouch.presentation.edit.resize
+package dev.arkbuilders.arkretouch.presentation.edit.resize
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntSize
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.Operation
-import space.taran.arkretouch.presentation.utils.resize
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.Operation
+import dev.arkbuilders.arkretouch.presentation.utils.resize
 import java.lang.NullPointerException
 
 class ResizeOperation(private val editManager: EditManager) : Operation {

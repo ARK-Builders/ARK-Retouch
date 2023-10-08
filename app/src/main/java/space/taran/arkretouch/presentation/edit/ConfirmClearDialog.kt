@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.AlertDialog

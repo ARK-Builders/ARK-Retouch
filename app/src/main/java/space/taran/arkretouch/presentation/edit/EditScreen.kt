@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalComposeUiApi::class)
 
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import android.view.MotionEvent
 import android.widget.Toast
@@ -62,20 +62,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.viewmodel.compose.viewModel
-import space.taran.arkretouch.R
-import space.taran.arkretouch.data.Resolution
-import space.taran.arkretouch.di.DIManager
-import space.taran.arkretouch.presentation.drawing.EditCanvas
-import space.taran.arkretouch.presentation.edit.blur.BlurIntensityPopup
-import space.taran.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
-import space.taran.arkretouch.presentation.edit.resize.Hint
-import space.taran.arkretouch.presentation.edit.resize.ResizeInput
-import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
-import space.taran.arkretouch.presentation.picker.toPx
-import space.taran.arkretouch.presentation.theme.Gray
-import space.taran.arkretouch.presentation.utils.askWritePermissions
-import space.taran.arkretouch.presentation.utils.getActivity
-import space.taran.arkretouch.presentation.utils.isWritePermGranted
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.data.Resolution
+import dev.arkbuilders.arkretouch.di.DIManager
+import dev.arkbuilders.arkretouch.presentation.drawing.EditCanvas
+import dev.arkbuilders.arkretouch.presentation.edit.blur.BlurIntensityPopup
+import dev.arkbuilders.arkretouch.presentation.edit.crop.CropAspectRatiosMenu
+import dev.arkbuilders.arkretouch.presentation.edit.resize.Hint
+import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeInput
+import dev.arkbuilders.arkretouch.presentation.edit.resize.delayHidingHint
+import dev.arkbuilders.arkretouch.presentation.picker.toPx
+import dev.arkbuilders.arkretouch.presentation.theme.Gray
+import dev.arkbuilders.arkretouch.presentation.utils.askWritePermissions
+import dev.arkbuilders.arkretouch.presentation.utils.getActivity
+import dev.arkbuilders.arkretouch.presentation.utils.isWritePermGranted
 import java.nio.file.Path
 
 @Composable

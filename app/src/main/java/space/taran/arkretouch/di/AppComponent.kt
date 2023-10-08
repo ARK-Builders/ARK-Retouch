@@ -1,10 +1,10 @@
-package space.taran.arkretouch.di
+package dev.arkbuilders.arkretouch.di
 
 import android.app.Application
 import android.content.Context
 import dagger.BindsInstance
 import dagger.Component
-import space.taran.arkretouch.presentation.edit.EditViewModelFactory
+import dev.arkbuilders.arkretouch.presentation.edit.EditViewModelFactory
 import javax.inject.Singleton
 
 @Singleton

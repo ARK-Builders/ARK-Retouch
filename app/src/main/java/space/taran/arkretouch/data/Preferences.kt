@@ -1,4 +1,4 @@
-package space.taran.arkretouch.data
+package dev.arkbuilders.arkretouch.data
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color

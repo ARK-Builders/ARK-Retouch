@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,12 +34,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.text.isDigitsOnly
-import space.taran.arkretouch.R
-import space.taran.arkretouch.data.Resolution
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.resize.Hint
-import space.taran.arkretouch.presentation.edit.resize.delayHidingHint
-import space.taran.arkretouch.presentation.theme.Gray
+import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.data.Resolution
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.resize.Hint
+import dev.arkbuilders.arkretouch.presentation.edit.resize.delayHidingHint
+import dev.arkbuilders.arkretouch.presentation.theme.Gray
 
 @Composable
 fun NewImageOptionsDialog(

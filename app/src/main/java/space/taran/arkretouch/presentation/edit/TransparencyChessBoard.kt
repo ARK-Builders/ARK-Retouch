@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.edit
+package dev.arkbuilders.arkretouch.presentation.edit
 
 import android.graphics.Matrix
 import androidx.compose.runtime.Composable
@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.toSize
-import space.taran.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
 
 private class TransparencyChessBoard {
     fun create(boardSize: Size, canvas: Canvas, matrix: Matrix) {

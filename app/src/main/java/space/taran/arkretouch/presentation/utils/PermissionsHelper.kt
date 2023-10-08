@@ -1,4 +1,4 @@
-package space.taran.arkretouch.presentation.utils
+package dev.arkbuilders.arkretouch.presentation.utils
 
 import android.Manifest
 import android.annotation.TargetApi
@@ -11,7 +11,7 @@ import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
-import space.taran.arkretouch.BuildConfig
+import dev.arkbuilders.arkretouch.BuildConfig
 
 object PermissionsHelper {
     fun writePermContract(): ActivityResultContract<String, Boolean> {

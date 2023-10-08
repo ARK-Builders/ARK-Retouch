@@ -1,10 +1,10 @@
-package space.taran.arkretouch.presentation.utils
+package dev.arkbuilders.arkretouch.presentation.utils
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import space.taran.arkretouch.presentation.edit.crop.CropWindow
-import space.taran.arkretouch.presentation.edit.resize.ResizeOperation
-import space.taran.arkretouch.presentation.edit.rotate.RotateOperation
+import dev.arkbuilders.arkretouch.presentation.edit.crop.CropWindow
+import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
 
 fun Bitmap.crop(cropParams: CropWindow.CropParams): Bitmap = Bitmap.createBitmap(
     this,

@@ -1,4 +1,4 @@
-package space.taran.arkretouch
+package dev.arkbuilders.arkretouch
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

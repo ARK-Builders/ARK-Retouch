@@ -1,9 +1,9 @@
-package space.taran.arkretouch.presentation.edit.rotate
+package dev.arkbuilders.arkretouch.presentation.edit.rotate
 
 import android.graphics.Matrix
-import space.taran.arkretouch.presentation.drawing.EditManager
-import space.taran.arkretouch.presentation.edit.Operation
-import space.taran.arkretouch.presentation.utils.rotate
+import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import dev.arkbuilders.arkretouch.presentation.edit.Operation
+import dev.arkbuilders.arkretouch.presentation.utils.rotate
 
 class RotateOperation(private val editManager: EditManager) : Operation {
 
