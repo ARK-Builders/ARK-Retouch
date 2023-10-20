@@ -44,6 +44,8 @@ import dev.arkbuilders.arkretouch.data.Resolution
 import dev.arkbuilders.arkretouch.di.DIManager
 import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -58,6 +60,12 @@ class EditViewModel(
     private val maxResolution: Resolution,
     private val prefs: Preferences
 ) : ViewModel() {
+    // TODO connect with EditManager field Scale
+    val scale: StateFlow<Float> = MutableStateFlow<Float>(1f)
+
+    // TODO connect with EditManager field Offset
+    val offset: StateFlow<Offset> = MutableStateFlow<Offset>(Offset.Zero)
+    var showEyeDropperHint by mutableStateOf(false)
     val editManager = EditManager()
 
     var strokeSliderExpanded by mutableStateOf(false)
@@ -69,7 +77,6 @@ class EditViewModel(
     var showMoreOptionsPopup by mutableStateOf(false)
     var imageSaved by mutableStateOf(false)
     var isSavingImage by mutableStateOf(false)
-    var showEyeDropperHint by mutableStateOf(false)
     val showConfirmClearDialog = mutableStateOf(false)
     var isLoaded by mutableStateOf(false)
     var exitConfirmed = false
@@ -205,6 +212,7 @@ class EditViewModel(
     fun toggleEyeDropper() {
         editManager.toggleEyeDropper()
     }
+
     fun cancelEyeDropper() {
         editManager.setPaintColor(usedColors.last())
     }
@@ -232,6 +240,7 @@ class EditViewModel(
             e.printStackTrace()
         }
     }
+
     fun getCombinedImageBitmap(): ImageBitmap {
         val size = editManager.imageSize
         val drawBitmap = ImageBitmap(
@@ -358,6 +367,7 @@ class EditViewModel(
         )
         return bitmap
     }
+
     fun confirmExit() = viewModelScope.launch {
         exitConfirmed = true
         isLoaded = false
@@ -578,6 +588,7 @@ fun fitBackground(
         )
     )
 }
+
 class ImageViewParams(
     val drawArea: IntSize,
     val scale: ResizeOperation.Scale
