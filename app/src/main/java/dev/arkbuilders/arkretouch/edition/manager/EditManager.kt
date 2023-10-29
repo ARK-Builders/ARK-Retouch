@@ -14,19 +14,19 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.edition.ui.blur.BlurOperation
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropOperation
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow
-import dev.arkbuilders.arkretouch.storage.ImageDefaults
-import dev.arkbuilders.arkretouch.storage.Resolution
-import dev.arkbuilders.arkretouch.edition.ui.main.fitBackground
-import dev.arkbuilders.arkretouch.edition.ui.main.fitImage
 import dev.arkbuilders.arkretouch.edition.model.DrawPath
 import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
 import dev.arkbuilders.arkretouch.edition.model.Operation
+import dev.arkbuilders.arkretouch.edition.ui.blur.BlurOperation
+import dev.arkbuilders.arkretouch.edition.ui.crop.CropOperation
+import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow
+import dev.arkbuilders.arkretouch.edition.ui.main.fitBackground
+import dev.arkbuilders.arkretouch.edition.ui.main.fitImage
 import dev.arkbuilders.arkretouch.presentation.edit.draw.DrawOperation
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
+import dev.arkbuilders.arkretouch.storage.ImageDefaults
+import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.utils.copy
 import dev.arkbuilders.arkretouch.utils.defaultPaint
 import timber.log.Timber
@@ -79,7 +79,6 @@ class EditManager {
     val drawPaths = Stack<DrawPath>()
 
     val redoPaths = Stack<DrawPath>()
-
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
     val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)

@@ -32,12 +32,12 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.storage.OldStorageRepository
-import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.edition.manager.EditManager
 import dev.arkbuilders.arkretouch.edition.model.EditionState
 import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.storage.OldStorageRepository
+import dev.arkbuilders.arkretouch.storage.Resolution
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -555,4 +555,3 @@ fun fitBackground(
         )
     )
 }
-

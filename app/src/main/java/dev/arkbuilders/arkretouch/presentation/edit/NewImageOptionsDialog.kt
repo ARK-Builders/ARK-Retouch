@@ -35,10 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.text.isDigitsOnly
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.edition.manager.EditManager
 import dev.arkbuilders.arkretouch.presentation.edit.resize.Hint
 import dev.arkbuilders.arkretouch.presentation.edit.resize.delayHidingHint
+import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.ui.theme.Gray
 
 @Composable
