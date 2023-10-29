@@ -63,7 +63,6 @@ import android.content.Context
 import android.view.MotionEvent
 import android.widget.Toast
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.edition.model.EditionState
 import dev.arkbuilders.arkretouch.edition.ui.blur.BlurIntensityPopup
 import dev.arkbuilders.arkretouch.edition.ui.canvas.EditCanvasScreen
@@ -78,6 +77,7 @@ import dev.arkbuilders.arkretouch.presentation.edit.SaveProgress
 import dev.arkbuilders.arkretouch.presentation.edit.resize.Hint
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeInput
 import dev.arkbuilders.arkretouch.presentation.edit.resize.delayHidingHint
+import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.ui.theme.Gray
 import dev.arkbuilders.arkretouch.utils.getActivity
 import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
