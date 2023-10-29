@@ -1,20 +1,20 @@
 package dev.arkbuilders.arkretouch.presentation.edit
 
-import android.graphics.Matrix
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.toSize
-import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
+import android.graphics.Matrix
+import dev.arkbuilders.arkretouch.edition.manager.EditManager
 
 private class TransparencyChessBoard {
     fun create(boardSize: Size, canvas: Canvas, matrix: Matrix) {

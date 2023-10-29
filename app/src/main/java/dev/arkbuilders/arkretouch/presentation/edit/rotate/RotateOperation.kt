@@ -1,9 +1,9 @@
 package dev.arkbuilders.arkretouch.presentation.edit.rotate
 
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
-import dev.arkbuilders.arkretouch.presentation.edit.Operation
-import dev.arkbuilders.arkretouch.presentation.utils.rotate
+import dev.arkbuilders.arkretouch.edition.manager.EditManager
+import dev.arkbuilders.arkretouch.edition.model.Operation
+import dev.arkbuilders.arkretouch.utils.rotate
 
 class RotateOperation(private val editManager: EditManager) : Operation {
 
