@@ -1,13 +1,13 @@
 package dev.arkbuilders.arkretouch.presentation.edit.resize
 
-import android.graphics.Bitmap
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntSize
-import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
-import dev.arkbuilders.arkretouch.presentation.edit.Operation
-import dev.arkbuilders.arkretouch.presentation.utils.resize
+import android.graphics.Bitmap
+import dev.arkbuilders.arkretouch.edition.manager.EditManager
+import dev.arkbuilders.arkretouch.edition.model.Operation
+import dev.arkbuilders.arkretouch.utils.resize
 import java.lang.NullPointerException
 
 class ResizeOperation(private val editManager: EditManager) : Operation {

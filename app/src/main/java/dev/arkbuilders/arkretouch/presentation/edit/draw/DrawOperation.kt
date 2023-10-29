@@ -1,8 +1,8 @@
 package dev.arkbuilders.arkretouch.presentation.edit.draw
 
 import androidx.compose.ui.graphics.Path
-import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
-import dev.arkbuilders.arkretouch.presentation.edit.Operation
+import dev.arkbuilders.arkretouch.edition.manager.EditManager
+import dev.arkbuilders.arkretouch.edition.model.Operation
 
 class DrawOperation(private val editManager: EditManager) : Operation {
     private var path = Path()
