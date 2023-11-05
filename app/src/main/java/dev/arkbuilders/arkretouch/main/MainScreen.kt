@@ -14,12 +14,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import dev.arkbuilders.arkretouch.edition.ui.main.EditScreen
+import dev.arkbuilders.arkretouch.edit.ui.main.EditScreen
 import dev.arkbuilders.arkretouch.picker.PickerScreen
 import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper
 import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
 import kotlin.io.path.Path
+
+private const val EXTRA_PATH = "EXTRA_PATH"
+private const val EXTRA_URI = "EXTRA_URI"
+private const val EXTRA_LAUNCHED_FROM_INTENT = "EXTRA_LAUNCHED_FROM_INTENT"
 
 @Composable
 fun MainScreen(
@@ -32,25 +36,26 @@ fun MainScreen(
     val navController = rememberNavController()
     var maxResolution by remember { mutableStateOf(Resolution(0, 0)) }
     val startScreen =
-        if ((uri != null || realPath != null) && context.isWritePermissionGranted())
+        if ((uri != null || realPath != null) && context.isWritePermissionGranted())  {
             NavHelper.editRoute
-        else
+        } else {
             NavHelper.pickerRoute
+        }
 
     val launcher = rememberLauncherForActivityResult(
         contract = PermissionsHelper.writePermContract()
     ) { isGranted ->
         if (!isGranted) return@rememberLauncherForActivityResult
         if (launchedFromIntent) {
-            navController.navigate(
-                NavHelper.parseEditArgs(realPath, uri, true)
-            )
+            val route = NavHelper.parseEditArgs(realPath, uri, true)
+            navController.navigate(route)
         }
     }
 
     SideEffect {
-        if (!context.isWritePermissionGranted())
+        if (!context.isWritePermissionGranted()) {
             PermissionsHelper.launchWritePerm(launcher)
+        }
     }
 
     NavHost(
@@ -62,42 +67,41 @@ fun MainScreen(
                 fragmentManager,
                 onNavigateToEdit = { path, resolution ->
                     maxResolution = resolution
-                    navController.navigate(
-                        NavHelper.parseEditArgs(
-                            path?.toString(),
-                            uri = null,
-                            launchedFromIntent = false,
-                        )
+                    val parsedRoute = NavHelper.parseEditArgs(
+                        path = path?.toString(),
+                        uri = null,
+                        launchedFromIntent = false,
                     )
+                    navController.navigate(parsedRoute)
                 },
             )
         }
         composable(
             route = NavHelper.editRoute,
             arguments = listOf(
-                navArgument("path") {
+                navArgument(EXTRA_PATH) {
                     type = NavType.StringType
                     defaultValue = realPath
                     nullable = true
                 },
-                navArgument("uri") {
+                navArgument(EXTRA_URI) {
                     type = NavType.StringType
                     defaultValue = uri
                     nullable = true
                 },
-                navArgument("launchedFromIntent") {
+                navArgument(EXTRA_LAUNCHED_FROM_INTENT) {
                     type = NavType.BoolType
                     defaultValue = launchedFromIntent
                 },
             )
         ) { entry ->
             EditScreen(
-                entry.arguments?.getString("path")?.let { Path(it) },
-                entry.arguments?.getString("uri"),
-                fragmentManager,
+                imagePath = entry.arguments?.getString(EXTRA_PATH)?.let { Path(it) },
+                imageUri = entry.arguments?.getString(EXTRA_URI),
+                fragmentManager = fragmentManager,
                 navigateBack = { navController.popBackStack() },
-                entry.arguments?.getBoolean("launchedFromIntent")!!,
-                maxResolution
+                launchedFromIntent = entry.arguments?.getBoolean(EXTRA_LAUNCHED_FROM_INTENT)!!,
+                maxResolution = maxResolution
             )
         }
     }

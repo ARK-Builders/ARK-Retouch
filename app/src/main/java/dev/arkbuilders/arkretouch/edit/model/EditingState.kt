@@ -1,11 +1,11 @@
-package dev.arkbuilders.arkretouch.edition.model
+package dev.arkbuilders.arkretouch.edit.model
 
-data class EditionState(
+data class EditingState(
     val strokeSliderExpanded: Boolean
 ) {
 
     companion object {
-        val DEFAULT = EditionState(
+        val DEFAULT = EditingState(
             strokeSliderExpanded = false
         )
     }

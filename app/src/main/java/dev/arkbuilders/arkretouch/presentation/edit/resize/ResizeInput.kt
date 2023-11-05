@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
+import dev.arkbuilders.arkretouch.edit.manager.EditManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

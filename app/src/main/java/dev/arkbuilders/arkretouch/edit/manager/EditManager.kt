@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.manager
+package dev.arkbuilders.arkretouch.edit.manager
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -12,16 +12,17 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.edition.model.DrawPath
-import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
-import dev.arkbuilders.arkretouch.edition.model.Operation
-import dev.arkbuilders.arkretouch.edition.ui.blur.BlurOperation
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropOperation
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow
-import dev.arkbuilders.arkretouch.edition.ui.main.fitBackground
-import dev.arkbuilders.arkretouch.edition.ui.main.fitImage
+import dev.arkbuilders.arkretouch.edit.model.DrawPath
+import dev.arkbuilders.arkretouch.edit.model.ImageViewParams
+import dev.arkbuilders.arkretouch.edit.model.Operation
+import dev.arkbuilders.arkretouch.edit.ui.blur.BlurOperation
+import dev.arkbuilders.arkretouch.edit.ui.crop.CropOperation
+import dev.arkbuilders.arkretouch.edit.ui.crop.CropWindow
+import dev.arkbuilders.arkretouch.edit.ui.main.fitBackground
+import dev.arkbuilders.arkretouch.edit.ui.main.fitImage
 import dev.arkbuilders.arkretouch.presentation.edit.draw.DrawOperation
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
@@ -32,8 +33,16 @@ import dev.arkbuilders.arkretouch.utils.defaultPaint
 import timber.log.Timber
 import java.util.Stack
 
+private const val DRAW = "draw"
+private const val CROP = "crop"
+private const val RESIZE = "resize"
+private const val ROTATE = "rotate"
+private const val BLUR = "blur"
+
 // FIXME: This class is overloaded, split into smaller classes/managers
 class EditManager {
+
+    private val imageEditor = ImageEditor()
 
     private val drawPaint: MutableState<Paint> = mutableStateOf(defaultPaint())
 
@@ -52,12 +61,13 @@ class EditManager {
     }
 
     val backgroundPaint: Paint
-        get() {
-            return Paint().apply {
-                color = backgroundImage.value?.let {
-                    Color.Transparent
-                } ?: backgroundColor.value
+        get() = Paint().apply {
+            val initialColor = if (backgroundImage.value != null) {
+                Color.Transparent
+            } else {
+                backgroundColor.value
             }
+            color = initialColor
         }
 
     val blurIntensity = mutableStateOf(12f)
@@ -71,8 +81,8 @@ class EditManager {
     val blurOperation = BlurOperation(this)
 
     private val currentPaint: Paint
-        get() = when (true) {
-            isEraseMode.value -> erasePaint
+        get() = when (editingMode) {
+            EditingMode.ERASE -> erasePaint
             else -> drawPaint.value
         }
 
@@ -110,6 +120,7 @@ class EditManager {
 
     private val _resolution = mutableStateOf<Resolution?>(null)
     val resolution: State<Resolution?> = _resolution
+
     var drawAreaSize = mutableStateOf(IntSize.Zero)
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
 
@@ -168,7 +179,7 @@ class EditManager {
     private val _isCropMode = mutableStateOf(false)
     val isCropMode = _isCropMode
 
-    var editionMode: EditionMode by mutableStateOf(EditionMode.IDLE)
+    var editingMode: EditingMode by mutableStateOf(EditingMode.IDLE)
 
     val cropStack = Stack<ImageBitmap>()
     val redoCropStack = Stack<ImageBitmap>()
@@ -273,25 +284,6 @@ class EditManager {
         if (resolution.value == null)
             _resolution.value = maxResolution
         _backgroundColor.value = Color(defaults.colorValue)
-    }
-
-    fun updateAvailableDrawAreaByMatrix() {
-        val drawArea = backgroundImage.value?.let {
-            val drawWidth = it.width * matrixScale.value
-            val drawHeight = it.height * matrixScale.value
-            IntSize(
-                drawWidth.toInt(),
-                drawHeight.toInt()
-            )
-        } ?: run {
-            val drawWidth = resolution.value?.width!! * matrixScale.value
-            val drawHeight = resolution.value?.height!! * matrixScale.value
-            IntSize(
-                drawWidth.toInt(),
-                drawHeight.toInt()
-            )
-        }
-        updateAvailableDrawArea(drawArea)
     }
 
     fun updateAvailableDrawArea(bitmap: ImageBitmap? = backgroundImage.value) {
@@ -536,25 +528,151 @@ class EditManager {
     }
 
     fun toggleEraseMode() {
-        _isEraseMode.value = !isEraseMode.value
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.ERASE
+            EditingMode.ERASE -> EditingMode.IDLE
+            else -> return
+        }
+
+        editingMode = newMode
     }
 
-    fun toggleRotateMode() {
-        _isRotateMode.value = !isRotateMode.value
-        if (isRotateMode.value) editMatrix.set(matrix)
+    fun toggleRotateMode(): Boolean {
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.ROTATE
+            EditingMode.ROTATE -> EditingMode.IDLE
+            else -> return false
+        }
+
+        editingMode = newMode
+
+        val isRotateMode = newMode == EditingMode.ROTATE
+
+        if (!isRotateMode) {
+            cancelRotateMode()
+            scaleToFit()
+            return false
+        }
+
+        editMatrix.set(matrix)
+        setBackgroundImage2()
+        scaleToFitOnEdit()
+
+        return true
     }
 
-    fun toggleCropMode() {
-        _isCropMode.value = !isCropMode.value
-        if (!isCropMode.value) cropWindow.close()
+    fun toggleCropMode(): Boolean {
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.CROP
+            EditingMode.CROP -> EditingMode.IDLE
+            else -> return false
+        }
+
+        editingMode = newMode
+
+        val isCropActivated = newMode == EditingMode.CROP
+
+        if (!isCropActivated) {
+            cancelCropMode()
+            scaleToFit()
+            cropWindow.close()
+            return false
+        }
+
+        val bitmap = imageEditor.getEditedImage(
+            size = imageSize,
+            drawPaths = drawPaths,
+            backgroundImage = backgroundImage.value,
+            prevRotationAngle = prevRotationAngle,
+            backgroundPaint = backgroundPaint
+        )
+        setBackgroundImage2()
+        backgroundImage.value = bitmap
+        cropWindow.init(bitmap.asAndroidBitmap())
+
+        // since we already checked for [false] value earlier
+        return true
     }
 
     fun toggleZoomMode() {
-        _isZoomMode.value = !isZoomMode.value
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.ZOOM
+            EditingMode.ZOOM -> EditingMode.IDLE
+            else -> return
+        }
+
+        editingMode = newMode
     }
 
     fun togglePanMode() {
-        _isPanMode.value = !isPanMode.value
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.PAN
+            EditingMode.PAN -> EditingMode.IDLE
+            else -> return
+        }
+
+        editingMode = newMode
+    }
+
+    fun toggleResizeMode(): Boolean {
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.RESIZE
+            EditingMode.RESIZE -> EditingMode.IDLE
+            else -> return false
+        }
+
+        editingMode = newMode
+
+        val isResizeMode = newMode == EditingMode.RESIZE
+
+        if (!isResizeMode) {
+            cancelResizeMode()
+            scaleToFit()
+            return false
+        }
+
+        setBackgroundImage2()
+        val imgBitmap = imageEditor.getEditedImage(
+            size = imageSize,
+            drawPaths = drawPaths,
+            backgroundImage = backgroundImage.value,
+            prevRotationAngle = prevRotationAngle,
+            backgroundPaint = backgroundPaint
+        )
+        backgroundImage.value = imgBitmap
+        resizeOperation.init(imgBitmap.asAndroidBitmap())
+
+        return true
+    }
+
+    fun toggleBlurMode(): Boolean {
+        val newMode = when (editingMode) {
+            EditingMode.IDLE -> EditingMode.BLUR
+            EditingMode.BLUR -> EditingMode.IDLE
+            else -> return false
+        }
+
+        editingMode = newMode
+
+        val isBlurMode = newMode == EditingMode.BLUR
+
+        if (!isBlurMode) {
+            blurOperation.cancel()
+            scaleToFit()
+            return false
+        }
+
+        setBackgroundImage2()
+        backgroundImage.value = imageEditor.getEditedImage(
+            size = imageSize,
+            drawPaths = drawPaths,
+            backgroundImage = backgroundImage.value,
+            prevRotationAngle = prevRotationAngle,
+            backgroundPaint = backgroundPaint
+        )
+        blurOperation.init()
+
+        return true
     }
 
     fun cancelCropMode() {
@@ -567,43 +685,49 @@ class EditManager {
         editMatrix.reset()
     }
 
-    fun toggleResizeMode() {
-        _isResizeMode.value = !isResizeMode.value
-    }
-
     fun cancelResizeMode() {
         backgroundImage.value = backgroundImage2.value
         editMatrix.reset()
     }
 
-    fun toggleBlurMode() {
-        _isBlurMode.value = !isBlurMode.value
+    private fun cancelEyeDropper(usedColors: List<Color>) {
+        setPaintColor(usedColors.last())
+    }
+
+    fun cancelCurrent(usedColors: List<Color>) {
+        when (editingMode) {
+            EditingMode.ROTATE -> {
+                toggleRotateMode()
+                cancelRotateMode()
+            }
+            EditingMode.CROP -> {
+                toggleCropMode()
+                cancelCropMode()
+            }
+            EditingMode.RESIZE -> {
+                toggleResizeMode()
+                cancelResizeMode()
+            }
+            EditingMode.EYE_DROPPER -> {
+                toggleEyeDropper()
+                cancelEyeDropper(usedColors)
+            }
+            EditingMode.BLUR -> {
+                toggleBlurMode()
+                blurOperation.cancel()
+            }
+            else -> Unit
+        }
+
+        scaleToFit()
     }
 
     fun setPaintStrokeWidth(strokeWidth: Float) {
         drawPaint.value.strokeWidth = strokeWidth
     }
 
-    fun calcImageOffset(): Offset {
-        val drawArea = drawAreaSize.value
-        val allowedArea = availableDrawAreaSize.value
-        val xOffset = ((drawArea.width - allowedArea.width) / 2f)
-            .coerceAtLeast(0f)
-        val yOffset = ((drawArea.height - allowedArea.height) / 2f)
-            .coerceAtLeast(0f)
-        return Offset(xOffset, yOffset)
-    }
-
-    fun calcCenter() = Offset(
+    fun calculateCenter() = Offset(
         availableDrawAreaSize.value.width / 2f,
         availableDrawAreaSize.value.height / 2f
     )
-
-    private companion object {
-        private const val DRAW = "draw"
-        private const val CROP = "crop"
-        private const val RESIZE = "resize"
-        private const val ROTATE = "rotate"
-        private const val BLUR = "blur"
-    }
 }

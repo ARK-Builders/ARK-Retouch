@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalComposeUiApi::class)
 
-package dev.arkbuilders.arkretouch.edition.ui.main
+package dev.arkbuilders.arkretouch.edit.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -41,14 +41,15 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -63,10 +64,12 @@ import android.content.Context
 import android.view.MotionEvent
 import android.widget.Toast
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.edition.model.EditionState
-import dev.arkbuilders.arkretouch.edition.ui.blur.BlurIntensityPopup
-import dev.arkbuilders.arkretouch.edition.ui.canvas.EditCanvasScreen
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropAspectRatiosMenu
+import dev.arkbuilders.arkretouch.common.model.ImageContainer
+import dev.arkbuilders.arkretouch.edit.manager.EditingMode
+import dev.arkbuilders.arkretouch.edit.model.EditingState
+import dev.arkbuilders.arkretouch.edit.ui.blur.BlurIntensityPopup
+import dev.arkbuilders.arkretouch.edit.ui.canvas.EditCanvasScreen
+import dev.arkbuilders.arkretouch.edit.ui.crop.CropAspectRatiosMenu
 import dev.arkbuilders.arkretouch.picker.toPx
 import dev.arkbuilders.arkretouch.presentation.edit.ColorPickerDialog
 import dev.arkbuilders.arkretouch.presentation.edit.ConfirmClearDialog
@@ -100,16 +103,13 @@ fun EditScreen(
         parametersOf(primaryColor, launchedFromIntent, imagePath, imageUri, maxResolution)
     }
 
-    val editionState = viewModel.editionState
+    val editionState = viewModel.editingState
 
     val context = LocalContext.current
-    val showDefaultsDialog = remember {
-        mutableStateOf(
-            imagePath == null && imageUri == null && !viewModel.isLoaded
-        )
-    }
 
-    if (showDefaultsDialog.value) {
+    var showDefaultsDialog by remember { mutableStateOf(!viewModel.isLoaded) }
+
+    if (showDefaultsDialog) {
         viewModel.editManager.apply {
             resolution.value?.let {
                 NewImageOptionsDialog(
@@ -122,7 +122,7 @@ fun EditScreen(
                         viewModel.persistDefaults(color, resolution)
                     },
                     onConfirm = {
-                        showDefaultsDialog.value = false
+                        showDefaultsDialog = false
                     }
                 )
             }
@@ -176,8 +176,9 @@ fun EditScreen(
 
     HandleImageSavedEffect(viewModel, launchedFromIntent, navigateBack)
 
-    if (!showDefaultsDialog.value)
+    if (!showDefaultsDialog) {
         DrawContainer(viewModel, context)
+    }
 
     Menus(
         imagePath,
@@ -213,7 +214,7 @@ private fun Menus(
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
     launchedFromIntent: Boolean,
-    editionState: EditionState,
+    editingState: EditingState,
     navigateBack: () -> Unit,
 ) {
     Box(
@@ -275,7 +276,7 @@ private fun Menus(
                     )
                 }
 
-            EditMenuContainer(viewModel, editionState, navigateBack)
+            EditMenuContainer(viewModel, editingState, navigateBack)
         }
     }
 }
@@ -506,11 +507,11 @@ private fun BoxScope.TopMenu(
 private fun StrokeWidthPopup(
     modifier: Modifier,
     viewModel: EditViewModel,
-    editionState: EditionState
+    editingState: EditingState
 ) {
     val editManager = viewModel.editManager
     editManager.setPaintStrokeWidth(viewModel.strokeWidth.dp.toPx())
-    if (editionState.strokeSliderExpanded) {
+    if (editingState.strokeSliderExpanded) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -551,7 +552,7 @@ private fun StrokeWidthPopup(
 @Composable
 private fun EditMenuContainer(
     viewModel: EditViewModel,
-    editionState: EditionState,
+    editingState: EditingState,
     navigateBack: () -> Unit
 ) {
     Column(
@@ -591,7 +592,7 @@ private fun EditMenuContainer(
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            EditMenuContent(viewModel, editionState)
+            EditMenuContent(viewModel, editingState)
             EditMenuFlowHint(
                 viewModel.bottomButtonsScrollIsAtStart.value,
                 viewModel.bottomButtonsScrollIsAtEnd.value
@@ -603,9 +604,10 @@ private fun EditMenuContainer(
 @Composable
 private fun EditMenuContent(
     viewModel: EditViewModel,
-    editionState: EditionState
+    editingState: EditingState
 ) {
-    val colorDialogExpanded = remember { mutableStateOf(false) }
+
+    val isColorDialogExpanded = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val editManager = viewModel.editManager
     Column(
@@ -613,7 +615,7 @@ private fun EditMenuContent(
             .fillMaxWidth()
             .background(Gray)
     ) {
-        StrokeWidthPopup(Modifier, viewModel, editionState)
+        StrokeWidthPopup(Modifier, viewModel, editingState)
 
         BlurIntensityPopup(editManager)
 
@@ -686,24 +688,22 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .background(color = editManager.paintColor.value)
                     .clickable {
-                        if (editManager.isEyeDropperMode.value) {
+                        val currentMode = editManager.editingMode
+
+                        if (currentMode == EditingMode.EYE_DROPPER) {
                             viewModel.toggleEyeDropper()
                             viewModel.cancelEyeDropper()
-                            colorDialogExpanded.value = true
+                            isColorDialogExpanded.value = true
                             return@clickable
                         }
-                        if (
-                            !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value &&
-                            !editManager.isEraseMode.value &&
-                            !editManager.isBlurMode.value
-                        )
-                            colorDialogExpanded.value = true
+
+                        if (currentMode.isColorMode()) {
+                            isColorDialogExpanded.value = true
+                        }
                     }
             )
             ColorPickerDialog(
-                isVisible = colorDialogExpanded,
+                isVisible = isColorDialogExpanded,
                 initialColor = editManager.paintColor.value,
                 usedColors = viewModel.usedColors,
                 enableEyeDropper = true,
@@ -721,14 +721,15 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
+
                         if (
                             !editManager.isRotateMode.value &&
-                            !editManager.isCropMode.value &&
                             !editManager.isResizeMode.value &&
+                            !editManager.isCropMode.value &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
                         )
-                            viewModel.setStrokeSliderExpanded(isExpanded = !editionState.strokeSliderExpanded)
+                            viewModel.setStrokeSliderExpanded(isExpanded = !editingState.strokeSliderExpanded)
                     },
                 imageVector =
                 ImageVector.vectorResource(R.drawable.ic_line_weight),
@@ -747,23 +748,13 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable {
-                        if (
-                            !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
-                        )
-                            editManager.toggleEraseMode()
-                    },
+                    .clickable { editManager.toggleEraseMode() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
-                tint = if (
-                    editManager.isEraseMode.value
-                )
+                tint = if (editManager.editingMode == EditingMode.ERASE) {
                     MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                } else {
+                    Color.Black
+                },
                 contentDescription = null
             )
             Icon(
@@ -771,17 +762,7 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable {
-                        if (
-                            !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value &&
-                            !editManager.isEraseMode.value
-                        )
-                            editManager.toggleZoomMode()
-                    },
+                    .clickable { editManager.toggleZoomMode() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_zoom_in),
                 tint = if (
                     editManager.isZoomMode.value
@@ -796,24 +777,13 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .clickable {
-                        if (
-                            !editManager.isRotateMode.value &&
-                            !editManager.isResizeMode.value &&
-                            !editManager.isCropMode.value &&
-                            !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value &&
-                            !editManager.isEraseMode.value
-                        )
-                            editManager.togglePanMode()
-                    },
+                    .clickable { editManager.togglePanMode() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_pan_tool),
-                tint = if (
-                    editManager.isPanMode.value
-                )
+                tint = if (editManager.editingMode == EditingMode.PAN) {
                     MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                } else {
+                    Color.Black
+                },
                 contentDescription = null
             )
             Icon(
@@ -822,31 +792,8 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !isRotateMode.value &&
-                                !isResizeMode.value &&
-                                !isEyeDropperMode.value &&
-                                !isEraseMode.value &&
-                                !isBlurMode.value
-                            ) {
-                                toggleCropMode()
-                                viewModel.menusVisible =
-                                    !editManager.isCropMode.value
-                                if (isCropMode.value) {
-                                    val bitmap = viewModel.getEditedImage()
-                                    setBackgroundImage2()
-                                    backgroundImage.value = bitmap
-                                    viewModel.editManager.cropWindow.init(
-                                        bitmap.asAndroidBitmap()
-                                    )
-                                    return@clickable
-                                }
-                                editManager.cancelCropMode()
-                                editManager.scaleToFit()
-                                editManager.cropWindow.close()
-                            }
-                        }
+                        val isCropMode = editManager.toggleCropMode()
+                        viewModel.menusVisible = !isCropMode
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
                 tint = if (
@@ -862,33 +809,16 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !isCropMode.value &&
-                                !isResizeMode.value &&
-                                !isEyeDropperMode.value &&
-                                !isEraseMode.value &&
-                                !isBlurMode.value
-                            ) {
-                                toggleRotateMode()
-                                if (isRotateMode.value) {
-                                    setBackgroundImage2()
-                                    viewModel.menusVisible =
-                                        !editManager.isRotateMode.value
-                                    scaleToFitOnEdit()
-                                    return@clickable
-                                }
-                                cancelRotateMode()
-                                scaleToFit()
-                            }
-                        }
+                        val isRotateMode = editManager.toggleRotateMode()
+                        viewModel.menusVisible = !isRotateMode
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
-                tint = if (editManager.isRotateMode.value)
+                tint = if (editManager.editingMode == EditingMode.ROTATE) {
                     MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                } else {
+                    Color.Black
+                },
                 contentDescription = null
             )
             Icon(
@@ -897,36 +827,16 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !isRotateMode.value &&
-                                !isCropMode.value &&
-                                !isEyeDropperMode.value &&
-                                !isEraseMode.value &&
-                                !isBlurMode.value
-                            )
-                                toggleResizeMode()
-                            else return@clickable
-                            viewModel.menusVisible = !isResizeMode.value
-                            if (isResizeMode.value) {
-                                setBackgroundImage2()
-                                val imgBitmap = viewModel.getEditedImage()
-                                backgroundImage.value = imgBitmap
-                                resizeOperation.init(
-                                    imgBitmap.asAndroidBitmap()
-                                )
-                                return@clickable
-                            }
-                            cancelResizeMode()
-                            scaleToFit()
-                        }
+                        val isResizeMode = editManager.toggleResizeMode()
+                        viewModel.menusVisible = !isResizeMode
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_aspect_ratio),
-                tint = if (editManager.isResizeMode.value)
+                tint = if (editManager.editingMode == EditingMode.RESIZE) {
                     MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                } else {
+                    Color.Black
+                },
                 contentDescription = null
             )
             Icon(
@@ -935,38 +845,25 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !isRotateMode.value &&
-                                !isCropMode.value &&
-                                !isEyeDropperMode.value &&
-                                !isResizeMode.value &&
-                                !isEraseMode.value &&
-                                !editionState.strokeSliderExpanded
-                            ) toggleBlurMode()
-                            if (isBlurMode.value) {
-                                setBackgroundImage2()
-                                backgroundImage.value = viewModel.getEditedImage()
-                                blurOperation.init()
-                                return@clickable
-                            }
-                            blurOperation.cancel()
-                            scaleToFit()
+                        if (editingState.strokeSliderExpanded) {
+                            return@clickable
                         }
+
+                        editManager.toggleBlurMode()
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_blur_on),
-                tint = if (editManager.isBlurMode.value)
+                tint = if (editManager.editingMode == EditingMode.BLUR) {
                     MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                } else {
+                    Color.Black
+                },
                 contentDescription = null
             )
         }
     }
     viewModel.bottomButtonsScrollIsAtStart.value = scrollState.value == 0
-    viewModel.bottomButtonsScrollIsAtEnd.value =
-        scrollState.value == scrollState.maxValue
+    viewModel.bottomButtonsScrollIsAtEnd.value = scrollState.value == scrollState.maxValue
 }
 
 @Composable

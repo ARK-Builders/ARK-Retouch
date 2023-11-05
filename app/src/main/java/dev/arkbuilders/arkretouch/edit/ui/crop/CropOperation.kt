@@ -1,8 +1,8 @@
-package dev.arkbuilders.arkretouch.edition.ui.crop
+package dev.arkbuilders.arkretouch.edit.ui.crop
 
 import androidx.compose.ui.graphics.asImageBitmap
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
-import dev.arkbuilders.arkretouch.edition.model.Operation
+import dev.arkbuilders.arkretouch.edit.manager.EditManager
+import dev.arkbuilders.arkretouch.edit.model.Operation
 import dev.arkbuilders.arkretouch.utils.crop
 
 class CropOperation(
