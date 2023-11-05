@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.main
+package dev.arkbuilders.arkretouch.edit.ui.main
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +32,9 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
-import dev.arkbuilders.arkretouch.edition.model.EditionState
-import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
+import dev.arkbuilders.arkretouch.edit.manager.EditManager
+import dev.arkbuilders.arkretouch.edit.model.EditingState
+import dev.arkbuilders.arkretouch.edit.model.ImageViewParams
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.storage.OldStorageRepository
 import dev.arkbuilders.arkretouch.storage.Resolution
@@ -56,7 +56,7 @@ class EditViewModel(
     private val prefs: OldStorageRepository
 ) : ViewModel() {
 
-    var editionState: EditionState by mutableStateOf(EditionState.DEFAULT)
+    var editingState: EditingState by mutableStateOf(EditingState.DEFAULT)
 
     val editManager = EditManager()
 
@@ -107,7 +107,7 @@ class EditViewModel(
     }
 
     fun setStrokeSliderExpanded(isExpanded: Boolean) {
-        editionState = editionState.copy(strokeSliderExpanded = isExpanded)
+        editingState = editingState.copy(strokeSliderExpanded = isExpanded)
     }
 
     fun loadImage(context: Context) {
@@ -307,6 +307,7 @@ class EditViewModel(
                         pathCanvas.drawPath(it.path, it.paint)
                     }
                 }
+
                 backgroundImage.value?.let {
                     val canvas = Canvas(bitmap)
                     if (prevRotationAngle == 0f && drawPaths.isEmpty()) {
@@ -376,34 +377,10 @@ class EditViewModel(
     }
 
     fun cancelOperation() {
-        editManager.apply {
-            if (isRotateMode.value) {
-                toggleRotateMode()
-                cancelRotateMode()
-                menusVisible = true
-            }
-            if (isCropMode.value) {
-                toggleCropMode()
-                cancelCropMode()
-                menusVisible = true
-            }
-            if (isResizeMode.value) {
-                toggleResizeMode()
-                cancelResizeMode()
-                menusVisible = true
-            }
-            if (isEyeDropperMode.value) {
-                toggleEyeDropper()
-                cancelEyeDropper()
-                menusVisible = true
-            }
-            if (isBlurMode.value) {
-                toggleBlurMode()
-                blurOperation.cancel()
-                menusVisible = true
-            }
-            scaleToFit()
-        }
+        editManager.cancelCurrent(usedColors = usedColors)
+
+        // when menu should be shown?
+        menusVisible = true
     }
 
     fun persistDefaults(color: Color, resolution: Resolution) {

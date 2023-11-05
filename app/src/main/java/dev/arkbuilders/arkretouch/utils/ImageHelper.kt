@@ -2,7 +2,7 @@ package dev.arkbuilders.arkretouch.utils
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow
+import dev.arkbuilders.arkretouch.edit.ui.crop.CropWindow
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
 

@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.canvas
+package dev.arkbuilders.arkretouch.edit.ui.canvas
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.toSize
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.view.MotionEvent
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow.Companion.computeDeltaX
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow.Companion.computeDeltaY
-import dev.arkbuilders.arkretouch.edition.ui.main.EditViewModel
+import dev.arkbuilders.arkretouch.edit.ui.crop.CropWindow.Companion.computeDeltaX
+import dev.arkbuilders.arkretouch.edit.ui.crop.CropWindow.Companion.computeDeltaY
+import dev.arkbuilders.arkretouch.edit.ui.main.EditViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable

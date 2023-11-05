@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.crop
+package dev.arkbuilders.arkretouch.edit.ui.crop
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,13 +26,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.aspectRatios
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.isChanged
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.isCropFree
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.isCropSquare
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.isCrop_2_3
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.isCrop_4_5
-import dev.arkbuilders.arkretouch.edition.ui.crop.AspectRatio.isCrop_9_16
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.aspectRatios
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.isChanged
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.isCropFree
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.isCropSquare
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.isCrop_2_3
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.isCrop_4_5
+import dev.arkbuilders.arkretouch.edit.ui.crop.AspectRatio.isCrop_9_16
 
 @Composable
 fun CropAspectRatiosMenu(

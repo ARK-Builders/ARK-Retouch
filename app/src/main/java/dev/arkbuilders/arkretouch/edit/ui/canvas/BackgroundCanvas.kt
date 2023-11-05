@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.canvas
+package dev.arkbuilders.arkretouch.edit.ui.canvas
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.toSize
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
+import dev.arkbuilders.arkretouch.edit.manager.EditManager
 
 @Composable
 fun BackgroundCanvas(modifier: Modifier, editManager: EditManager) {
