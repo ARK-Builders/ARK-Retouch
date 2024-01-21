@@ -3,7 +3,7 @@ package dev.arkbuilders.arkretouch
 import android.app.Application
 import dev.arkbuilders.arkfilepicker.folders.FoldersRepo
 import dev.arkbuilders.arkretouch.common.CommonModule
-import dev.arkbuilders.arkretouch.edition.EditionModule
+import dev.arkbuilders.arkretouch.edition.EditModule
 import org.acra.config.dialog
 import org.acra.config.httpSender
 import org.acra.data.StringFormat
@@ -50,7 +50,7 @@ class App : Application() {
             androidContext(applicationContext)
             androidLogger(Level.INFO)
             modules(
-                EditionModule.create(),
+                EditModule.create(),
                 CommonModule.create(),
             )
         }
