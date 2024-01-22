@@ -82,6 +82,8 @@ import dev.arkbuilders.arkretouch.presentation.edit.resize.delayHidingHint
 import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.ui.theme.Gray
 import dev.arkbuilders.arkretouch.utils.getActivity
+import dev.arkbuilders.arkretouch.utils.loadImageWithPath
+import dev.arkbuilders.arkretouch.utils.loadImageWithUri
 import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
 import dev.arkbuilders.arkretouch.utils.permission.requestWritePermissions
 import org.koin.androidx.compose.koinViewModel
@@ -353,7 +355,10 @@ private fun DrawContainer(
                         }
                     }
                 }
-                viewModel.loadImage(context = context)
+                viewModel.loadImage(
+                    loadByPath = { path, editManager -> loadImageWithPath(context, path, editManager) },
+                    loadByUri = { uri, editManager -> loadImageWithUri(context, uri, editManager) }
+                )
             },
         contentAlignment = Alignment.Center
     ) {

@@ -15,21 +15,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.view.MotionEvent
-import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import dev.arkbuilders.arkretouch.edition.manager.EditManager
 import dev.arkbuilders.arkretouch.edition.model.EditionState
 import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
@@ -109,22 +101,14 @@ class EditViewModel(
         editionState = editionState.copy(strokeSliderExpanded = isExpanded)
     }
 
-    fun loadImage(context: Context) {
+    fun loadImage(loadByPath: (Path, EditManager) -> Unit, loadByUri: (String, EditManager) -> Unit) {
         isLoaded = true
         imagePath?.let {
-            loadImageWithPath(
-                context,
-                imagePath,
-                editManager
-            )
+            loadByPath(it, editManager)
             return
         }
         imageUri?.let {
-            loadImageWithUri(
-                context,
-                imageUri,
-                editManager
-            )
+            loadByUri(it, editManager)
             return
         }
         editManager.scaleToFit()
@@ -383,56 +367,6 @@ class EditViewModel(
     companion object {
         private const val KEEP_USED_COLORS = 20
     }
-}
-
-// FIXME: Remove context or this function from here
-private fun loadImageWithPath(
-    context: Context,
-    image: Path,
-    editManager: EditManager
-) {
-    initGlideBuilder(context)
-        .load(image.toFile())
-        .loadInto(editManager)
-}
-
-// FIXME: Remove context or this function from here
-private fun loadImageWithUri(
-    context: Context,
-    uri: String,
-    editManager: EditManager
-) {
-    initGlideBuilder(context)
-        .load(uri.toUri())
-        .loadInto(editManager)
-}
-
-// FIXME: Remove context or this function from here
-private fun initGlideBuilder(context: Context) = Glide
-    .with(context)
-    .asBitmap()
-    .skipMemoryCache(true)
-    .diskCacheStrategy(DiskCacheStrategy.NONE)
-
-// FIXME: Remove context or this function from here
-private fun RequestBuilder<Bitmap>.loadInto(
-    editManager: EditManager
-) {
-    into(object : CustomTarget<Bitmap>() {
-        override fun onResourceReady(
-            bitmap: Bitmap,
-            transition: Transition<in Bitmap>?
-        ) {
-            editManager.apply {
-                val image = bitmap.asImageBitmap()
-                backgroundImage.value = image
-                setOriginalBackgroundImage(image)
-                scaleToFit()
-            }
-        }
-
-        override fun onLoadCleared(placeholder: Drawable?) {}
-    })
 }
 
 fun resize(
