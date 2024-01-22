@@ -41,6 +41,7 @@ import dev.arkbuilders.arkretouch.storage.Resolution
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.createTempFile
 import kotlin.io.path.outputStream
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.Dispatchers
@@ -148,9 +149,15 @@ class EditViewModel(
     fun shareImage(context: Context) =
         viewModelScope.launch(Dispatchers.IO) {
             val intent = Intent(Intent.ACTION_SEND)
-            val uri = getCachedImageUri(context)
+            val tempPath = createTempFile(suffix = ".png")
+            val bitmap = getEditedImage().asAndroidBitmap()
+            tempPath.outputStream().use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            Timber.tag("viewmodel: 1").d(Uri.encode(tempPath.toString()).toString())
+            Timber.tag("viewmodel: 2").d(getCachedImageUri(context).toString())
             intent.type = "image/*"
-            intent.putExtra(Intent.EXTRA_STREAM, uri)
+            intent.putExtra(Intent.EXTRA_STREAM, Uri.encode(tempPath.toString()))
             context.apply {
                 startActivity(
                     Intent.createChooser(

@@ -26,6 +26,6 @@ tasks.register('ktlintCheck', JavaExec) {
     args "src/**/*.kt", "**.kts", "!**/build/**"
 }
 
-tasks.preBuild.dependsOn ktlintFormat
+tasks.preBuild.dependsOn ktlintCheck
 
-tasks.ktlintFormat.dependsOn ktlintCheck
+tasks.ktlintCheck.dependsOn ktlintFormat
