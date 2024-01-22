@@ -58,8 +58,10 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentManager
 import android.content.Context
+import android.content.Intent
 import android.view.MotionEvent
 import android.widget.Toast
 import dev.arkbuilders.arkretouch.R
@@ -385,7 +387,22 @@ private fun BoxScope.TopMenu(
                 viewModel.showMoreOptionsPopup = false
             },
             onShareClick = {
-                viewModel.shareImage(context)
+                viewModel.shareImage(
+                    context.cacheDir.toPath(),
+                    provideUri = { file ->
+                        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    },
+                    startShare = { intent ->
+                        context.apply {
+                            startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    getString(R.string.share)
+                                )
+                            )
+                        }
+                    }
+                )
                 viewModel.showMoreOptionsPopup = false
             },
             onSaveClick = {

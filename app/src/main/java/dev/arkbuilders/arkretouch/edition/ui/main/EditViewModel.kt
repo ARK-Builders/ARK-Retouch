@@ -31,7 +31,6 @@ import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import dev.arkbuilders.arkretouch.R
 import dev.arkbuilders.arkretouch.edition.manager.EditManager
 import dev.arkbuilders.arkretouch.edition.model.EditionState
 import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
@@ -41,6 +40,7 @@ import dev.arkbuilders.arkretouch.storage.Resolution
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.createTempFile
 import kotlin.io.path.outputStream
 import kotlin.system.measureTimeMillis
@@ -145,28 +145,19 @@ class EditViewModel(
             isSavingImage = false
         }
 
-    // FIXME: Remove context or this function from here
-    fun shareImage(context: Context) =
+    fun shareImage(root: Path, provideUri: (File) -> Uri, startShare: (Intent) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val intent = Intent(Intent.ACTION_SEND)
-            val tempPath = createTempFile(suffix = ".png")
+            val tempPath = createTempFile(root.resolve("images/"), suffix = ".png")
             val bitmap = getEditedImage().asAndroidBitmap()
             tempPath.outputStream().use { out ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             }
-            Timber.tag("viewmodel: 1").d(Uri.encode(tempPath.toString()).toString())
-            Timber.tag("viewmodel: 2").d(getCachedImageUri(context).toString())
             intent.type = "image/*"
-            intent.putExtra(Intent.EXTRA_STREAM, Uri.encode(tempPath.toString()))
-            context.apply {
-                startActivity(
-                    Intent.createChooser(
-                        intent,
-                        getString(R.string.share)
-                    )
-                )
-            }
+            intent.putExtra(Intent.EXTRA_STREAM, provideUri(tempPath.toFile()))
+            startShare(intent)
         }
+    }
 
     // FIXME: Remove context or this function from here
     private fun getCachedImageUri(
