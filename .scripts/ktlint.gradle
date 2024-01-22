@@ -6,8 +6,8 @@ dependencies {
     ktlint "com.pinterest:ktlint:0.45.2"
 }
 
-task ktlint(type: JavaExec) {
-    main = "com.pinterest.ktlint.Main"
+tasks.register('ktlintFormat', JavaExec) {
+    mainClass = "com.pinterest.ktlint.Main"
     classpath = configurations.ktlint
     args("$rootDir/**/*.kt", "!$rootDir/**/build/**")
     jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
@@ -19,3 +19,13 @@ task ktlint(type: JavaExec) {
         args "-F"
     }
 }
+
+tasks.register('ktlintCheck', JavaExec) {
+    classpath = configurations.ktlint
+    mainClass = "com.pinterest.ktlint.Main"
+    args "src/**/*.kt", "**.kts", "!**/build/**"
+}
+
+tasks.preBuild.dependsOn ktlintFormat
+
+tasks.ktlintFormat.dependsOn ktlintCheck
