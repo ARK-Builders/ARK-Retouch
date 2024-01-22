@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
-import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,7 +39,6 @@ import dev.arkbuilders.arkretouch.storage.Resolution
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.Path
 import kotlin.io.path.createTempFile
 import kotlin.io.path.outputStream
 import kotlin.system.measureTimeMillis
@@ -157,34 +155,6 @@ class EditViewModel(
             intent.putExtra(Intent.EXTRA_STREAM, provideUri(tempPath.toFile()))
             startShare(intent)
         }
-    }
-
-    // FIXME: Remove context or this function from here
-    private fun getCachedImageUri(
-        context: Context,
-        bitmap: Bitmap? = null,
-        name: String = ""
-    ): Uri {
-        var uri: Uri? = null
-        val imageCacheFolder = File(context.cacheDir, "images")
-        val imgBitmap = bitmap ?: getEditedImage().asAndroidBitmap()
-        try {
-            imageCacheFolder.mkdirs()
-            val file = File(imageCacheFolder, "image$name.png")
-            file.outputStream().use { out ->
-                imgBitmap
-                    .compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-            Timber.tag("Cached image path").d(file.path.toString())
-            uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return uri!!
     }
 
     fun trackColor(color: Color) {
