@@ -95,7 +95,7 @@ dependencies {
     kapt "com.github.bumptech.glide:compiler:4.11.0"
 
     implementation 'com.google.dagger:dagger:2.44'
-    kapt 'com.google.dagger:dagger-compiler:2.44'
+    kapt 'com.google.dagger:dagger-compiler:2.50'
 
     implementation 'com.godaddy.android.colorpicker:compose-color-picker:0.5.1'
 
