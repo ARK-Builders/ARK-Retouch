@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.model
+package dev.arkbuilders.arkretouch.editing.model
 
 interface Operation {
     fun apply()

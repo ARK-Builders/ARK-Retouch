@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.manager
+package dev.arkbuilders.arkretouch.editing.manager
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -14,14 +14,14 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.edition.model.DrawPath
-import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
-import dev.arkbuilders.arkretouch.edition.model.Operation
-import dev.arkbuilders.arkretouch.edition.ui.blur.BlurOperation
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropOperation
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropWindow
-import dev.arkbuilders.arkretouch.edition.ui.main.fitBackground
-import dev.arkbuilders.arkretouch.edition.ui.main.fitImage
+import dev.arkbuilders.arkretouch.editing.model.DrawPath
+import dev.arkbuilders.arkretouch.editing.model.ImageViewParams
+import dev.arkbuilders.arkretouch.editing.model.Operation
+import dev.arkbuilders.arkretouch.editing.ui.blur.BlurOperation
+import dev.arkbuilders.arkretouch.editing.ui.crop.CropOperation
+import dev.arkbuilders.arkretouch.editing.ui.crop.CropWindow
+import dev.arkbuilders.arkretouch.editing.ui.main.fitBackground
+import dev.arkbuilders.arkretouch.editing.ui.main.fitImage
 import dev.arkbuilders.arkretouch.presentation.edit.draw.DrawOperation
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
@@ -168,7 +168,7 @@ class EditManager {
     private val _isCropMode = mutableStateOf(false)
     val isCropMode = _isCropMode
 
-    var editionMode: EditionMode by mutableStateOf(EditionMode.IDLE)
+    var editingMode: EditingMode by mutableStateOf(EditingMode.IDLE)
 
     val cropStack = Stack<ImageBitmap>()
     val redoCropStack = Stack<ImageBitmap>()

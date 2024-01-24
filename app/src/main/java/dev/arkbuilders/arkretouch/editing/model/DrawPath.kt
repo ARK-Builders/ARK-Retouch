@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.model
+package dev.arkbuilders.arkretouch.editing.model
 
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path

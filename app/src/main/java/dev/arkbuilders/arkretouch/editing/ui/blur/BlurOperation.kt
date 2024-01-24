@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.blur
+package dev.arkbuilders.arkretouch.editing.ui.blur
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.IntOffset
 import android.content.Context
 import android.graphics.Bitmap
 import com.hoko.blur.processor.HokoBlurBuild
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
-import dev.arkbuilders.arkretouch.edition.model.Operation
+import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.model.Operation
 import java.util.Stack
 
 class BlurOperation(

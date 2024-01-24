@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalComposeUiApi::class)
 
-package dev.arkbuilders.arkretouch.edition.ui.main
+package dev.arkbuilders.arkretouch.editing.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -65,10 +65,10 @@ import android.content.Intent
 import android.view.MotionEvent
 import android.widget.Toast
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.edition.model.EditionState
-import dev.arkbuilders.arkretouch.edition.ui.blur.BlurIntensityPopup
-import dev.arkbuilders.arkretouch.edition.ui.canvas.EditCanvasScreen
-import dev.arkbuilders.arkretouch.edition.ui.crop.CropAspectRatiosMenu
+import dev.arkbuilders.arkretouch.editing.model.EditingState
+import dev.arkbuilders.arkretouch.editing.ui.blur.BlurIntensityPopup
+import dev.arkbuilders.arkretouch.editing.ui.canvas.EditCanvasScreen
+import dev.arkbuilders.arkretouch.editing.ui.crop.CropAspectRatiosMenu
 import dev.arkbuilders.arkretouch.picker.toPx
 import dev.arkbuilders.arkretouch.presentation.edit.ColorPickerDialog
 import dev.arkbuilders.arkretouch.presentation.edit.ConfirmClearDialog
@@ -104,12 +104,12 @@ fun EditScreen(
         parametersOf(primaryColor, launchedFromIntent, imagePath, imageUri, maxResolution)
     }
 
-    val editionState = viewModel.editionState
+    val editingState = viewModel.editingState
 
     val context = LocalContext.current
     val showDefaultsDialog = remember {
         mutableStateOf(
-            imagePath == null && imageUri == null && !viewModel.isLoaded
+            imagePath == null && imageUri == null && !editingState.isLoaded
         )
     }
 
@@ -136,7 +136,7 @@ fun EditScreen(
         viewModel = viewModel,
         navigateBack = {
             navigateBack()
-            viewModel.isLoaded = false
+            viewModel.setIsLoaded(false)
         },
         launchedFromIntent = launchedFromIntent,
     )
@@ -163,14 +163,14 @@ fun EditScreen(
             editManager.undo()
             return@BackHandler
         }
-        if (viewModel.exitConfirmed) {
+        if (viewModel.editingState.exitConfirmed) {
             if (launchedFromIntent)
                 context.getActivity()?.finish()
             else
                 navigateBack()
             return@BackHandler
         }
-        if (!viewModel.exitConfirmed) {
+        if (!viewModel.editingState.exitConfirmed) {
             Toast.makeText(context, "Tap back again to exit", Toast.LENGTH_SHORT)
                 .show()
             viewModel.confirmExit()
@@ -188,24 +188,24 @@ fun EditScreen(
         fragmentManager,
         viewModel,
         launchedFromIntent,
-        editionState,
+        editingState,
         navigateBack
     )
 
-    if (viewModel.isSavingImage) {
+    if (viewModel.editingState.isSavingImage) {
         SaveProgress()
     }
 
-    if (viewModel.showEyeDropperHint) {
+    if (viewModel.editingState.showEyeDropperHint) {
         Box(
             Modifier.fillMaxSize(),
             contentAlignment = Alignment.TopCenter
         ) {
             Hint(stringResource(R.string.pick_color)) {
                 delayHidingHint(it) {
-                    viewModel.showEyeDropperHint = false
+                    viewModel.showEyeDropperHint(false)
                 }
-                viewModel.showEyeDropperHint
+                viewModel.editingState.showEyeDropperHint
             }
         }
     }
@@ -217,7 +217,7 @@ private fun Menus(
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
     launchedFromIntent: Boolean,
-    editionState: EditionState,
+    editingState: EditingState,
     navigateBack: () -> Unit,
 ) {
     Box(
@@ -279,7 +279,7 @@ private fun Menus(
                     )
                 }
 
-            EditMenuContainer(viewModel, editionState, navigateBack)
+            EditMenuContainer(viewModel, editingState, navigateBack)
         }
     }
 }
@@ -310,9 +310,9 @@ private fun DrawContainer(
             }
             .onSizeChanged { newSize ->
                 if (newSize == IntSize.Zero) return@onSizeChanged
-                if (viewModel.showSavePathDialog) return@onSizeChanged
+                if (viewModel.editingState.showSavePathDialog) return@onSizeChanged
                 viewModel.editManager.drawAreaSize.value = newSize
-                if (viewModel.isLoaded) {
+                if (viewModel.editingState.isLoaded) {
                     viewModel.editManager.apply {
                         when (true) {
                             isCropMode.value -> {
@@ -376,20 +376,20 @@ private fun BoxScope.TopMenu(
 ) {
     val context = LocalContext.current
 
-    if (viewModel.showSavePathDialog)
+    if (viewModel.editingState.showSavePathDialog)
         SavePathDialog(
             initialImagePath = imagePath,
             fragmentManager = fragmentManager,
-            onDismissClick = { viewModel.showSavePathDialog = false },
+            onDismissClick = { viewModel.showSavePathDialog(false) },
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath)
-                viewModel.showSavePathDialog = false
+                viewModel.showSavePathDialog(false)
             }
         )
-    if (viewModel.showMoreOptionsPopup)
+    if (viewModel.editingState.showMoreOptionsPopup)
         MoreOptionsPopup(
             onDismissClick = {
-                viewModel.showMoreOptionsPopup = false
+                viewModel.showMoreOptions(false)
             },
             onShareClick = {
                 viewModel.shareImage(
@@ -408,23 +408,23 @@ private fun BoxScope.TopMenu(
                         }
                     }
                 )
-                viewModel.showMoreOptionsPopup = false
+                viewModel.showMoreOptions(false)
             },
             onSaveClick = {
                 if (!context.isWritePermissionGranted()) {
                     context.requestWritePermissions()
                     return@MoreOptionsPopup
                 }
-                viewModel.showSavePathDialog = true
+                viewModel.showSavePathDialog(true)
             },
             onClearEdits = {
-                viewModel.showConfirmClearDialog.value = true
-                viewModel.showMoreOptionsPopup = false
+                viewModel.showConfirmClearDialog(true)
+                viewModel.showMoreOptions(false)
             }
         )
 
     ConfirmClearDialog(
-        viewModel.showConfirmClearDialog,
+        viewModel.editingState.showConfirmClearDialog,
         onConfirm = {
             viewModel.editManager.apply {
                 if (
@@ -434,11 +434,14 @@ private fun BoxScope.TopMenu(
                     !isEyeDropperMode.value
                 ) clearEdits()
             }
+        },
+        onDismiss = {
+            viewModel.showConfirmClearDialog(false)
         }
     )
 
     if (
-        !viewModel.menusVisible &&
+        !viewModel.editingState.menusVisible &&
         !viewModel.editManager.isRotateMode.value &&
         !viewModel.editManager.isResizeMode.value &&
         !viewModel.editManager.isCropMode.value &&
@@ -480,7 +483,7 @@ private fun BoxScope.TopMenu(
                             navigateBack()
                         }
                     } else {
-                        viewModel.showExitDialog = true
+                        viewModel.showExitDialog(true)
                     }
                 }
             },
@@ -508,7 +511,7 @@ private fun BoxScope.TopMenu(
                             return@clickable
                         }
                     }
-                    viewModel.showMoreOptionsPopup = true
+                    viewModel.showMoreOptions(true)
                 },
             imageVector = if (
                 viewModel.editManager.isCropMode.value ||
@@ -528,10 +531,10 @@ private fun BoxScope.TopMenu(
 private fun StrokeWidthPopup(
     modifier: Modifier,
     viewModel: EditViewModel,
-    editionState: EditionState
+    editionState: EditingState
 ) {
     val editManager = viewModel.editManager
-    editManager.setPaintStrokeWidth(viewModel.strokeWidth.dp.toPx())
+    editManager.setPaintStrokeWidth(viewModel.editingState.strokeWidth.dp.toPx())
     if (editionState.strokeSliderExpanded) {
         Column(
             modifier = modifier
@@ -551,7 +554,7 @@ private fun StrokeWidthPopup(
                         )
                         .align(Alignment.Center)
                         .fillMaxWidth()
-                        .height(viewModel.strokeWidth.dp)
+                        .height(viewModel.editingState.strokeWidth.dp)
                         .clip(RoundedCornerShape(30))
                         .background(editManager.paintColor.value)
                 )
@@ -560,9 +563,9 @@ private fun StrokeWidthPopup(
             Slider(
                 modifier = Modifier
                     .fillMaxWidth(),
-                value = viewModel.strokeWidth,
+                value = viewModel.editingState.strokeWidth,
                 onValueChange = {
-                    viewModel.strokeWidth = it
+                    viewModel.setStrokeWidth(it)
                 },
                 valueRange = 0.5f..50f,
             )
@@ -573,7 +576,7 @@ private fun StrokeWidthPopup(
 @Composable
 private fun EditMenuContainer(
     viewModel: EditViewModel,
-    editionState: EditionState,
+    editingState: EditingState,
     navigateBack: () -> Unit
 ) {
     Column(
@@ -597,26 +600,26 @@ private fun EditMenuContainer(
                 .clip(RoundedCornerShape(topStartPercent = 30, topEndPercent = 30))
                 .background(Gray)
                 .clickable {
-                    viewModel.menusVisible = !viewModel.menusVisible
+                    viewModel.toggleMenus()
                 },
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                if (viewModel.menusVisible) Icons.Filled.KeyboardArrowDown
+                if (viewModel.editingState.menusVisible) Icons.Filled.KeyboardArrowDown
                 else Icons.Filled.KeyboardArrowUp,
                 contentDescription = "",
                 modifier = Modifier.size(32.dp),
             )
         }
         AnimatedVisibility(
-            visible = viewModel.menusVisible,
+            visible = viewModel.editingState.menusVisible,
             enter = expandVertically(expandFrom = Alignment.Bottom),
             exit = shrinkVertically(shrinkTowards = Alignment.Top)
         ) {
-            EditMenuContent(viewModel, editionState)
+            EditMenuContent(viewModel, editingState)
             EditMenuFlowHint(
-                viewModel.bottomButtonsScrollIsAtStart.value,
-                viewModel.bottomButtonsScrollIsAtEnd.value
+                viewModel.editingState.bottomButtonsScrollIsAtStart,
+                viewModel.editingState.bottomButtonsScrollIsAtEnd
             )
         }
     }
@@ -625,7 +628,7 @@ private fun EditMenuContainer(
 @Composable
 private fun EditMenuContent(
     viewModel: EditViewModel,
-    editionState: EditionState
+    editingState: EditingState
 ) {
     val colorDialogExpanded = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -635,7 +638,7 @@ private fun EditMenuContent(
             .fillMaxWidth()
             .background(Gray)
     ) {
-        StrokeWidthPopup(Modifier, viewModel, editionState)
+        StrokeWidthPopup(Modifier, viewModel, editingState)
 
         BlurIntensityPopup(editManager)
 
@@ -727,7 +730,7 @@ private fun EditMenuContent(
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
                 initialColor = editManager.paintColor.value,
-                usedColors = viewModel.usedColors,
+                usedColors = viewModel.editingState.usedColors,
                 enableEyeDropper = true,
                 onToggleEyeDropper = {
                     viewModel.toggleEyeDropper()
@@ -750,7 +753,7 @@ private fun EditMenuContent(
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
                         )
-                            viewModel.setStrokeSliderExpanded(isExpanded = !editionState.strokeSliderExpanded)
+                            viewModel.setStrokeSliderExpanded(isExpanded = !editingState.strokeSliderExpanded)
                     },
                 imageVector =
                 ImageVector.vectorResource(R.drawable.ic_line_weight),
@@ -853,8 +856,7 @@ private fun EditMenuContent(
                                 !isBlurMode.value
                             ) {
                                 toggleCropMode()
-                                viewModel.menusVisible =
-                                    !editManager.isCropMode.value
+                                viewModel.showMenus(!editManager.isCropMode.value)
                                 if (isCropMode.value) {
                                     val bitmap = viewModel.getEditedImage()
                                     setBackgroundImage2()
@@ -895,8 +897,7 @@ private fun EditMenuContent(
                                 toggleRotateMode()
                                 if (isRotateMode.value) {
                                     setBackgroundImage2()
-                                    viewModel.menusVisible =
-                                        !editManager.isRotateMode.value
+                                    viewModel.showMenus(!editManager.isRotateMode.value)
                                     scaleToFitOnEdit()
                                     return@clickable
                                 }
@@ -929,7 +930,7 @@ private fun EditMenuContent(
                             )
                                 toggleResizeMode()
                             else return@clickable
-                            viewModel.menusVisible = !isResizeMode.value
+                            viewModel.showMenus(!isResizeMode.value)
                             if (isResizeMode.value) {
                                 setBackgroundImage2()
                                 val imgBitmap = viewModel.getEditedImage()
@@ -964,7 +965,7 @@ private fun EditMenuContent(
                                 !isEyeDropperMode.value &&
                                 !isResizeMode.value &&
                                 !isEraseMode.value &&
-                                !editionState.strokeSliderExpanded
+                                !editingState.strokeSliderExpanded
                             ) toggleBlurMode()
                             if (isBlurMode.value) {
                                 setBackgroundImage2()
@@ -986,9 +987,10 @@ private fun EditMenuContent(
             )
         }
     }
-    viewModel.bottomButtonsScrollIsAtStart.value = scrollState.value == 0
-    viewModel.bottomButtonsScrollIsAtEnd.value =
+    viewModel.setBottomButtonsScrollIsAtStart(scrollState.value == 0)
+    viewModel.setBottomButtonsScrollIsAtEnd(
         scrollState.value == scrollState.maxValue
+    )
 }
 
 @Composable
@@ -1037,8 +1039,8 @@ private fun HandleImageSavedEffect(
     navigateBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    LaunchedEffect(viewModel.imageSaved) {
-        if (!viewModel.imageSaved)
+    LaunchedEffect(viewModel.editingState.imageSaved) {
+        if (!viewModel.editingState.imageSaved)
             return@LaunchedEffect
         if (launchedFromIntent)
             context.getActivity()?.finish()
@@ -1053,13 +1055,13 @@ private fun ExitDialog(
     navigateBack: () -> Unit,
     launchedFromIntent: Boolean
 ) {
-    if (!viewModel.showExitDialog) return
+    if (!viewModel.editingState.showExitDialog) return
 
     val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = {
-            viewModel.showExitDialog = false
+            viewModel.showExitDialog(false)
         },
         title = {
             Text(
@@ -1071,8 +1073,8 @@ private fun ExitDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    viewModel.showExitDialog = false
-                    viewModel.showSavePathDialog = true
+                    viewModel.showExitDialog(false)
+                    viewModel.showSavePathDialog(true)
                 }
             ) {
                 Text("Save")
@@ -1081,7 +1083,7 @@ private fun ExitDialog(
         dismissButton = {
             TextButton(
                 onClick = {
-                    viewModel.showExitDialog = false
+                    viewModel.showExitDialog(false)
                     if (launchedFromIntent) {
                         context.getActivity()?.finish()
                     } else {

@@ -1,7 +1,7 @@
-package dev.arkbuilders.arkretouch.edition
+package dev.arkbuilders.arkretouch.di
 
 import com.etherean.app.common.di.InjectionModule
-import dev.arkbuilders.arkretouch.edition.ui.main.EditViewModel
+import dev.arkbuilders.arkretouch.editing.ui.main.EditViewModel
 import dev.arkbuilders.arkretouch.storage.Resolution
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module

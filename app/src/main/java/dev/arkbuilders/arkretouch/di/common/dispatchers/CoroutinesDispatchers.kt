@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.common.dispatchers
+package dev.arkbuilders.arkretouch.di.common.dispatchers
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

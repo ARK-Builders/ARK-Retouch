@@ -10,7 +10,7 @@ import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import java.nio.file.Path
 
 fun loadImageWithPath(

@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.main
+package dev.arkbuilders.arkretouch.editing.ui.main
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,15 +22,16 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.net.Uri
 import android.view.MotionEvent
-import dev.arkbuilders.arkretouch.edition.manager.EditManager
-import dev.arkbuilders.arkretouch.edition.model.EditionState
-import dev.arkbuilders.arkretouch.edition.model.ImageViewParams
+import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.model.EditingState
+import dev.arkbuilders.arkretouch.editing.model.ImageViewParams
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.storage.OldStorageRepository
 import dev.arkbuilders.arkretouch.storage.Resolution
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.createTempDirectory
 import kotlin.io.path.createTempFile
 import kotlin.io.path.outputStream
 import kotlin.system.measureTimeMillis
@@ -47,29 +48,12 @@ class EditViewModel(
     private val prefs: OldStorageRepository
 ) : ViewModel() {
 
-    var editionState: EditionState by mutableStateOf(EditionState.DEFAULT)
+    private val _usedColors = mutableListOf<Color>()
+
+    private var _editingState: EditingState by mutableStateOf(EditingState.DEFAULT.copy(usedColors = _usedColors))
+    val editingState: EditingState get() = _editingState
 
     val editManager = EditManager()
-
-    // TODO: Move each field into [EditionState] in next PRs
-    var menusVisible by mutableStateOf(true)
-    var strokeWidth by mutableStateOf(5f)
-    var showSavePathDialog by mutableStateOf(false)
-    val showOverwriteCheckbox = mutableStateOf(imagePath != null)
-    var showExitDialog by mutableStateOf(false)
-    var showMoreOptionsPopup by mutableStateOf(false)
-    var imageSaved by mutableStateOf(false)
-    var isSavingImage by mutableStateOf(false)
-    var showEyeDropperHint by mutableStateOf(false)
-    val showConfirmClearDialog = mutableStateOf(false)
-    var isLoaded by mutableStateOf(false)
-    var exitConfirmed = false
-        private set
-    val bottomButtonsScrollIsAtStart = mutableStateOf(true)
-    val bottomButtonsScrollIsAtEnd = mutableStateOf(false)
-
-    private val _usedColors = mutableListOf<Color>()
-    val usedColors: List<Color> = _usedColors
 
     init {
         if (imageUri == null && imagePath == null) {
@@ -83,26 +67,55 @@ class EditViewModel(
         loadDefaultPaintColor()
     }
 
-    private fun loadDefaultPaintColor() {
-        viewModelScope.launch {
-            _usedColors.addAll(prefs.readUsedColors())
+    fun toggleMenus() {
+        _editingState = editingState.copy(menusVisible = !editingState.menusVisible)
+    }
 
-            val color = if (_usedColors.isNotEmpty()) {
-                _usedColors.last()
-            } else {
-                Color(primaryColor.toULong()).also { _usedColors.add(it) }
-            }
+    fun showMenus(bool: Boolean) {
+        _editingState = editingState.copy(menusVisible = bool)
+    }
 
-            editManager.setPaintColor(color)
-        }
+    fun setStrokeWidth(width: Float) {
+        _editingState = editingState.copy(strokeWidth = width)
+    }
+
+    fun showSavePathDialog(bool: Boolean) {
+        _editingState = editingState.copy(showSavePathDialog = bool)
+    }
+
+    fun showExitDialog(bool: Boolean) {
+        _editingState = editingState.copy(showExitDialog = bool)
+    }
+
+    fun showMoreOptions(bool: Boolean) {
+        _editingState = editingState.copy(showMoreOptionsPopup = bool)
+    }
+
+    fun showEyeDropperHint(bool: Boolean) {
+        _editingState = editingState.copy(showEyeDropperHint = bool)
+    }
+
+    fun showConfirmClearDialog(bool: Boolean) {
+        _editingState = editingState.copy(showConfirmClearDialog = bool)
+    }
+
+    fun setIsLoaded(bool: Boolean) {
+        _editingState = editingState.copy(isLoaded = bool)
+    }
+
+    fun setBottomButtonsScrollIsAtStart(bool: Boolean) {
+        _editingState = editingState.copy(bottomButtonsScrollIsAtStart = bool)
+    }
+    fun setBottomButtonsScrollIsAtEnd(bool: Boolean) {
+        _editingState = editingState.copy(bottomButtonsScrollIsAtEnd = bool)
     }
 
     fun setStrokeSliderExpanded(isExpanded: Boolean) {
-        editionState = editionState.copy(strokeSliderExpanded = isExpanded)
+        _editingState = editingState.copy(strokeSliderExpanded = isExpanded)
     }
 
     fun loadImage(loadByPath: (Path, EditManager) -> Unit, loadByUri: (String, EditManager) -> Unit) {
-        isLoaded = true
+        _editingState = editingState.copy(isLoaded = true)
         imagePath?.let {
             loadByPath(it, editManager)
             return
@@ -116,21 +129,20 @@ class EditViewModel(
 
     fun saveImage(savePath: Path) =
         viewModelScope.launch(Dispatchers.IO) {
-            isSavingImage = true
+            _editingState = editingState.copy(isSavingImage = true)
             val combinedBitmap = getEditedImage()
 
             savePath.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
-            imageSaved = true
-            isSavingImage = false
+            _editingState = editingState.copy(imageSaved = true, isSavingImage = false)
         }
 
     fun shareImage(root: Path, provideUri: (File) -> Uri, startShare: (Intent) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val intent = Intent(Intent.ACTION_SEND)
-            val tempPath = createTempFile(root.resolve("images/"), suffix = ".png")
+            val tempPath = createTempFile(createTempDirectory(root.resolve("images/")), suffix = ".png")
             val bitmap = getEditedImage().asAndroidBitmap()
             tempPath.outputStream().use { out ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
@@ -151,7 +163,7 @@ class EditViewModel(
         }
 
         viewModelScope.launch {
-            prefs.persistUsedColors(usedColors)
+            prefs.persistUsedColors(editingState.usedColors)
         }
     }
 
@@ -160,7 +172,7 @@ class EditViewModel(
     }
 
     fun cancelEyeDropper() {
-        editManager.setPaintColor(usedColors.last())
+        editManager.setPaintColor(editingState.usedColors.last())
     }
 
     fun applyEyeDropper(action: Int, x: Int, y: Int) {
@@ -171,14 +183,14 @@ class EditViewModel(
             val pixel = bitmap.getPixel(imageX, imageY)
             val color = Color(pixel)
             if (color == Color.Transparent) {
-                showEyeDropperHint = true
+                showEyeDropperHint(true)
                 return
             }
             when (action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> {
                     trackColor(color)
                     toggleEyeDropper()
-                    menusVisible = true
+                    showMenus(true)
                 }
             }
             editManager.setPaintColor(color)
@@ -315,16 +327,14 @@ class EditViewModel(
     }
 
     fun confirmExit() = viewModelScope.launch {
-        exitConfirmed = true
-        isLoaded = false
+        _editingState = editingState.copy(exitConfirmed = true, isLoaded = false)
         delay(2_000)
-        exitConfirmed = false
-        isLoaded = true
+        _editingState = editingState.copy(exitConfirmed = false, isLoaded = true)
     }
 
     fun applyOperation() {
         editManager.applyOperation()
-        menusVisible = true
+        _editingState = editingState.copy(menusVisible = true)
     }
 
     fun cancelOperation() {
@@ -332,27 +342,27 @@ class EditViewModel(
             if (isRotateMode.value) {
                 toggleRotateMode()
                 cancelRotateMode()
-                menusVisible = true
+                _editingState = editingState.copy(menusVisible = true)
             }
             if (isCropMode.value) {
                 toggleCropMode()
                 cancelCropMode()
-                menusVisible = true
+                _editingState = editingState.copy(menusVisible = true)
             }
             if (isResizeMode.value) {
                 toggleResizeMode()
                 cancelResizeMode()
-                menusVisible = true
+                _editingState = editingState.copy(menusVisible = true)
             }
             if (isEyeDropperMode.value) {
                 toggleEyeDropper()
                 cancelEyeDropper()
-                menusVisible = true
+                _editingState = editingState.copy(menusVisible = true)
             }
             if (isBlurMode.value) {
                 toggleBlurMode()
                 blurOperation.cancel()
-                menusVisible = true
+                _editingState = editingState.copy(menusVisible = true)
             }
             scaleToFit()
         }
@@ -361,6 +371,20 @@ class EditViewModel(
     fun persistDefaults(color: Color, resolution: Resolution) {
         viewModelScope.launch {
             prefs.persistDefaults(color, resolution)
+        }
+    }
+
+    private fun loadDefaultPaintColor() {
+        viewModelScope.launch {
+            _usedColors.addAll(prefs.readUsedColors())
+
+            val color = if (_usedColors.isNotEmpty()) {
+                _usedColors.last()
+            } else {
+                Color(primaryColor.toULong()).also { _usedColors.add(it) }
+            }
+
+            editManager.setPaintColor(color)
         }
     }
 

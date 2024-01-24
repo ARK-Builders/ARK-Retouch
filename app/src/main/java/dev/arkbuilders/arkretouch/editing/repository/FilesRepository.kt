@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.repository
+package dev.arkbuilders.arkretouch.editing.repository
 
 import androidx.core.content.FileProvider
 import android.content.Context

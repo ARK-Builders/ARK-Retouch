@@ -1,4 +1,4 @@
-package dev.arkbuilders.arkretouch.edition.ui.canvas
+package dev.arkbuilders.arkretouch.editing.ui.canvas
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import dev.arkbuilders.arkretouch.edition.ui.main.EditViewModel
+import dev.arkbuilders.arkretouch.editing.ui.main.EditViewModel
 import dev.arkbuilders.arkretouch.picker.toDp
 import dev.arkbuilders.arkretouch.presentation.edit.TransparencyChessBoardCanvas
 import dev.arkbuilders.arkretouch.utils.calculateRotationFromOneFingerGesture
