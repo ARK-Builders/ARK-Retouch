@@ -1,4 +1,4 @@
-package com.etherean.app.common.di
+package dev.arkbuilders.arkretouch.di.common
 
 import org.koin.core.module.Module
 
