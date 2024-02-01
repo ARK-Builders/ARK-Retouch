@@ -14,7 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import dev.arkbuilders.arkretouch.edition.ui.main.EditScreen
+import dev.arkbuilders.arkretouch.editing.ui.main.EditScreen
 import dev.arkbuilders.arkretouch.picker.PickerScreen
 import dev.arkbuilders.arkretouch.storage.Resolution
 import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper
