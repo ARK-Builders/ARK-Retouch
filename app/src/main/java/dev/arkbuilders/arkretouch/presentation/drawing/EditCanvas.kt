@@ -228,6 +228,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 currentPoint.x = eventX
                 currentPoint.y = eventY
             }
+            else -> {}
         }
     }
 
