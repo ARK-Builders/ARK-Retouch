@@ -48,7 +48,9 @@ fun BlurIntensityPopup(
                         editManager.blurOperation.blurSize.value = it
                         editManager.blurOperation.resize()
                     },
-                    valueRange = 100f..500f,
+                    valueRange =
+                    editManager.blurOperation.minBlurSize..editManager
+                        .blurOperation.maxBlurSize,
                 )
             }
         }
