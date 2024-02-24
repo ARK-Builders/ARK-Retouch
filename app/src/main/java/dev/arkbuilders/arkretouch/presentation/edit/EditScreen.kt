@@ -76,6 +76,7 @@ import dev.arkbuilders.arkretouch.presentation.theme.Gray
 import dev.arkbuilders.arkretouch.presentation.utils.askWritePermissions
 import dev.arkbuilders.arkretouch.presentation.utils.getActivity
 import dev.arkbuilders.arkretouch.presentation.utils.isWritePermGranted
+import dev.arkbuilders.arkretouch.presentation.utils.toast
 import java.nio.file.Path
 
 @Composable
@@ -364,6 +365,9 @@ private fun BoxScope.TopMenu(
         SavePathDialog(
             initialImagePath = imagePath,
             fragmentManager = fragmentManager,
+            onEmptyFileName = {
+                context.toast(R.string.ark_retouch_file_name_missing)
+            },
             onDismissClick = { viewModel.showSavePathDialog = false },
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath)

@@ -36,4 +36,5 @@
     <string name="height_empty">Please enter height</string>
     <string name="blur_intensity">Intensity</string>
     <string name="blur_size">Size</string>
+    <string name="ark_retouch_file_name_missing">Please provide file name</string>
 </resources>
