@@ -44,6 +44,8 @@ import kotlin.io.path.name
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.key
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalContext
+import dev.arkbuilders.arkretouch.presentation.utils.toast
 import java.nio.file.Files
 import kotlin.streams.toList
 
@@ -166,6 +168,7 @@ fun SavePathDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
+                    val context = LocalContext.current
                     TextButton(
                         modifier = Modifier.padding(5.dp),
                         onClick = onDismissClick
@@ -175,8 +178,17 @@ fun SavePathDialog(
                     Button(
                         modifier = Modifier.padding(5.dp),
                         onClick = {
-                            if (currentPath != null && name != null)
-                                onPositiveClick(currentPath!!.resolve(name))
+                            if (currentPath == null) {
+                                with(context) {
+                                    toast(
+                                        getString(
+                                            R.string.ark_retouch_notify_choose_folder
+                                        )
+                                    )
+                                }
+                                return@Button
+                            }
+                            onPositiveClick(currentPath?.resolve(name)!!)
                         }
                     ) {
                         Text(text = stringResource(R.string.ok))

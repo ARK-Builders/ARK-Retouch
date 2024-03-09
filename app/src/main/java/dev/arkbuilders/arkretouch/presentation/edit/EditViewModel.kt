@@ -137,6 +137,7 @@ class EditViewModel(
             }
             imageSaved = true
             isSavingImage = false
+            showSavePathDialog = false
         }
 
     fun shareImage(context: Context) =

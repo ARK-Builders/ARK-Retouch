@@ -367,7 +367,6 @@ private fun BoxScope.TopMenu(
             onDismissClick = { viewModel.showSavePathDialog = false },
             onPositiveClick = { savePath ->
                 viewModel.saveImage(savePath)
-                viewModel.showSavePathDialog = false
             }
         )
     if (viewModel.showMoreOptionsPopup)

@@ -308,7 +308,7 @@ fun NewImageOptionsDialog(
                             isVisible = false
                         }
                     ) {
-                        Text("Ok")
+                        Text(stringResource(R.string.ok))
                     }
                 }
             }
