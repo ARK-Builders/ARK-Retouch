@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.drawable.Drawable
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.view.MotionEvent
 import androidx.compose.runtime.getValue
@@ -126,18 +127,24 @@ class EditViewModel(
         editManager.scaleToFit()
     }
 
-    fun saveImage(savePath: Path) =
+    fun saveImage(context: Context, path: Path) {
         viewModelScope.launch(Dispatchers.IO) {
             isSavingImage = true
             val combinedBitmap = getEditedImage()
 
-            savePath.outputStream().use { out ->
+            path.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(path.toString()),
+                arrayOf("image/*")
+            ) { _, _ -> }
             imageSaved = true
             isSavingImage = false
         }
+    }
 
     fun shareImage(context: Context) =
         viewModelScope.launch(Dispatchers.IO) {
