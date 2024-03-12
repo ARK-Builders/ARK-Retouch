@@ -52,6 +52,7 @@ import kotlin.streams.toList
 fun SavePathDialog(
     initialImagePath: Path?,
     fragmentManager: FragmentManager,
+    onEmptyFileName: () -> Unit,
     onDismissClick: () -> Unit,
     onPositiveClick: (Path) -> Unit
 ) {
@@ -128,6 +129,10 @@ fun SavePathDialog(
                     value = name,
                     onValueChange = {
                         name = it
+                        if (name.isEmpty()) {
+                            onEmptyFileName()
+                            return@OutlinedTextField
+                        }
                         currentPath?.let { path ->
                             imagePath = path.resolve(name)
                             showOverwriteCheckbox.value = Files.list(path).toList()
@@ -175,7 +180,11 @@ fun SavePathDialog(
                     Button(
                         modifier = Modifier.padding(5.dp),
                         onClick = {
-                            if (currentPath != null && name != null)
+                            if (name.isEmpty()) {
+                                onEmptyFileName()
+                                return@Button
+                            }
+                            if (currentPath != null)
                                 onPositiveClick(currentPath!!.resolve(name))
                         }
                     ) {
