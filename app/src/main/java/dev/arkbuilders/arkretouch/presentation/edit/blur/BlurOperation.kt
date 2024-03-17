@@ -24,12 +24,23 @@ class BlurOperation(private val editManager: EditManager) : Operation {
     private val redoBlurs = Stack<ImageBitmap>()
     private var offset = Offset.Zero
     private var bitmapPosition = IntOffset.Zero
-
-    val blurSize = mutableStateOf(BRUSH_SIZE.toFloat())
+    val blurSize = mutableStateOf(0f)
+    private var _minBlurSize = 0f
+    private var _maxBlurSize = 0f
+    val minBlurSize get() = _minBlurSize
+    val maxBlurSize get() = _maxBlurSize
 
     fun init() {
         editManager.apply {
             backgroundImage.value?.let {
+                _minBlurSize = if (it.width <= it.height) {
+                    _maxBlurSize = it.width.toFloat()
+                    it.width * 0.2f
+                } else {
+                    _maxBlurSize = it.height.toFloat()
+                    it.height * 0.2f
+                }
+                blurSize.value = minBlurSize
                 bitmapPosition = IntOffset(
                     (it.width / 2) - (blurSize.value.toInt() / 2),
                     (it.height / 2) - (blurSize.value.toInt() / 2)
@@ -61,22 +72,20 @@ class BlurOperation(private val editManager: EditManager) : Operation {
     }
 
     fun draw(context: Context, canvas: Canvas) {
-        if (blurSize.value in MIN_SIZE..MAX_SIZE) {
-            editManager.backgroundImage.value?.let {
-                this.context = context
-                if (isWithinBounds(it)) {
-                    offset = Offset(
-                        bitmapPosition.x.toFloat(),
-                        bitmapPosition.y.toFloat()
-                    )
-                }
-                blur(context)
-                canvas.drawImage(
-                    blurredBitmap.asImageBitmap(),
-                    offset,
-                    Paint()
+        editManager.backgroundImage.value?.let {
+            this.context = context
+            if (isWithinBounds(it)) {
+                offset = Offset(
+                    bitmapPosition.x.toFloat(),
+                    bitmapPosition.y.toFloat()
                 )
             }
+            blur(context)
+            canvas.drawImage(
+                blurredBitmap.asImageBitmap(),
+                offset,
+                Paint()
+            )
         }
     }
 
@@ -173,11 +182,5 @@ class BlurOperation(private val editManager: EditManager) : Operation {
             blurredBitmap =
                 blurProcessor.blur(brushBitmap)
         }
-    }
-
-    companion object {
-        private const val BRUSH_SIZE = 250
-        const val MAX_SIZE = 500f
-        const val MIN_SIZE = 100f
     }
 }
