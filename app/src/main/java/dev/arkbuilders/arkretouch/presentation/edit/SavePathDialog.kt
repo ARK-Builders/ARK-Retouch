@@ -54,7 +54,6 @@ import kotlin.streams.toList
 fun SavePathDialog(
     initialImagePath: Path?,
     fragmentManager: FragmentManager,
-    onEmptyFileName: () -> Unit,
     onDismissClick: () -> Unit,
     onPositiveClick: (Path) -> Unit
 ) {
@@ -71,6 +70,8 @@ fun SavePathDialog(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    val context = LocalContext.current
 
     LaunchedEffect(overwriteOriginalPath) {
         if (overwriteOriginalPath) {
@@ -132,7 +133,9 @@ fun SavePathDialog(
                     onValueChange = {
                         name = it
                         if (name.isEmpty()) {
-                            onEmptyFileName()
+                            context.toast(
+                                R.string.ark_retouch_notify_missing_file_name
+                            )
                             return@OutlinedTextField
                         }
                         currentPath?.let { path ->
@@ -173,7 +176,6 @@ fun SavePathDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    val context = LocalContext.current
                     TextButton(
                         modifier = Modifier.padding(5.dp),
                         onClick = onDismissClick
@@ -184,13 +186,15 @@ fun SavePathDialog(
                         modifier = Modifier.padding(5.dp),
                         onClick = {
                             if (name.isEmpty()) {
-                                onEmptyFileName()
+                                context.toast(
+                                    R.string.ark_retouch_notify_missing_file_name
+                                )
                                 return@Button
                             }
                             if (currentPath == null) {
-                                with(context) {
-                                    toast(R.string.ark_retouch_notify_choose_folder)
-                                }
+                                context.toast(
+                                    R.string.ark_retouch_notify_choose_folder
+                                )
                                 return@Button
                             }
                             onPositiveClick(currentPath?.resolve(name)!!)

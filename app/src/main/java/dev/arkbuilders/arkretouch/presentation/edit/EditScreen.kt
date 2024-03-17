@@ -364,12 +364,9 @@ private fun BoxScope.TopMenu(
         SavePathDialog(
             initialImagePath = imagePath,
             fragmentManager = fragmentManager,
-            onEmptyFileName = {
-                context.toast(R.string.ark_retouch_file_name_missing)
-            },
             onDismissClick = { viewModel.showSavePathDialog = false },
             onPositiveClick = { savePath ->
-                viewModel.saveImage(savePath)
+                viewModel.saveImage(context, savePath)
             }
         )
     if (viewModel.showMoreOptionsPopup)
