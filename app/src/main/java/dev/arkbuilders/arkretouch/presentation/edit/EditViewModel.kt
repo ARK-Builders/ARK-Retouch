@@ -143,6 +143,7 @@ class EditViewModel(
             ) { _, _ -> }
             imageSaved = true
             isSavingImage = false
+            showSavePathDialog = false
         }
     }
 
