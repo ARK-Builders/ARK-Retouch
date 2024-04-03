@@ -6,7 +6,7 @@ dependencies {
     ktlint "com.pinterest:ktlint:0.45.2"
 }
 
-tasks.register('ktlintFormat', JavaExec) {
+tasks.register('ktlint', JavaExec) {
     mainClass = "com.pinterest.ktlint.Main"
     classpath = configurations.ktlint
     args("$rootDir/**/*.kt", "!$rootDir/**/build/**")
@@ -28,4 +28,4 @@ tasks.register('ktlintCheck', JavaExec) {
 
 tasks.preBuild.dependsOn ktlintCheck
 
-tasks.ktlintCheck.dependsOn ktlintFormat
+tasks.ktlintCheck.dependsOn ktlint

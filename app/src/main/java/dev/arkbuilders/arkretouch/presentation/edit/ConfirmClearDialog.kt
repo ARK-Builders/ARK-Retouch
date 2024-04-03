@@ -6,21 +6,21 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun ConfirmClearDialog(
-    show: MutableState<Boolean>,
+    show: Boolean,
+    onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    if (!show.value) return
+    if (!show) return
 
     AlertDialog(
         onDismissRequest = {
-            show.value = false
+            onDismiss()
         },
         title = {
             Text(
@@ -32,8 +32,8 @@ fun ConfirmClearDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    show.value = false
                     onConfirm()
+                    onDismiss()
                 }
             ) {
                 Text("Clear")
@@ -42,7 +42,7 @@ fun ConfirmClearDialog(
         dismissButton = {
             TextButton(
                 onClick = {
-                    show.value = false
+                    onDismiss()
                 }
             ) {
                 Text("Cancel")
