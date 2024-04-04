@@ -2,9 +2,9 @@ package dev.arkbuilders.arkretouch.utils
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.editing.ui.crop.CropWindow
-import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
-import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
+import dev.arkbuilders.arkretouch.editing.crop.CropWindow
+import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.editing.rotate.RotateOperation
 
 fun Bitmap.crop(cropParams: CropWindow.CropParams): Bitmap = Bitmap.createBitmap(
     this,

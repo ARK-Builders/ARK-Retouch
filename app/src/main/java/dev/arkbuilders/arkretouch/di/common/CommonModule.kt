@@ -1,7 +1,7 @@
 package dev.arkbuilders.arkretouch.di.common
 
-import dev.arkbuilders.arkretouch.editing.repository.FilesRepository
-import dev.arkbuilders.arkretouch.storage.OldStorageRepository
+import dev.arkbuilders.arkretouch.data.repo.FilesRepository
+import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
