@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
 import dev.arkbuilders.arkretouch.presentation.picker.toDp
+import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
 import dev.arkbuilders.arkretouch.presentation.views.TransparencyChessBoardCanvas
 import dev.arkbuilders.arkretouch.utils.calculateRotationFromOneFingerGesture
 
@@ -32,7 +32,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
     fun resetScaleAndTranslate() {
         editManager.apply {
             if (
-                isRotateMode.value || isCropMode.value || isResizeMode.value ||
+                isRotateMode.value || viewModel.isCropping() || isResizeMode.value ||
                 isBlurMode.value
             ) {
                 scale = 1f; zoomScale = scale; offset = Offset.Zero
@@ -62,7 +62,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                 translationY = offset.y
             }
         TransparencyChessBoardCanvas(modifier, editManager)
-        BackgroundCanvas(modifier, editManager)
+        BackgroundCanvas(modifier, viewModel.isCropping(), editManager)
         DrawCanvas(modifier, viewModel)
     }
     if (

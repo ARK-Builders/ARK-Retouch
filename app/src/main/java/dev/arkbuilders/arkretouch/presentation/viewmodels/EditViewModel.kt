@@ -22,12 +22,16 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.net.Uri
 import android.view.MotionEvent
-import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.data.model.EditingState
 import dev.arkbuilders.arkretouch.data.model.ImageViewParams
-import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
-import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
 import dev.arkbuilders.arkretouch.data.model.Resolution
+import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
+import dev.arkbuilders.arkretouch.editing.Operation
+import dev.arkbuilders.arkretouch.editing.crop.CropOperation
+import dev.arkbuilders.arkretouch.editing.draw.DrawOperation
+import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.manager.EditingMode
+import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -53,7 +57,13 @@ class EditViewModel(
     private var _editingState: EditingState by mutableStateOf(EditingState.DEFAULT.copy(usedColors = _usedColors))
     val editingState: EditingState get() = _editingState
 
+    val isCropping = mutableStateOf(false)
+
     val editManager = EditManager()
+
+    private val cropOperation = CropOperation(editManager) {
+        toggleDraw()
+    }
 
     init {
         if (imageUri == null && imagePath == null) {
@@ -333,7 +343,7 @@ class EditViewModel(
     }
 
     fun applyOperation() {
-        editManager.applyOperation()
+        applyEdit()
         _editingState = editingState.copy(menusVisible = true)
     }
 
@@ -344,8 +354,8 @@ class EditViewModel(
                 cancelRotateMode()
                 _editingState = editingState.copy(menusVisible = true)
             }
-            if (isCropMode.value) {
-                toggleCropMode()
+            if (isCropping()) {
+                toggleCrop()
                 cancelCropMode()
                 _editingState = editingState.copy(menusVisible = true)
             }
@@ -372,6 +382,53 @@ class EditViewModel(
         viewModelScope.launch {
             prefs.persistDefaults(color, resolution)
         }
+    }
+
+    fun toggleDraw() {
+        _editingState = editingState.copy(mode = EditingMode.DRAW)
+    }
+
+    fun toggleErase() {
+        _editingState = editingState.copy(mode = EditingMode.ERASE)
+    }
+
+    fun toggleCrop() {
+        _editingState = editingState.copy(mode = EditingMode.CROP)
+    }
+
+    fun toggleResize() {
+        _editingState = editingState.copy(mode = EditingMode.RESIZE)
+    }
+
+    fun toggleRotate() {
+        _editingState = editingState.copy(mode = EditingMode.ROTATE)
+    }
+
+    fun toggleZoom() {
+        _editingState = editingState.copy(mode = EditingMode.ZOOM)
+    }
+
+    fun togglePan() {
+        _editingState = editingState.copy(mode = EditingMode.PAN)
+    }
+
+    fun toggleBlur() {
+        _editingState = editingState.copy(mode = EditingMode.BLUR)
+    }
+
+    fun isCropping() = editingState.mode == EditingMode.CROP
+
+    private fun applyEdit() {
+        val operation: Operation = with(editManager) {
+            when (editingState.mode) {
+                EditingMode.CROP -> this@EditViewModel.cropOperation
+                EditingMode.RESIZE -> resizeOperation
+                EditingMode.ROTATE -> rotateOperation
+                EditingMode.BLUR -> blurOperation
+                else -> drawOperation
+            }
+        }
+        operation.apply()
     }
 
     private fun loadDefaultPaintColor() {

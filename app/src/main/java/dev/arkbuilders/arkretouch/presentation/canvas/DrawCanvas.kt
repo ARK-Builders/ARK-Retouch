@@ -30,7 +30,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
     val editManager = viewModel.editManager
     var path = Path()
     val currentPoint = PointF(0f, 0f)
-    val drawModifier = if (editManager.isCropMode.value) Modifier.fillMaxSize()
+    val drawModifier = if (viewModel.isCropping()) Modifier.fillMaxSize()
     else modifier
 
     fun handleDrawEvent(action: Int, eventX: Float, eventY: Float) {
@@ -42,7 +42,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 currentPoint.y = eventY
                 editManager.apply {
                     drawOperation.draw(path)
-                    applyOperation()
+                    viewModel.applyOperation()
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -94,6 +94,9 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 )
                 currentPoint.x = eventX
                 currentPoint.y = eventY
+            }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+                editManager.cropWindow.resetDelta()
             }
         }
     }
@@ -147,7 +150,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     eventY
                 )
 
-                editManager.isCropMode.value -> handleCropEvent(
+                viewModel.isCropping() -> handleCropEvent(
                     event.action,
                     eventX,
                     eventY
@@ -172,14 +175,14 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 var matrix = this.matrix
                 if (isRotateMode.value || isResizeMode.value || isBlurMode.value)
                     matrix = editMatrix
-                if (isCropMode.value) matrix = Matrix()
+                if (viewModel.isCropping()) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
                 if (isResizeMode.value) return@drawIntoCanvas
                 if (isBlurMode.value) {
                     editManager.blurOperation.draw(context, canvas)
                     return@drawIntoCanvas
                 }
-                if (isCropMode.value) {
+                if (viewModel.isCropping()) {
                     editManager.cropWindow.show(canvas)
                     return@drawIntoCanvas
                 }

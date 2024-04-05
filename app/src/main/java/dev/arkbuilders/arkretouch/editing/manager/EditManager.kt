@@ -15,18 +15,18 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Matrix
 import dev.arkbuilders.arkretouch.data.model.DrawPath
+import dev.arkbuilders.arkretouch.data.model.ImageDefaults
 import dev.arkbuilders.arkretouch.data.model.ImageViewParams
+import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.editing.Operation
 import dev.arkbuilders.arkretouch.editing.blur.BlurOperation
 import dev.arkbuilders.arkretouch.editing.crop.CropOperation
 import dev.arkbuilders.arkretouch.editing.crop.CropWindow
-import dev.arkbuilders.arkretouch.presentation.viewmodels.fitBackground
-import dev.arkbuilders.arkretouch.presentation.viewmodels.fitImage
 import dev.arkbuilders.arkretouch.editing.draw.DrawOperation
 import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.editing.rotate.RotateOperation
-import dev.arkbuilders.arkretouch.data.model.ImageDefaults
-import dev.arkbuilders.arkretouch.data.model.Resolution
+import dev.arkbuilders.arkretouch.presentation.viewmodels.fitBackground
+import dev.arkbuilders.arkretouch.presentation.viewmodels.fitImage
 import dev.arkbuilders.arkretouch.utils.copy
 import dev.arkbuilders.arkretouch.utils.defaultPaint
 import timber.log.Timber
@@ -67,7 +67,7 @@ class EditManager {
     val drawOperation = DrawOperation(this)
     val resizeOperation = ResizeOperation(this)
     val rotateOperation = RotateOperation(this)
-    val cropOperation = CropOperation(this)
+    val cropOperation = CropOperation(this, {})
     val blurOperation = BlurOperation(this)
 
     private val currentPaint: Paint
@@ -167,8 +167,6 @@ class EditManager {
     // TODO: not used? Consider using [EditionMode] instead
     private val _isCropMode = mutableStateOf(false)
     val isCropMode = _isCropMode
-
-    var editingMode: EditingMode by mutableStateOf(EditingMode.IDLE)
 
     val cropStack = Stack<ImageBitmap>()
     val redoCropStack = Stack<ImageBitmap>()

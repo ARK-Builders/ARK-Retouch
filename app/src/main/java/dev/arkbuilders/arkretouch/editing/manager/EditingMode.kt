@@ -1,9 +1,12 @@
 package dev.arkbuilders.arkretouch.editing.manager
 
 enum class EditingMode {
-    IDLE,
+    DRAW,
+    ERASE,
     CROP,
     RESIZE,
     ROTATE,
-    ZOOM
+    ZOOM,
+    PAN,
+    BLUR
 }

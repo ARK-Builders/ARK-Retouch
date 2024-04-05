@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Bitmap
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.CROP_2_3
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.CROP_4_5
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.CROP_9_16
@@ -19,7 +20,6 @@ import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCropSquare
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCrop_2_3
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCrop_4_5
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCrop_9_16
-import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import timber.log.Timber
 
 class CropWindow(private val editManager: EditManager) {
@@ -165,6 +165,8 @@ class CropWindow(private val editManager: EditManager) {
         this.delta = delta
     }
 
+    fun resetDelta() { delta = Offset.Zero }
+
     private fun isAspectRatioFixed() =
         isCropSquare.value || isCrop_4_5.value ||
             isCrop_9_16.value || isCrop_2_3.value
@@ -221,6 +223,7 @@ class CropWindow(private val editManager: EditManager) {
                 }
             }
         } else {
+            Timber.tag("crop-window").d("offset $delta")
             left = if (isTouchedLeft.value)
                 rect.left + delta.x
             else rect.left

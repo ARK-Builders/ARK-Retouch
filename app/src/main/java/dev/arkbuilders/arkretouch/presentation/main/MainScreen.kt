@@ -14,9 +14,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import dev.arkbuilders.arkretouch.presentation.screens.EditScreen
-import dev.arkbuilders.arkretouch.presentation.picker.PickerScreen
 import dev.arkbuilders.arkretouch.data.model.Resolution
+import dev.arkbuilders.arkretouch.presentation.picker.PickerScreen
+import dev.arkbuilders.arkretouch.presentation.screens.EditScreen
 import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper
 import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
 import kotlin.io.path.Path
