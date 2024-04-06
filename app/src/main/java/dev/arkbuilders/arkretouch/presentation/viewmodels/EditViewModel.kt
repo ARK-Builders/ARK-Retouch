@@ -17,17 +17,19 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.view.MotionEvent
-import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.data.model.EditingState
 import dev.arkbuilders.arkretouch.data.model.ImageViewParams
-import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
-import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
 import dev.arkbuilders.arkretouch.data.model.Resolution
+import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
+import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -141,8 +143,7 @@ class EditViewModel(
                 arrayOf(path.toString()),
                 arrayOf("image/*")
             ) { _, _ -> }
-            showSavePathDialog = false
-            _editingState = editingState.copy(imageSaved = true, isSavingImage = false)
+            _editingState = editingState.copy(imageSaved = true, isSavingImage = false, showSavePathDialog = false)
         }
     }
 

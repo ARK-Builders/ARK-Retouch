@@ -35,11 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.text.isDigitsOnly
 import dev.arkbuilders.arkretouch.R
+import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.presentation.theme.Gray
 import dev.arkbuilders.arkretouch.presentation.views.Hint
 import dev.arkbuilders.arkretouch.presentation.views.delayHidingHint
-import dev.arkbuilders.arkretouch.data.model.Resolution
-import dev.arkbuilders.arkretouch.presentation.theme.Gray
 
 @Composable
 fun NewImageOptionsDialog(

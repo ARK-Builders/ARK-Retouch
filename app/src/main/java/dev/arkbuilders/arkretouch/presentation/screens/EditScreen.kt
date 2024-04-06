@@ -66,22 +66,22 @@ import android.view.MotionEvent
 import android.widget.Toast
 import dev.arkbuilders.arkretouch.R
 import dev.arkbuilders.arkretouch.data.model.EditingState
-import dev.arkbuilders.arkretouch.presentation.popups.BlurIntensityPopup
+import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.presentation.canvas.EditCanvasScreen
-import dev.arkbuilders.arkretouch.presentation.views.CropAspectRatiosMenu
-import dev.arkbuilders.arkretouch.presentation.picker.toPx
 import dev.arkbuilders.arkretouch.presentation.dialogs.ColorPickerDialog
 import dev.arkbuilders.arkretouch.presentation.dialogs.ConfirmClearDialog
-import dev.arkbuilders.arkretouch.presentation.popups.MoreOptionsPopup
 import dev.arkbuilders.arkretouch.presentation.dialogs.NewImageOptionsDialog
 import dev.arkbuilders.arkretouch.presentation.dialogs.SavePathDialog
 import dev.arkbuilders.arkretouch.presentation.dialogs.SaveProgress
+import dev.arkbuilders.arkretouch.presentation.picker.toPx
+import dev.arkbuilders.arkretouch.presentation.popups.BlurIntensityPopup
+import dev.arkbuilders.arkretouch.presentation.popups.MoreOptionsPopup
+import dev.arkbuilders.arkretouch.presentation.theme.Gray
 import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
+import dev.arkbuilders.arkretouch.presentation.views.CropAspectRatiosMenu
 import dev.arkbuilders.arkretouch.presentation.views.Hint
 import dev.arkbuilders.arkretouch.presentation.views.ResizeInput
 import dev.arkbuilders.arkretouch.presentation.views.delayHidingHint
-import dev.arkbuilders.arkretouch.data.model.Resolution
-import dev.arkbuilders.arkretouch.presentation.theme.Gray
 import dev.arkbuilders.arkretouch.utils.getActivity
 import dev.arkbuilders.arkretouch.utils.loadImageWithPath
 import dev.arkbuilders.arkretouch.utils.loadImageWithUri
@@ -383,7 +383,7 @@ private fun BoxScope.TopMenu(
             fragmentManager = fragmentManager,
             onDismissClick = { viewModel.showSavePathDialog(false) },
             onPositiveClick = { savePath ->
-                viewModel.saveImage(savePath)
+                viewModel.saveImage(context, savePath)
                 viewModel.showSavePathDialog(false)
             }
         )

@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Bitmap
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.CROP_2_3
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.CROP_4_5
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.CROP_9_16
@@ -19,7 +20,6 @@ import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCropSquare
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCrop_2_3
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCrop_4_5
 import dev.arkbuilders.arkretouch.presentation.views.AspectRatio.isCrop_9_16
-import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import timber.log.Timber
 
 class CropWindow(private val editManager: EditManager) {

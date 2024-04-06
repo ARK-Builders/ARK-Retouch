@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.IntOffset
 import android.content.Context
 import android.graphics.Bitmap
 import com.hoko.blur.processor.HokoBlurBuild
-import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.editing.Operation
+import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import java.util.Stack
 
 class BlurOperation(

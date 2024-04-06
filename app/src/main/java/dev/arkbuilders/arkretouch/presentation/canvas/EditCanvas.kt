@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
 import dev.arkbuilders.arkretouch.presentation.picker.toDp
+import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
 import dev.arkbuilders.arkretouch.presentation.views.TransparencyChessBoardCanvas
 import dev.arkbuilders.arkretouch.utils.calculateRotationFromOneFingerGesture
 

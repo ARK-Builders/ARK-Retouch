@@ -30,6 +30,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -41,13 +42,8 @@ import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerFragme
 import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerMode
 import dev.arkbuilders.arkfilepicker.presentation.onArkPathPicked
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.presentation.utils.findNotExistCopyName
-import kotlin.io.path.name
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.runtime.key
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.platform.LocalContext
-import dev.arkbuilders.arkretouch.presentation.utils.toast
+import dev.arkbuilders.arkretouch.utils.findNotExistCopyName
+import dev.arkbuilders.arkretouch.utils.toast
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
