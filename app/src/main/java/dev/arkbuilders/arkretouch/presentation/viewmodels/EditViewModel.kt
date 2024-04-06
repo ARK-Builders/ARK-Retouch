@@ -28,7 +28,6 @@ import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
 import dev.arkbuilders.arkretouch.editing.Operation
 import dev.arkbuilders.arkretouch.editing.crop.CropOperation
-import dev.arkbuilders.arkretouch.editing.draw.DrawOperation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.editing.manager.EditingMode
 import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
@@ -78,7 +77,7 @@ class EditViewModel(
     }
 
     fun toggleMenus() {
-        _editingState = editingState.copy(menusVisible = !editingState.menusVisible)
+        showMenus(!editingState.menusVisible)
     }
 
     fun showMenus(bool: Boolean) {
@@ -344,7 +343,6 @@ class EditViewModel(
 
     fun applyOperation() {
         applyEdit()
-        _editingState = editingState.copy(menusVisible = true)
     }
 
     fun cancelOperation() {
@@ -352,28 +350,24 @@ class EditViewModel(
             if (isRotateMode.value) {
                 toggleRotateMode()
                 cancelRotateMode()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isCropping()) {
-                toggleCrop()
+                toggleDraw()
                 cancelCropMode()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isResizeMode.value) {
                 toggleResizeMode()
                 cancelResizeMode()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isEyeDropperMode.value) {
                 toggleEyeDropper()
                 cancelEyeDropper()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isBlurMode.value) {
                 toggleBlurMode()
                 blurOperation.cancel()
-                _editingState = editingState.copy(menusVisible = true)
             }
+            showMenus(true)
             scaleToFit()
         }
     }
@@ -429,6 +423,7 @@ class EditViewModel(
             }
         }
         operation.apply()
+        if (operation != editManager.drawOperation) { showMenus(true) }
     }
 
     private fun loadDefaultPaintColor() {

@@ -164,24 +164,8 @@ class EditManager {
     private val undoStack = Stack<String>()
     private val redoStack = Stack<String>()
 
-    // TODO: not used? Consider using [EditionMode] instead
-    private val _isCropMode = mutableStateOf(false)
-    val isCropMode = _isCropMode
-
     val cropStack = Stack<ImageBitmap>()
     val redoCropStack = Stack<ImageBitmap>()
-
-    fun applyOperation() {
-        val operation: Operation =
-            when (true) {
-                isRotateMode.value -> rotateOperation
-                isCropMode.value -> cropOperation
-                isBlurMode.value -> blurOperation
-                isResizeMode.value -> resizeOperation
-                else -> drawOperation
-            }
-        operation.apply()
-    }
 
     private fun undoOperation(operation: Operation) {
         operation.undo()
@@ -540,11 +524,6 @@ class EditManager {
     fun toggleRotateMode() {
         _isRotateMode.value = !isRotateMode.value
         if (isRotateMode.value) editMatrix.set(matrix)
-    }
-
-    fun toggleCropMode() {
-        _isCropMode.value = !isCropMode.value
-        if (!isCropMode.value) cropWindow.close()
     }
 
     fun toggleZoomMode() {
