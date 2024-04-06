@@ -41,7 +41,13 @@ import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerFragme
 import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerMode
 import dev.arkbuilders.arkfilepicker.presentation.onArkPathPicked
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.utils.findNotExistCopyName
+import dev.arkbuilders.arkretouch.presentation.utils.findNotExistCopyName
+import kotlin.io.path.name
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.runtime.key
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalContext
+import dev.arkbuilders.arkretouch.presentation.utils.toast
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
@@ -68,6 +74,8 @@ fun SavePathDialog(
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    val context = LocalContext.current
 
     LaunchedEffect(overwriteOriginalPath) {
         if (overwriteOriginalPath) {
@@ -128,6 +136,12 @@ fun SavePathDialog(
                     value = name,
                     onValueChange = {
                         name = it
+                        if (name.isEmpty()) {
+                            context.toast(
+                                R.string.ark_retouch_notify_missing_file_name
+                            )
+                            return@OutlinedTextField
+                        }
                         currentPath?.let { path ->
                             imagePath = path.resolve(name)
                             showOverwriteCheckbox.value = Files.list(path).toList()
@@ -175,8 +189,19 @@ fun SavePathDialog(
                     Button(
                         modifier = Modifier.padding(5.dp),
                         onClick = {
-                            if (currentPath != null && name != null)
-                                onPositiveClick(currentPath!!.resolve(name))
+                            if (name.isEmpty()) {
+                                context.toast(
+                                    R.string.ark_retouch_notify_missing_file_name
+                                )
+                                return@Button
+                            }
+                            if (currentPath == null) {
+                                context.toast(
+                                    R.string.ark_retouch_notify_choose_folder
+                                )
+                                return@Button
+                            }
+                            onPositiveClick(currentPath?.resolve(name)!!)
                         }
                     ) {
                         Text(text = stringResource(R.string.ok))

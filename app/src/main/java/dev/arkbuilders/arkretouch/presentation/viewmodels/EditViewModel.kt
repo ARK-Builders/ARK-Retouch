@@ -127,17 +127,24 @@ class EditViewModel(
         editManager.scaleToFit()
     }
 
-    fun saveImage(savePath: Path) =
+    fun saveImage(context: Context, path: Path) {
         viewModelScope.launch(Dispatchers.IO) {
             _editingState = editingState.copy(isSavingImage = true)
             val combinedBitmap = getEditedImage()
 
-            savePath.outputStream().use { out ->
+            path.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(path.toString()),
+                arrayOf("image/*")
+            ) { _, _ -> }
+            showSavePathDialog = false
             _editingState = editingState.copy(imageSaved = true, isSavingImage = false)
         }
+    }
 
     fun shareImage(root: Path, provideUri: (File) -> Uri, startShare: (Intent) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
