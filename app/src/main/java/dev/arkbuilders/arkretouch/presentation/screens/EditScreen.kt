@@ -383,7 +383,7 @@ private fun BoxScope.TopMenu(
             fragmentManager = fragmentManager,
             onDismissClick = { viewModel.showSavePathDialog(false) },
             onPositiveClick = { savePath ->
-                viewModel.saveImage(savePath)
+                viewModel.saveImage(context, savePath)
                 viewModel.showSavePathDialog(false)
             }
         )

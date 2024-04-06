@@ -1,10 +1,12 @@
 package dev.arkbuilders.arkretouch.utils
 
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import android.content.Context
 import android.content.ContextWrapper
+import android.widget.Toast
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.extension
@@ -57,4 +59,8 @@ fun PointerEvent.calculateRotationFromOneFingerGesture(
         }
     }
     return angleDelta.toFloat()
+}
+
+fun Context.toast(@StringRes stringId: Int) {
+    Toast.makeText(this, getString(stringId), Toast.LENGTH_SHORT).show()
 }

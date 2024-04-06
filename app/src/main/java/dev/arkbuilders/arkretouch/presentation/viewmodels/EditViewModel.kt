@@ -17,9 +17,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.view.MotionEvent
 import dev.arkbuilders.arkretouch.data.model.EditingState
@@ -136,17 +138,23 @@ class EditViewModel(
         editManager.scaleToFit()
     }
 
-    fun saveImage(savePath: Path) =
+    fun saveImage(context: Context, path: Path) {
         viewModelScope.launch(Dispatchers.IO) {
             _editingState = editingState.copy(isSavingImage = true)
             val combinedBitmap = getEditedImage()
 
-            savePath.outputStream().use { out ->
+            path.outputStream().use { out ->
                 combinedBitmap.asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, out)
             }
-            _editingState = editingState.copy(imageSaved = true, isSavingImage = false)
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(path.toString()),
+                arrayOf("image/*")
+            ) { _, _ -> }
+            _editingState = editingState.copy(imageSaved = true, isSavingImage = false, showSavePathDialog = false)
         }
+    }
 
     fun shareImage(root: Path, provideUri: (File) -> Uri, startShare: (Intent) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
