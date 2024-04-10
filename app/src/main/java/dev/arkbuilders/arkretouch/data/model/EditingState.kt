@@ -1,8 +1,10 @@
 package dev.arkbuilders.arkretouch.data.model
 
 import androidx.compose.ui.graphics.Color
+import dev.arkbuilders.arkretouch.editing.manager.EditingMode
 
 data class EditingState(
+    val mode: EditingMode = EditingMode.DRAW,
     val strokeSliderExpanded: Boolean = false,
     val strokeWidth: Float = 5f,
     val menusVisible: Boolean = true,

@@ -13,16 +13,21 @@ import androidx.compose.ui.unit.toSize
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 
 @Composable
-fun BackgroundCanvas(modifier: Modifier, editManager: EditManager) {
+fun BackgroundCanvas(
+    modifier: Modifier,
+    isCropping: Boolean,
+    editManager: EditManager
+) {
     Canvas(modifier) {
         editManager.apply {
             invalidatorTick.value
             var matrix = matrix
             if (
-                isCropMode.value || isRotateMode.value ||
+                isCropping || isRotateMode.value ||
                 isResizeMode.value || isBlurMode.value
-            )
+            ) {
                 matrix = editMatrix
+            }
             drawIntoCanvas { canvas ->
                 backgroundImage.value?.let {
                     canvas.nativeCanvas.drawBitmap(

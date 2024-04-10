@@ -165,6 +165,8 @@ class CropWindow(private val editManager: EditManager) {
         this.delta = delta
     }
 
+    fun resetDelta() { delta = Offset.Zero }
+
     private fun isAspectRatioFixed() =
         isCropSquare.value || isCrop_4_5.value ||
             isCrop_9_16.value || isCrop_2_3.value
@@ -221,6 +223,7 @@ class CropWindow(private val editManager: EditManager) {
                 }
             }
         } else {
+            Timber.tag("crop-window").d("offset $delta")
             left = if (isTouchedLeft.value)
                 rect.left + delta.x
             else rect.left

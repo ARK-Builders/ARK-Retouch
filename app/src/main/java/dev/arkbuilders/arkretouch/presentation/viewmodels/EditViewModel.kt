@@ -28,7 +28,10 @@ import dev.arkbuilders.arkretouch.data.model.EditingState
 import dev.arkbuilders.arkretouch.data.model.ImageViewParams
 import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
+import dev.arkbuilders.arkretouch.editing.Operation
+import dev.arkbuilders.arkretouch.editing.crop.CropOperation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import dev.arkbuilders.arkretouch.editing.manager.EditingMode
 import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
@@ -55,7 +58,13 @@ class EditViewModel(
     private var _editingState: EditingState by mutableStateOf(EditingState.DEFAULT.copy(usedColors = _usedColors))
     val editingState: EditingState get() = _editingState
 
+    val isCropping = mutableStateOf(false)
+
     val editManager = EditManager()
+
+    private val cropOperation = CropOperation(editManager) {
+        toggleDraw()
+    }
 
     init {
         if (imageUri == null && imagePath == null) {
@@ -70,7 +79,7 @@ class EditViewModel(
     }
 
     fun toggleMenus() {
-        _editingState = editingState.copy(menusVisible = !editingState.menusVisible)
+        showMenus(!editingState.menusVisible)
     }
 
     fun showMenus(bool: Boolean) {
@@ -341,8 +350,7 @@ class EditViewModel(
     }
 
     fun applyOperation() {
-        editManager.applyOperation()
-        _editingState = editingState.copy(menusVisible = true)
+        applyEdit()
     }
 
     fun cancelOperation() {
@@ -350,28 +358,24 @@ class EditViewModel(
             if (isRotateMode.value) {
                 toggleRotateMode()
                 cancelRotateMode()
-                _editingState = editingState.copy(menusVisible = true)
             }
-            if (isCropMode.value) {
-                toggleCropMode()
+            if (isCropping()) {
+                toggleDraw()
                 cancelCropMode()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isResizeMode.value) {
                 toggleResizeMode()
                 cancelResizeMode()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isEyeDropperMode.value) {
                 toggleEyeDropper()
                 cancelEyeDropper()
-                _editingState = editingState.copy(menusVisible = true)
             }
             if (isBlurMode.value) {
                 toggleBlurMode()
                 blurOperation.cancel()
-                _editingState = editingState.copy(menusVisible = true)
             }
+            showMenus(true)
             scaleToFit()
         }
     }
@@ -380,6 +384,54 @@ class EditViewModel(
         viewModelScope.launch {
             prefs.persistDefaults(color, resolution)
         }
+    }
+
+    fun toggleDraw() {
+        _editingState = editingState.copy(mode = EditingMode.DRAW)
+    }
+
+    fun toggleErase() {
+        _editingState = editingState.copy(mode = EditingMode.ERASE)
+    }
+
+    fun toggleCrop() {
+        _editingState = editingState.copy(mode = EditingMode.CROP)
+    }
+
+    fun toggleResize() {
+        _editingState = editingState.copy(mode = EditingMode.RESIZE)
+    }
+
+    fun toggleRotate() {
+        _editingState = editingState.copy(mode = EditingMode.ROTATE)
+    }
+
+    fun toggleZoom() {
+        _editingState = editingState.copy(mode = EditingMode.ZOOM)
+    }
+
+    fun togglePan() {
+        _editingState = editingState.copy(mode = EditingMode.PAN)
+    }
+
+    fun toggleBlur() {
+        _editingState = editingState.copy(mode = EditingMode.BLUR)
+    }
+
+    fun isCropping() = editingState.mode == EditingMode.CROP
+
+    private fun applyEdit() {
+        val operation: Operation = with(editManager) {
+            when (editingState.mode) {
+                EditingMode.CROP -> this@EditViewModel.cropOperation
+                EditingMode.RESIZE -> resizeOperation
+                EditingMode.ROTATE -> rotateOperation
+                EditingMode.BLUR -> blurOperation
+                else -> drawOperation
+            }
+        }
+        operation.apply()
+        if (operation != editManager.drawOperation) { showMenus(true) }
     }
 
     private fun loadDefaultPaintColor() {

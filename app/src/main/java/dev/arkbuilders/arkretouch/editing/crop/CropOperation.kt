@@ -6,7 +6,8 @@ import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.utils.crop
 
 class CropOperation(
-    private val editManager: EditManager
+    private val editManager: EditManager,
+    val onApply: () -> Unit
 ) : Operation {
 
     override fun apply() {
@@ -18,7 +19,7 @@ class CropOperation(
                 addCrop()
                 saveRotationAfterOtherOperation()
                 scaleToFit()
-                toggleCropMode()
+                onApply()
             }
         }
     }
