@@ -145,7 +145,7 @@ fun EditScreen(
     BackHandler {
         val editManager = viewModel.editManager
         if (
-            viewModel.isCropping() || editManager.isRotateMode.value ||
+            viewModel.isCropping() || viewModel.isRotating() ||
             editManager.isResizeMode.value || editManager.isEyeDropperMode.value ||
             editManager.isBlurMode.value
         ) {
@@ -244,7 +244,7 @@ private fun Menus(
                 .height(IntrinsicSize.Min),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (viewModel.editManager.isRotateMode.value)
+            if (viewModel.isRotating())
                 Row {
                     Icon(
                         modifier = Modifier
@@ -253,7 +253,7 @@ private fun Menus(
                             .clip(CircleShape)
                             .clickable {
                                 viewModel.editManager.apply {
-                                    rotate(-90f)
+                                    viewModel.onRotate(-90f)
                                     invalidatorTick.value++
                                 }
                             },
@@ -269,7 +269,7 @@ private fun Menus(
                             .clip(CircleShape)
                             .clickable {
                                 viewModel.editManager.apply {
-                                    rotate(90f)
+                                    viewModel.onRotate(90f)
                                     invalidatorTick.value++
                                 }
                             },
@@ -340,8 +340,8 @@ private fun DrawContainer(
                                 return@onSizeChanged
                             }
 
-                            isRotateMode.value -> {
-                                scaleToFitOnEdit()
+                            viewModel.isRotating() -> {
+                                scaleToFitOnEdit(isRotating = true)
                                 return@onSizeChanged
                             }
 
@@ -429,7 +429,7 @@ private fun BoxScope.TopMenu(
         onConfirm = {
             viewModel.editManager.apply {
                 if (
-                    !isRotateMode.value &&
+                    !viewModel.isRotating() &&
                     !isResizeMode.value &&
                     !isEyeDropperMode.value
                 ) clearEdits()
@@ -442,7 +442,7 @@ private fun BoxScope.TopMenu(
 
     if (
         !viewModel.editingState.menusVisible &&
-        !viewModel.editManager.isRotateMode.value &&
+        !viewModel.isRotating() &&
         !viewModel.editManager.isResizeMode.value &&
         !viewModel.isCropping() &&
         !viewModel.editManager.isEyeDropperMode.value
@@ -457,7 +457,7 @@ private fun BoxScope.TopMenu(
             .clickable {
                 viewModel.editManager.apply {
                     if (
-                        viewModel.isCropping() || isRotateMode.value ||
+                        viewModel.isCropping() || viewModel.isRotating() ||
                         isResizeMode.value || isEyeDropperMode.value ||
                         isBlurMode.value
                     ) {
@@ -504,7 +504,7 @@ private fun BoxScope.TopMenu(
                 .clickable {
                     viewModel.editManager.apply {
                         if (
-                            viewModel.isCropping() || isRotateMode.value ||
+                            viewModel.isCropping() || viewModel.isRotating() ||
                             isResizeMode.value || isBlurMode.value
                         ) {
                             viewModel.applyOperation()
@@ -515,7 +515,7 @@ private fun BoxScope.TopMenu(
                 },
             imageVector = if (
                 viewModel.isCropping() ||
-                viewModel.editManager.isRotateMode.value ||
+                viewModel.isRotating() ||
                 viewModel.editManager.isResizeMode.value ||
                 viewModel.editManager.isBlurMode.value
             )
@@ -656,7 +656,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -668,7 +668,7 @@ private fun EditMenuContent(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (
                     editManager.canUndo.value && (
-                        !editManager.isRotateMode.value &&
+                        !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -684,7 +684,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -695,7 +695,7 @@ private fun EditMenuContent(
                 tint = if (
                     editManager.canRedo.value &&
                     (
-                        !editManager.isRotateMode.value &&
+                        !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -718,7 +718,7 @@ private fun EditMenuContent(
                             return@clickable
                         }
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEraseMode.value &&
@@ -747,7 +747,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !viewModel.isCropping() &&
                             !editManager.isResizeMode.value &&
                             !editManager.isEyeDropperMode.value &&
@@ -758,7 +758,7 @@ private fun EditMenuContent(
                 imageVector =
                 ImageVector.vectorResource(R.drawable.ic_line_weight),
                 tint = if (
-                    !editManager.isRotateMode.value &&
+                    !viewModel.isRotating() &&
                     !editManager.isResizeMode.value &&
                     !viewModel.isCropping() &&
                     !editManager.isEyeDropperMode.value &&
@@ -774,7 +774,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -798,7 +798,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -823,7 +823,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         if (
-                            !editManager.isRotateMode.value &&
+                            !viewModel.isRotating() &&
                             !editManager.isResizeMode.value &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
@@ -849,7 +849,7 @@ private fun EditMenuContent(
                     .clickable {
                         editManager.apply {
                             if (
-                                !isRotateMode.value &&
+                                !viewModel.isRotating() &&
                                 !isResizeMode.value &&
                                 !isEyeDropperMode.value &&
                                 !isEraseMode.value &&
@@ -894,10 +894,10 @@ private fun EditMenuContent(
                                 !isEraseMode.value &&
                                 !isBlurMode.value
                             ) {
-                                toggleRotateMode()
-                                if (isRotateMode.value) {
+                                viewModel.toggleRotate()
+                                if (viewModel.isRotating()) {
                                     setBackgroundImage2()
-                                    viewModel.showMenus(!editManager.isRotateMode.value)
+                                    viewModel.showMenus(!viewModel.isRotating())
                                     scaleToFitOnEdit()
                                     return@clickable
                                 }
@@ -908,7 +908,7 @@ private fun EditMenuContent(
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
-                tint = if (editManager.isRotateMode.value)
+                tint = if (viewModel.isRotating())
                     MaterialTheme.colors.primary
                 else
                     Color.Black,
@@ -922,7 +922,7 @@ private fun EditMenuContent(
                     .clickable {
                         editManager.apply {
                             if (
-                                !isRotateMode.value &&
+                                !viewModel.isRotating() &&
                                 !viewModel.isCropping() &&
                                 !isEyeDropperMode.value &&
                                 !isEraseMode.value &&
@@ -960,7 +960,7 @@ private fun EditMenuContent(
                     .clickable {
                         editManager.apply {
                             if (
-                                !isRotateMode.value &&
+                                !viewModel.isRotating() &&
                                 !viewModel.isCropping() &&
                                 !isEyeDropperMode.value &&
                                 !isResizeMode.value &&

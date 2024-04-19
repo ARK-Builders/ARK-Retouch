@@ -2,9 +2,7 @@ package dev.arkbuilders.arkretouch.editing.manager
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -66,7 +64,7 @@ class EditManager {
 
     val drawOperation = DrawOperation(this)
     val resizeOperation = ResizeOperation(this)
-    val rotateOperation = RotateOperation(this)
+    val rotateOperation = RotateOperation(this, {})
     val cropOperation = CropOperation(this, {})
     val blurOperation = BlurOperation(this)
 
@@ -204,7 +202,8 @@ class EditManager {
 
     fun scaleToFitOnEdit(
         maxWidth: Int = drawAreaSize.value.width,
-        maxHeight: Int = drawAreaSize.value.height
+        maxHeight: Int = drawAreaSize.value.height,
+        isRotating: Boolean = false
     ): ImageViewParams {
         val viewParams = backgroundImage.value?.let {
             fitImage(it, maxWidth, maxHeight)
@@ -215,7 +214,7 @@ class EditManager {
                 maxHeight
             )
         }
-        scaleEditMatrix(viewParams)
+        scaleEditMatrix(viewParams, isRotating)
         updateAvailableDrawArea(viewParams.drawArea)
         return viewParams
     }
@@ -230,13 +229,13 @@ class EditManager {
         }
     }
 
-    private fun scaleEditMatrix(viewParams: ImageViewParams) {
+    private fun scaleEditMatrix(viewParams: ImageViewParams, isRotating: Boolean) {
         editMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
         backgroundMatrix.setScale(viewParams.scale.x, viewParams.scale.y)
-        if (prevRotationAngle != 0f && isRotateMode.value) {
+        if (rotationAngle.value != 0f && isRotating) {
             val centerX = viewParams.drawArea.width / 2f
             val centerY = viewParams.drawArea.height / 2f
-            editMatrix.postRotate(prevRotationAngle, centerX, centerY)
+            editMatrix.postRotate(rotationAngle.value, centerX, centerY)
         }
     }
 
@@ -311,21 +310,12 @@ class EditManager {
             backgroundImage.value = it
         }
 
-    fun rotate(angle: Float) {
+    fun RotateOperation.onRotate(angle: Float) {
         val centerX = availableDrawAreaSize.value.width / 2
         val centerY = availableDrawAreaSize.value.height / 2
-        if (isRotateMode.value) {
-            rotationAngle.value += angle
-            rotateOperation.rotate(
-                editMatrix,
-                angle,
-                centerX.toFloat(),
-                centerY.toFloat()
-            )
-            return
-        }
-        rotateOperation.rotate(
-            matrix,
+        rotationAngle.value += angle
+        rotate(
+            editMatrix,
             angle,
             centerX.toFloat(),
             centerY.toFloat()

@@ -16,6 +16,7 @@ import dev.arkbuilders.arkretouch.editing.manager.EditManager
 fun BackgroundCanvas(
     modifier: Modifier,
     isCropping: Boolean,
+    isRotating: Boolean,
     editManager: EditManager
 ) {
     Canvas(modifier) {
@@ -23,7 +24,7 @@ fun BackgroundCanvas(
             invalidatorTick.value
             var matrix = matrix
             if (
-                isCropping || isRotateMode.value ||
+                isCropping || isRotating ||
                 isResizeMode.value || isBlurMode.value
             ) {
                 matrix = editMatrix
