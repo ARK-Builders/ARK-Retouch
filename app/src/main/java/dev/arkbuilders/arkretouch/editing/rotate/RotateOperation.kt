@@ -5,14 +5,17 @@ import dev.arkbuilders.arkretouch.editing.Operation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.utils.rotate
 
-class RotateOperation(private val editManager: EditManager) : Operation {
+class RotateOperation(
+    private val editManager: EditManager,
+    private val onApply: () -> Unit
+) : Operation {
 
     override fun apply() {
         editManager.apply {
-            toggleRotateMode()
             matrix.set(editMatrix)
             editMatrix.reset()
             addRotation()
+            onApply()
         }
     }
 

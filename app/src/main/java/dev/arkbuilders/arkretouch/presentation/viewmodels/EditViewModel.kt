@@ -33,6 +33,7 @@ import dev.arkbuilders.arkretouch.editing.crop.CropOperation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.editing.manager.EditingMode
 import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
+import dev.arkbuilders.arkretouch.editing.rotate.RotateOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -63,6 +64,10 @@ class EditViewModel(
     val editManager = EditManager()
 
     private val cropOperation = CropOperation(editManager) {
+        toggleDraw()
+    }
+
+    private val rotateOperation = RotateOperation(editManager) {
         toggleDraw()
     }
 
@@ -355,8 +360,8 @@ class EditViewModel(
 
     fun cancelOperation() {
         editManager.apply {
-            if (isRotateMode.value) {
-                toggleRotateMode()
+            if (isRotating()) {
+                toggleDraw()
                 cancelRotateMode()
             }
             if (isCropping()) {
@@ -418,14 +423,22 @@ class EditViewModel(
         _editingState = editingState.copy(mode = EditingMode.BLUR)
     }
 
-    fun isCropping() = editingState.mode == EditingMode.CROP
+    fun isCropping(): Boolean = editingState.mode == EditingMode.CROP
+
+    fun isRotating(): Boolean = editingState.mode == EditingMode.ROTATE
+
+    fun onRotate(angle: Float) {
+        editManager.apply {
+            this@EditViewModel.rotateOperation.onRotate(angle)
+        }
+    }
 
     private fun applyEdit() {
         val operation: Operation = with(editManager) {
             when (editingState.mode) {
                 EditingMode.CROP -> this@EditViewModel.cropOperation
                 EditingMode.RESIZE -> resizeOperation
-                EditingMode.ROTATE -> rotateOperation
+                EditingMode.ROTATE -> this@EditViewModel.rotateOperation
                 EditingMode.BLUR -> blurOperation
                 else -> drawOperation
             }

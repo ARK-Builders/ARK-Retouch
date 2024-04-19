@@ -32,7 +32,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
     fun resetScaleAndTranslate() {
         editManager.apply {
             if (
-                isRotateMode.value || viewModel.isCropping() || isResizeMode.value ||
+                viewModel.isRotating() || viewModel.isCropping() || isResizeMode.value ||
                 isBlurMode.value
             ) {
                 scale = 1f; zoomScale = scale; offset = Offset.Zero
@@ -62,11 +62,11 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                 translationY = offset.y
             }
         TransparencyChessBoardCanvas(modifier, editManager)
-        BackgroundCanvas(modifier, viewModel.isCropping(), editManager)
+        BackgroundCanvas(modifier, viewModel.isCropping(), viewModel.isRotating(), editManager)
         DrawCanvas(modifier, viewModel)
     }
     if (
-        editManager.isRotateMode.value || editManager.isZoomMode.value ||
+        viewModel.isRotating() || editManager.isZoomMode.value ||
         editManager.isPanMode.value
     ) {
         Canvas(
@@ -79,12 +79,12 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                             do {
                                 val event = awaitPointerEvent()
                                 when (true) {
-                                    (editManager.isRotateMode.value) -> {
+                                    (viewModel.isRotating()) -> {
                                         val angle = event
                                             .calculateRotationFromOneFingerGesture(
                                                 editManager.calcCenter()
                                             )
-                                        editManager.rotate(angle)
+                                        viewModel.onRotate(angle)
                                         editManager.invalidatorTick.value++
                                     }
                                     else -> {

@@ -62,7 +62,6 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 ) {
                     path.lineTo(currentPoint.x, currentPoint.y)
                 }
-
                 editManager.clearRedoPath()
                 editManager.updateRevised()
                 path = Path()
@@ -173,7 +172,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (isRotateMode.value || isResizeMode.value || isBlurMode.value)
+                if (viewModel.isRotating() || isResizeMode.value || isBlurMode.value)
                     matrix = editMatrix
                 if (viewModel.isCropping()) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
