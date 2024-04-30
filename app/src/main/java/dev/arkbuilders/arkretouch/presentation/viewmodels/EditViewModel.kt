@@ -64,19 +64,17 @@ class EditViewModel(
     val editManager = EditManager()
 
     val imageSize: IntSize
-        get() {
-            with(editManager) {
-                return if (isResizing())
-                    backgroundImage2.value?.let {
-                        IntSize(it.width, it.height)
-                    } ?: originalBackgroundImage.value?.let {
-                        IntSize(it.width, it.height)
-                    } ?: resolution.value?.toIntSize()!!
-                else
-                    backgroundImage.value?.let {
-                        IntSize(it.width, it.height)
-                    } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
-            }
+        get() = with(editManager) {
+            if (isResizing())
+                backgroundImage2.value?.let {
+                    IntSize(it.width, it.height)
+                } ?: originalBackgroundImage.value?.let {
+                    IntSize(it.width, it.height)
+                } ?: resolution.value?.toIntSize()!!
+            else
+                backgroundImage.value?.let {
+                    IntSize(it.width, it.height)
+                } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
         }
 
     private val cropOperation = CropOperation(editManager) {
@@ -92,16 +90,16 @@ class EditViewModel(
     }
 
     init {
-        if (imageUri == null && imagePath == null) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            if (imageUri == null && imagePath == null) {
                 editManager.initDefaults(
                     prefs.readDefaults(),
                     maxResolution
                 )
             }
+            editManager.setImageSize(imageSize)
+            loadDefaultPaintColor()
         }
-        editManager.setImageSize(imageSize)
-        loadDefaultPaintColor()
     }
 
     fun toggleMenus() {
