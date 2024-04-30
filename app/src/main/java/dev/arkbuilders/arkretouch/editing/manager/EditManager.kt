@@ -33,6 +33,8 @@ import java.util.Stack
 // FIXME: This class is overloaded, split into smaller classes/managers
 class EditManager {
 
+    private var imageSize: IntSize = IntSize.Zero
+
     private val drawPaint: MutableState<Paint> = mutableStateOf(defaultPaint())
 
     private val _paintColor: MutableState<Color> =
@@ -66,7 +68,7 @@ class EditManager {
     val resizeOperation = ResizeOperation(this)
     val rotateOperation = RotateOperation(this, {})
     val cropOperation = CropOperation(this, {})
-    val blurOperation = BlurOperation(this)
+    val blurOperation = BlurOperation(this, imageSize)
 
     private val currentPaint: Paint
         get() = when (true) {
@@ -80,7 +82,7 @@ class EditManager {
 
     val backgroundImage = mutableStateOf<ImageBitmap?>(null)
     val backgroundImage2 = mutableStateOf<ImageBitmap?>(null)
-    private val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
+    val originalBackgroundImage = mutableStateOf<ImageBitmap?>(null)
 
     val matrix = Matrix()
     val editMatrix = Matrix()
@@ -92,7 +94,7 @@ class EditManager {
     lateinit var bitmapScale: ResizeOperation.Scale
         private set
 
-    val imageSize: IntSize
+    /* val imageSize: IntSize
         get() {
             return if (isResizeMode.value)
                 backgroundImage2.value?.let {
@@ -104,7 +106,7 @@ class EditManager {
                 backgroundImage.value?.let {
                     IntSize(it.width, it.height)
                 } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
-        }
+        }*/
 
     private val _resolution = mutableStateOf<Resolution?>(null)
     val resolution: State<Resolution?> = _resolution
@@ -124,10 +126,6 @@ class EditManager {
     // TODO: Consider using [EditionMode] instead
     private val _canRedo: MutableState<Boolean> = mutableStateOf(false)
     val canRedo: State<Boolean> = _canRedo
-
-    // TODO: Consider using [EditionMode] instead
-    private val _isResizeMode = mutableStateOf(false)
-    val isResizeMode: State<Boolean> = _isResizeMode
 
     // TODO: Consider using [EditionMode] instead
     private val _isEyeDropperMode = mutableStateOf(false)
@@ -167,6 +165,12 @@ class EditManager {
 
     private fun redoOperation(operation: Operation) {
         operation.redo()
+    }
+
+    fun setImageSize(size: IntSize) {
+        if (size != IntSize.Zero) {
+            imageSize = size
+        }
     }
 
     fun scaleToFit() {
@@ -523,10 +527,6 @@ class EditManager {
     fun cancelRotateMode() {
         rotationAngle.value = prevRotationAngle
         editMatrix.reset()
-    }
-
-    fun toggleResizeMode() {
-        _isResizeMode.value = !isResizeMode.value
     }
 
     fun cancelResizeMode() {

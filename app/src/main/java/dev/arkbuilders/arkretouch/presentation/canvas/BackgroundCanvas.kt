@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 
@@ -17,6 +18,8 @@ fun BackgroundCanvas(
     modifier: Modifier,
     isCropping: Boolean,
     isRotating: Boolean,
+    isResizing: Boolean,
+    imageSize: IntSize,
     editManager: EditManager
 ) {
     Canvas(modifier) {
@@ -25,7 +28,7 @@ fun BackgroundCanvas(
             var matrix = matrix
             if (
                 isCropping || isRotating ||
-                isResizeMode.value || isBlurMode.value
+                isResizing || isBlurMode.value
             ) {
                 matrix = editMatrix
             }

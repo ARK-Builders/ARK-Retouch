@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import dev.arkbuilders.arkretouch.R
@@ -38,28 +39,28 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
+fun ResizeInput(isVisible: Boolean, imageSize: IntSize, editManager: EditManager) {
     if (isVisible) {
         var width by rememberSaveable {
             mutableStateOf(
-                editManager.imageSize.width.toString()
+                imageSize.width.toString()
             )
         }
 
         var height by rememberSaveable {
             mutableStateOf(
-                editManager.imageSize.height.toString()
+                imageSize.height.toString()
             )
         }
 
         val widthHint = stringResource(
             R.string.width_too_large,
-            editManager.imageSize.width
+            imageSize.width
         )
         val digitsHint = stringResource(R.string.digits_only)
         val heightHint = stringResource(
             R.string.height_too_large,
-            editManager.imageSize.height
+            imageSize.height
         )
         var hint by remember {
             mutableStateOf("")
@@ -88,7 +89,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         if (
                             it.isNotEmpty() &&
                             it.isDigitsOnly() &&
-                            it.toInt() > editManager.imageSize.width
+                            it.toInt() > imageSize.width
                         ) {
                             hint = widthHint
                             showHint = true
@@ -132,7 +133,7 @@ fun ResizeInput(isVisible: Boolean, editManager: EditManager) {
                         if (
                             it.isNotEmpty() &&
                             it.isDigitsOnly() &&
-                            it.toInt() > editManager.imageSize.height
+                            it.toInt() > imageSize.height
                         ) {
                             hint = heightHint
                             showHint = true

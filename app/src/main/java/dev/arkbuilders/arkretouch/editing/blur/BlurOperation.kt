@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import android.content.Context
 import android.graphics.Bitmap
 import com.hoko.blur.processor.HokoBlurBuild
@@ -17,7 +18,8 @@ import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import java.util.Stack
 
 class BlurOperation(
-    private val editManager: EditManager
+    private val editManager: EditManager,
+    private val imageSize: IntSize
 ) : Operation {
 
     private lateinit var blurredBitmap: Bitmap
@@ -130,8 +132,8 @@ class BlurOperation(
 
     override fun apply() {
         val image = ImageBitmap(
-            editManager.imageSize.width,
-            editManager.imageSize.height,
+            imageSize.width,
+            imageSize.height,
             ImageBitmapConfig.Argb8888
         )
         editManager.backgroundImage.value?.let {

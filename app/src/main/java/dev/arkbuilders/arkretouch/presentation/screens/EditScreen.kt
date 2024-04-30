@@ -55,7 +55,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -83,8 +82,6 @@ import dev.arkbuilders.arkretouch.presentation.views.Hint
 import dev.arkbuilders.arkretouch.presentation.views.ResizeInput
 import dev.arkbuilders.arkretouch.presentation.views.delayHidingHint
 import dev.arkbuilders.arkretouch.utils.getActivity
-import dev.arkbuilders.arkretouch.utils.loadImageWithPath
-import dev.arkbuilders.arkretouch.utils.loadImageWithUri
 import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
 import dev.arkbuilders.arkretouch.utils.permission.requestWritePermissions
 import org.koin.androidx.compose.koinViewModel
@@ -146,7 +143,7 @@ fun EditScreen(
         val editManager = viewModel.editManager
         if (
             viewModel.isCropping() || viewModel.isRotating() ||
-            editManager.isResizeMode.value || editManager.isEyeDropperMode.value ||
+            viewModel.isResizing() || editManager.isEyeDropperMode.value ||
             editManager.isBlurMode.value
         ) {
             viewModel.cancelOperation()
@@ -310,56 +307,7 @@ private fun DrawContainer(
                 return@pointerInteropFilter false
             }
             .onSizeChanged { newSize ->
-                if (newSize == IntSize.Zero) return@onSizeChanged
-                if (viewModel.editingState.showSavePathDialog) return@onSizeChanged
-                viewModel.editManager.drawAreaSize.value = newSize
-                if (viewModel.editingState.isLoaded) {
-                    viewModel.editManager.apply {
-                        when (true) {
-                            viewModel.isCropping() -> {
-                                cropWindow.updateOnDrawAreaSizeChange(newSize)
-                                return@onSizeChanged
-                            }
-
-                            isResizeMode.value -> {
-                                if (
-                                    backgroundImage.value?.width ==
-                                    imageSize.width &&
-                                    backgroundImage.value?.height ==
-                                    imageSize.height
-                                ) {
-                                    val editMatrixScale = scaleToFitOnEdit().scale
-                                    resizeOperation
-                                        .updateEditMatrixScale(editMatrixScale)
-                                }
-                                if (
-                                    resizeOperation.isApplied()
-                                ) {
-                                    resizeOperation.resetApply()
-                                }
-                                return@onSizeChanged
-                            }
-
-                            viewModel.isRotating() -> {
-                                scaleToFitOnEdit(isRotating = true)
-                                return@onSizeChanged
-                            }
-
-                            isZoomMode.value -> {
-                                return@onSizeChanged
-                            }
-
-                            else -> {
-                                scaleToFit()
-                                return@onSizeChanged
-                            }
-                        }
-                    }
-                }
-                viewModel.loadImage(
-                    loadByPath = { path, editManager -> loadImageWithPath(context, path, editManager) },
-                    loadByUri = { uri, editManager -> loadImageWithUri(context, uri, editManager) }
-                )
+                viewModel.onDrawContainerSizeChanged(newSize, context)
             },
         contentAlignment = Alignment.Center
     ) {
@@ -430,7 +378,7 @@ private fun BoxScope.TopMenu(
             viewModel.editManager.apply {
                 if (
                     !viewModel.isRotating() &&
-                    !isResizeMode.value &&
+                    !viewModel.isResizing() &&
                     !isEyeDropperMode.value
                 ) clearEdits()
             }
@@ -443,7 +391,7 @@ private fun BoxScope.TopMenu(
     if (
         !viewModel.editingState.menusVisible &&
         !viewModel.isRotating() &&
-        !viewModel.editManager.isResizeMode.value &&
+        !viewModel.isResizing() &&
         !viewModel.isCropping() &&
         !viewModel.editManager.isEyeDropperMode.value
     )
@@ -458,7 +406,7 @@ private fun BoxScope.TopMenu(
                 viewModel.editManager.apply {
                     if (
                         viewModel.isCropping() || viewModel.isRotating() ||
-                        isResizeMode.value || isEyeDropperMode.value ||
+                        viewModel.isResizing() || isEyeDropperMode.value ||
                         isBlurMode.value
                     ) {
                         viewModel.cancelOperation()
@@ -505,7 +453,7 @@ private fun BoxScope.TopMenu(
                     viewModel.editManager.apply {
                         if (
                             viewModel.isCropping() || viewModel.isRotating() ||
-                            isResizeMode.value || isBlurMode.value
+                            viewModel.isResizing() || isBlurMode.value
                         ) {
                             viewModel.applyOperation()
                             return@clickable
@@ -516,7 +464,7 @@ private fun BoxScope.TopMenu(
             imageVector = if (
                 viewModel.isCropping() ||
                 viewModel.isRotating() ||
-                viewModel.editManager.isResizeMode.value ||
+                viewModel.isResizing() ||
                 viewModel.editManager.isBlurMode.value
             )
                 ImageVector.vectorResource(R.drawable.ic_check)
@@ -589,7 +537,8 @@ private fun EditMenuContainer(
             viewModel.editManager.cropWindow
         )
         ResizeInput(
-            isVisible = viewModel.editManager.isResizeMode.value,
+            isVisible = viewModel.isResizing(),
+            viewModel.imageSize,
             viewModel.editManager
         )
 
@@ -657,7 +606,7 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
@@ -669,7 +618,7 @@ private fun EditMenuContent(
                 tint = if (
                     editManager.canUndo.value && (
                         !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
@@ -685,7 +634,7 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
@@ -696,7 +645,7 @@ private fun EditMenuContent(
                     editManager.canRedo.value &&
                     (
                         !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
@@ -719,7 +668,7 @@ private fun EditMenuContent(
                         }
                         if (
                             !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEraseMode.value &&
                             !editManager.isBlurMode.value
@@ -749,7 +698,7 @@ private fun EditMenuContent(
                         if (
                             !viewModel.isRotating() &&
                             !viewModel.isCropping() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
                         )
@@ -759,7 +708,7 @@ private fun EditMenuContent(
                 ImageVector.vectorResource(R.drawable.ic_line_weight),
                 tint = if (
                     !viewModel.isRotating() &&
-                    !editManager.isResizeMode.value &&
+                    !viewModel.isResizing() &&
                     !viewModel.isCropping() &&
                     !editManager.isEyeDropperMode.value &&
                     !editManager.isBlurMode.value
@@ -775,7 +724,7 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
@@ -799,7 +748,7 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value &&
@@ -824,7 +773,7 @@ private fun EditMenuContent(
                     .clickable {
                         if (
                             !viewModel.isRotating() &&
-                            !editManager.isResizeMode.value &&
+                            !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value &&
@@ -850,7 +799,7 @@ private fun EditMenuContent(
                         editManager.apply {
                             if (
                                 !viewModel.isRotating() &&
-                                !isResizeMode.value &&
+                                !viewModel.isResizing() &&
                                 !isEyeDropperMode.value &&
                                 !isEraseMode.value &&
                                 !isBlurMode.value
@@ -889,7 +838,7 @@ private fun EditMenuContent(
                         editManager.apply {
                             if (
                                 !viewModel.isCropping() &&
-                                !isResizeMode.value &&
+                                !viewModel.isResizing() &&
                                 !isEyeDropperMode.value &&
                                 !isEraseMode.value &&
                                 !isBlurMode.value
@@ -928,10 +877,10 @@ private fun EditMenuContent(
                                 !isEraseMode.value &&
                                 !isBlurMode.value
                             )
-                                toggleResizeMode()
+                                viewModel.toggleResize()
                             else return@clickable
-                            viewModel.showMenus(!isResizeMode.value)
-                            if (isResizeMode.value) {
+                            viewModel.showMenus(!viewModel.isResizing())
+                            if (viewModel.isResizing()) {
                                 setBackgroundImage2()
                                 val imgBitmap = viewModel.getEditedImage()
                                 backgroundImage.value = imgBitmap
@@ -946,7 +895,7 @@ private fun EditMenuContent(
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_aspect_ratio),
-                tint = if (editManager.isResizeMode.value)
+                tint = if (viewModel.isResizing())
                     MaterialTheme.colors.primary
                 else
                     Color.Black,
@@ -963,7 +912,7 @@ private fun EditMenuContent(
                                 !viewModel.isRotating() &&
                                 !viewModel.isCropping() &&
                                 !isEyeDropperMode.value &&
-                                !isResizeMode.value &&
+                                !viewModel.isResizing() &&
                                 !isEraseMode.value &&
                                 !editingState.strokeSliderExpanded
                             ) toggleBlurMode()

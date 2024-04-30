@@ -32,7 +32,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
     fun resetScaleAndTranslate() {
         editManager.apply {
             if (
-                viewModel.isRotating() || viewModel.isCropping() || isResizeMode.value ||
+                viewModel.isRotating() || viewModel.isCropping() || viewModel.isResizing() ||
                 isBlurMode.value
             ) {
                 scale = 1f; zoomScale = scale; offset = Offset.Zero
@@ -61,8 +61,10 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                 translationX = offset.x
                 translationY = offset.y
             }
-        TransparencyChessBoardCanvas(modifier, editManager)
-        BackgroundCanvas(modifier, viewModel.isCropping(), viewModel.isRotating(), editManager)
+        TransparencyChessBoardCanvas(modifier, viewModel.imageSize, editManager)
+        BackgroundCanvas(
+            modifier, viewModel.isCropping(), viewModel.isRotating(), viewModel.isResizing(), viewModel.imageSize, editManager
+        )
         DrawCanvas(modifier, viewModel)
     }
     if (

@@ -10,7 +10,10 @@ import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.utils.resize
 import java.lang.NullPointerException
 
-class ResizeOperation(private val editManager: EditManager) : Operation {
+class ResizeOperation(
+    private val editManager: EditManager,
+    private val onApply: () -> Unit = {}
+) : Operation {
 
     private lateinit var bitmap: Bitmap
     private var aspectRatio = 1f
@@ -22,9 +25,9 @@ class ResizeOperation(private val editManager: EditManager) : Operation {
             addResize()
             saveRotationAfterOtherOperation()
             scaleToFit()
-            toggleResizeMode()
             editMatrix.reset()
             isApplied.value = true
+            onApply()
         }
     }
 

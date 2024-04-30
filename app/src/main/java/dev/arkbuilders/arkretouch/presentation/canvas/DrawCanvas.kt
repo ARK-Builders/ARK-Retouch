@@ -142,7 +142,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
             val mappedY = mappedXY[1]
 
             when (true) {
-                editManager.isResizeMode.value -> {}
+                viewModel.isResizing() -> {}
                 editManager.isBlurMode.value -> handleBlurEvent(
                     event.action,
                     eventX,
@@ -172,11 +172,11 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (viewModel.isRotating() || isResizeMode.value || isBlurMode.value)
+                if (viewModel.isRotating() || viewModel.isResizing() || isBlurMode.value)
                     matrix = editMatrix
                 if (viewModel.isCropping()) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
-                if (isResizeMode.value) return@drawIntoCanvas
+                if (viewModel.isResizing()) return@drawIntoCanvas
                 if (isBlurMode.value) {
                     editManager.blurOperation.draw(context, canvas)
                     return@drawIntoCanvas
@@ -187,7 +187,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 }
                 val rect = Rect(
                     Offset.Zero,
-                    imageSize.toSize()
+                    viewModel.imageSize.toSize()
                 )
                 canvas.drawRect(
                     rect,

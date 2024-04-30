@@ -34,6 +34,8 @@ import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.editing.manager.EditingMode
 import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.editing.rotate.RotateOperation
+import dev.arkbuilders.arkretouch.utils.loadImageWithPath
+import dev.arkbuilders.arkretouch.utils.loadImageWithUri
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -59,15 +61,33 @@ class EditViewModel(
     private var _editingState: EditingState by mutableStateOf(EditingState.DEFAULT.copy(usedColors = _usedColors))
     val editingState: EditingState get() = _editingState
 
-    val isCropping = mutableStateOf(false)
-
     val editManager = EditManager()
+
+    val imageSize: IntSize
+        get() {
+            with(editManager) {
+                return if (isResizing())
+                    backgroundImage2.value?.let {
+                        IntSize(it.width, it.height)
+                    } ?: originalBackgroundImage.value?.let {
+                        IntSize(it.width, it.height)
+                    } ?: resolution.value?.toIntSize()!!
+                else
+                    backgroundImage.value?.let {
+                        IntSize(it.width, it.height)
+                    } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
+            }
+        }
 
     private val cropOperation = CropOperation(editManager) {
         toggleDraw()
     }
 
     private val rotateOperation = RotateOperation(editManager) {
+        toggleDraw()
+    }
+
+    private val resizeOperation = ResizeOperation(editManager) {
         toggleDraw()
     }
 
@@ -80,6 +100,7 @@ class EditViewModel(
                 )
             }
         }
+        editManager.setImageSize(imageSize)
         loadDefaultPaintColor()
     }
 
@@ -222,7 +243,7 @@ class EditViewModel(
     }
 
     fun getCombinedImageBitmap(): ImageBitmap {
-        val size = editManager.imageSize
+        val size = imageSize
         val drawBitmap = ImageBitmap(
             size.width,
             size.height,
@@ -272,7 +293,7 @@ class EditViewModel(
     }
 
     fun getEditedImage(): ImageBitmap {
-        val size = editManager.imageSize
+        val size = imageSize
         var bitmap = ImageBitmap(
             size.width,
             size.height,
@@ -368,8 +389,8 @@ class EditViewModel(
                 toggleDraw()
                 cancelCropMode()
             }
-            if (isResizeMode.value) {
-                toggleResizeMode()
+            if (isResizing()) {
+                toggleDraw()
                 cancelResizeMode()
             }
             if (isEyeDropperMode.value) {
@@ -427,9 +448,64 @@ class EditViewModel(
 
     fun isRotating(): Boolean = editingState.mode == EditingMode.ROTATE
 
+    fun isResizing(): Boolean = editingState.mode == EditingMode.RESIZE
+
     fun onRotate(angle: Float) {
         editManager.apply {
             this@EditViewModel.rotateOperation.onRotate(angle)
+        }
+    }
+
+    fun onDrawContainerSizeChanged(newSize: IntSize, context: Context) {
+        viewModelScope.launch {
+            if (newSize == IntSize.Zero) return@launch
+            if (editingState.showSavePathDialog) return@launch
+            editManager.drawAreaSize.value = newSize
+            if (editingState.isLoaded) {
+                editManager.apply {
+                    when (true) {
+                        isCropping() -> {
+                            cropWindow.updateOnDrawAreaSizeChange(newSize)
+                            return@launch
+                        }
+
+                        isResizing() -> {
+                            if (
+                                backgroundImage.value?.width ==
+                                this@EditViewModel.imageSize.width &&
+                                backgroundImage.value?.height ==
+                                this@EditViewModel.imageSize.height
+                            ) {
+                                val editMatrixScale = scaleToFitOnEdit().scale
+                                this@EditViewModel.resizeOperation
+                                    .updateEditMatrixScale(editMatrixScale)
+                            }
+                            /* if (resizeOperation.isApplied()) {
+                                resizeOperation.resetApply()
+                            }*/
+                            return@launch
+                        }
+
+                        isRotating() -> {
+                            scaleToFitOnEdit(isRotating = true)
+                            return@launch
+                        }
+
+                        isZoomMode.value -> {
+                            return@launch
+                        }
+
+                        else -> {
+                            scaleToFit()
+                            return@launch
+                        }
+                    }
+                }
+            }
+            loadImage(
+                loadByPath = { path, editManager -> loadImageWithPath(context, path, editManager) },
+                loadByUri = { uri, editManager -> loadImageWithUri(context, uri, editManager) }
+            )
         }
     }
 
@@ -437,7 +513,7 @@ class EditViewModel(
         val operation: Operation = with(editManager) {
             when (editingState.mode) {
                 EditingMode.CROP -> this@EditViewModel.cropOperation
-                EditingMode.RESIZE -> resizeOperation
+                EditingMode.RESIZE -> this@EditViewModel.resizeOperation
                 EditingMode.ROTATE -> this@EditViewModel.rotateOperation
                 EditingMode.BLUR -> blurOperation
                 else -> drawOperation

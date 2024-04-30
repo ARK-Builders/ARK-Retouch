@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import android.graphics.Matrix
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
@@ -77,13 +78,13 @@ private fun transparencyChessBoard(
 }
 
 @Composable
-fun TransparencyChessBoardCanvas(modifier: Modifier, editManager: EditManager) {
+fun TransparencyChessBoardCanvas(modifier: Modifier, size: IntSize, editManager: EditManager) {
     Canvas(modifier.background(Color.Transparent)) {
         editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
             transparencyChessBoard(
                 canvas,
-                editManager.imageSize.toSize(),
+                size.toSize(),
                 editManager.backgroundMatrix
             )
         }
