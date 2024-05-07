@@ -4,12 +4,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.PaintingStyle
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.IntSize
 import android.graphics.Matrix
 import dev.arkbuilders.arkretouch.data.model.DrawPath
@@ -25,8 +21,6 @@ import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.editing.rotate.RotateOperation
 import dev.arkbuilders.arkretouch.presentation.viewmodels.fitBackground
 import dev.arkbuilders.arkretouch.presentation.viewmodels.fitImage
-import dev.arkbuilders.arkretouch.utils.copy
-import dev.arkbuilders.arkretouch.utils.defaultPaint
 import timber.log.Timber
 import java.util.Stack
 
@@ -35,30 +29,7 @@ class EditManager {
 
     private var imageSize: IntSize = IntSize.Zero
 
-    private val drawPaint: MutableState<Paint> = mutableStateOf(defaultPaint())
-
-    private val _paintColor: MutableState<Color> =
-        mutableStateOf(drawPaint.value.color)
-    val paintColor: State<Color> = _paintColor
-
     private val _backgroundColor = mutableStateOf(Color.Transparent)
-    val backgroundColor: State<Color> = _backgroundColor
-
-    private val erasePaint: Paint = Paint().apply {
-        shader = null
-        color = backgroundColor.value
-        style = PaintingStyle.Stroke
-        blendMode = BlendMode.SrcOut
-    }
-
-    val backgroundPaint: Paint
-        get() {
-            return Paint().apply {
-                color = backgroundImage.value?.let {
-                    Color.Transparent
-                } ?: backgroundColor.value
-            }
-        }
 
     val blurIntensity = mutableStateOf(12f)
 
@@ -69,12 +40,6 @@ class EditManager {
     val rotateOperation = RotateOperation(this, {})
     val cropOperation = CropOperation(this, {})
     val blurOperation = BlurOperation(this, imageSize)
-
-    private val currentPaint: Paint
-        get() = when (true) {
-            isEraseMode.value -> erasePaint
-            else -> drawPaint.value
-        }
 
     val drawPaths = Stack<DrawPath>()
 
@@ -114,10 +79,6 @@ class EditManager {
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
-
-    // TODO: Consider using [EditionMode] instead
-    private val _isEraseMode: MutableState<Boolean> = mutableStateOf(false)
-    val isEraseMode: State<Boolean> = _isEraseMode
 
     // TODO: Consider using [EditionMode] instead
     private val _canUndo: MutableState<Boolean> = mutableStateOf(false)
@@ -237,10 +198,6 @@ class EditManager {
             val centerY = viewParams.drawArea.height / 2f
             editMatrix.postRotate(rotationAngle.value, centerX, centerY)
         }
-    }
-
-    fun setBackgroundColor(color: Color) {
-        _backgroundColor.value = color
     }
 
     fun setImageResolution(value: Resolution) {
@@ -420,22 +377,10 @@ class EditManager {
         }
     }
 
-    fun addDrawPath(path: Path) {
-        drawPaths.add(
-            DrawPath(
-                path,
-                currentPaint.copy().apply {
-                    strokeWidth = drawPaint.value.strokeWidth
-                }
-            )
-        )
+    fun addDrawPath(path: DrawPath) {
+        drawPaths.add(path)
         if (canRedo.value) clearRedo()
         undoStack.add(DRAW)
-    }
-
-    fun setPaintColor(color: Color) {
-        drawPaint.value.color = color
-        _paintColor.value = color
     }
 
     private fun clearPaths() {
@@ -507,10 +452,6 @@ class EditManager {
         updateAvailableDrawArea()
     }
 
-    fun toggleEraseMode() {
-        _isEraseMode.value = !isEraseMode.value
-    }
-
     fun toggleZoomMode() {
         _isZoomMode.value = !isZoomMode.value
     }
@@ -536,10 +477,6 @@ class EditManager {
 
     fun toggleBlurMode() {
         _isBlurMode.value = !isBlurMode.value
-    }
-
-    fun setPaintStrokeWidth(strokeWidth: Float) {
-        drawPaint.value.strokeWidth = strokeWidth
     }
 
     fun calcImageOffset(): Offset {

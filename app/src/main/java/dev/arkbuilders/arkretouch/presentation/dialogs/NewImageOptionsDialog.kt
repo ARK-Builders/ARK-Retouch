@@ -38,6 +38,7 @@ import dev.arkbuilders.arkretouch.R
 import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.presentation.theme.Gray
+import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
 import dev.arkbuilders.arkretouch.presentation.views.Hint
 import dev.arkbuilders.arkretouch.presentation.views.delayHidingHint
 
@@ -47,10 +48,11 @@ fun NewImageOptionsDialog(
     maxResolution: Resolution,
     _backgroundColor: Color,
     navigateBack: () -> Unit,
-    editManager: EditManager,
+    viewModel: EditViewModel,
     persistDefaults: (Color, Resolution) -> Unit,
     onConfirm: () -> Unit
 ) {
+    val editManager: EditManager = viewModel.editManager
     var isVisible by remember { mutableStateOf(true) }
     var backgroundColor by remember {
         mutableStateOf(_backgroundColor)
@@ -301,7 +303,7 @@ fun NewImageOptionsDialog(
                                 height.toInt()
                             )
                             editManager.setImageResolution(resolution)
-                            editManager.setBackgroundColor(backgroundColor)
+                            viewModel.onSetBackgroundColor(backgroundColor)
                             if (rememberDefaults)
                                 persistDefaults(backgroundColor, resolution)
                             onConfirm()

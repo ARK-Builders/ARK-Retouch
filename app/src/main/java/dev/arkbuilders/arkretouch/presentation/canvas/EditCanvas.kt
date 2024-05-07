@@ -63,7 +63,13 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
             }
         TransparencyChessBoardCanvas(modifier, viewModel.imageSize, editManager)
         BackgroundCanvas(
-            modifier, viewModel.isCropping(), viewModel.isRotating(), viewModel.isResizing(), viewModel.imageSize, editManager
+            modifier,
+            viewModel.isCropping(),
+            viewModel.isRotating(),
+            viewModel.isResizing(),
+            viewModel.imageSize,
+            viewModel.drawingState.backgroundPaint,
+            editManager
         )
         DrawCanvas(modifier, viewModel)
     }

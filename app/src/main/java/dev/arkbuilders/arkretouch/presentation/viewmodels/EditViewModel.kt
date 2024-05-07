@@ -24,16 +24,20 @@ import android.graphics.Matrix
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.view.MotionEvent
+import dev.arkbuilders.arkretouch.data.model.DrawPath
+import dev.arkbuilders.arkretouch.data.model.DrawingState
 import dev.arkbuilders.arkretouch.data.model.EditingState
 import dev.arkbuilders.arkretouch.data.model.ImageViewParams
 import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
 import dev.arkbuilders.arkretouch.editing.Operation
 import dev.arkbuilders.arkretouch.editing.crop.CropOperation
+import dev.arkbuilders.arkretouch.editing.draw.DrawOperation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import dev.arkbuilders.arkretouch.editing.manager.EditingMode
 import dev.arkbuilders.arkretouch.editing.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.editing.rotate.RotateOperation
+import dev.arkbuilders.arkretouch.utils.copy
 import dev.arkbuilders.arkretouch.utils.loadImageWithPath
 import dev.arkbuilders.arkretouch.utils.loadImageWithUri
 import timber.log.Timber
@@ -58,8 +62,11 @@ class EditViewModel(
 
     private val _usedColors = mutableListOf<Color>()
 
-    private var _editingState: EditingState by mutableStateOf(EditingState.DEFAULT.copy(usedColors = _usedColors))
-    val editingState: EditingState get() = _editingState
+    var editingState: EditingState by mutableStateOf(EditingState.DEFAULT.copy(usedColors = _usedColors))
+        private set
+
+    var drawingState: DrawingState by mutableStateOf(DrawingState())
+        private set
 
     val editManager = EditManager()
 
@@ -76,6 +83,8 @@ class EditViewModel(
                     IntSize(it.width, it.height)
                 } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
         }
+
+    private val drawOperation = DrawOperation(editManager)
 
     private val cropOperation = CropOperation(editManager) {
         toggleDraw()
@@ -107,50 +116,50 @@ class EditViewModel(
     }
 
     fun showMenus(bool: Boolean) {
-        _editingState = editingState.copy(menusVisible = bool)
+        editingState = editingState.copy(menusVisible = bool)
     }
 
     fun setStrokeWidth(width: Float) {
-        _editingState = editingState.copy(strokeWidth = width)
+        editingState = editingState.copy(strokeWidth = width)
     }
 
     fun showSavePathDialog(bool: Boolean) {
-        _editingState = editingState.copy(showSavePathDialog = bool)
+        editingState = editingState.copy(showSavePathDialog = bool)
     }
 
     fun showExitDialog(bool: Boolean) {
-        _editingState = editingState.copy(showExitDialog = bool)
+        editingState = editingState.copy(showExitDialog = bool)
     }
 
     fun showMoreOptions(bool: Boolean) {
-        _editingState = editingState.copy(showMoreOptionsPopup = bool)
+        editingState = editingState.copy(showMoreOptionsPopup = bool)
     }
 
     fun showEyeDropperHint(bool: Boolean) {
-        _editingState = editingState.copy(showEyeDropperHint = bool)
+        editingState = editingState.copy(showEyeDropperHint = bool)
     }
 
     fun showConfirmClearDialog(bool: Boolean) {
-        _editingState = editingState.copy(showConfirmClearDialog = bool)
+        editingState = editingState.copy(showConfirmClearDialog = bool)
     }
 
     fun setIsLoaded(bool: Boolean) {
-        _editingState = editingState.copy(isLoaded = bool)
+        editingState = editingState.copy(isLoaded = bool)
     }
 
     fun setBottomButtonsScrollIsAtStart(bool: Boolean) {
-        _editingState = editingState.copy(bottomButtonsScrollIsAtStart = bool)
+        editingState = editingState.copy(bottomButtonsScrollIsAtStart = bool)
     }
     fun setBottomButtonsScrollIsAtEnd(bool: Boolean) {
-        _editingState = editingState.copy(bottomButtonsScrollIsAtEnd = bool)
+        editingState = editingState.copy(bottomButtonsScrollIsAtEnd = bool)
     }
 
     fun setStrokeSliderExpanded(isExpanded: Boolean) {
-        _editingState = editingState.copy(strokeSliderExpanded = isExpanded)
+        editingState = editingState.copy(strokeSliderExpanded = isExpanded)
     }
 
     fun loadImage(loadByPath: (Path, EditManager) -> Unit, loadByUri: (String, EditManager) -> Unit) {
-        _editingState = editingState.copy(isLoaded = true)
+        editingState = editingState.copy(isLoaded = true)
         imagePath?.let {
             loadByPath(it, editManager)
             return
@@ -164,7 +173,7 @@ class EditViewModel(
 
     fun saveImage(context: Context, path: Path) {
         viewModelScope.launch(Dispatchers.IO) {
-            _editingState = editingState.copy(isSavingImage = true)
+            editingState = editingState.copy(isSavingImage = true)
             val combinedBitmap = getEditedImage()
 
             path.outputStream().use { out ->
@@ -176,7 +185,7 @@ class EditViewModel(
                 arrayOf(path.toString()),
                 arrayOf("image/*")
             ) { _, _ -> }
-            _editingState = editingState.copy(imageSaved = true, isSavingImage = false, showSavePathDialog = false)
+            editingState = editingState.copy(imageSaved = true, isSavingImage = false, showSavePathDialog = false)
         }
     }
 
@@ -213,7 +222,7 @@ class EditViewModel(
     }
 
     fun cancelEyeDropper() {
-        editManager.setPaintColor(editingState.usedColors.last())
+        onSetPaintColor(editingState.usedColors.last())
     }
 
     fun applyEyeDropper(action: Int, x: Int, y: Int) {
@@ -234,7 +243,7 @@ class EditViewModel(
                     showMenus(true)
                 }
             }
-            editManager.setPaintColor(color)
+            onSetPaintColor(color)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -252,7 +261,7 @@ class EditViewModel(
 
         val time = measureTimeMillis {
             val backgroundPaint = Paint().also {
-                it.color = editManager.backgroundColor.value
+                it.color = drawingState.backgroundPaint.color
             }
             val drawCanvas = Canvas(drawBitmap)
             val combinedCanvas = Canvas(combinedBitmap)
@@ -349,7 +358,7 @@ class EditViewModel(
                     }
                     canvas.drawRect(
                         Rect(Offset.Zero, size.toSize()),
-                        backgroundPaint
+                        drawingState.backgroundPaint
                     )
                     if (drawPaths.isNotEmpty()) {
                         canvas.drawImage(
@@ -368,9 +377,9 @@ class EditViewModel(
     }
 
     fun confirmExit() = viewModelScope.launch {
-        _editingState = editingState.copy(exitConfirmed = true, isLoaded = false)
+        editingState = editingState.copy(exitConfirmed = true, isLoaded = false)
         delay(2_000)
-        _editingState = editingState.copy(exitConfirmed = false, isLoaded = true)
+        editingState = editingState.copy(exitConfirmed = false, isLoaded = true)
     }
 
     fun applyOperation() {
@@ -411,35 +420,37 @@ class EditViewModel(
     }
 
     fun toggleDraw() {
-        _editingState = editingState.copy(mode = EditingMode.DRAW)
+        editingState = editingState.copy(mode = EditingMode.DRAW)
+        drawingState = drawingState.copy(currentPaint = drawingState.drawPaint)
     }
 
     fun toggleErase() {
-        _editingState = editingState.copy(mode = EditingMode.ERASE)
+        editingState = editingState.copy(mode = EditingMode.ERASE)
+        drawingState = drawingState.copy(currentPaint = drawingState.erasePaint)
     }
 
     fun toggleCrop() {
-        _editingState = editingState.copy(mode = EditingMode.CROP)
+        editingState = editingState.copy(mode = EditingMode.CROP)
     }
 
     fun toggleResize() {
-        _editingState = editingState.copy(mode = EditingMode.RESIZE)
+        editingState = editingState.copy(mode = EditingMode.RESIZE)
     }
 
     fun toggleRotate() {
-        _editingState = editingState.copy(mode = EditingMode.ROTATE)
+        editingState = editingState.copy(mode = EditingMode.ROTATE)
     }
 
     fun toggleZoom() {
-        _editingState = editingState.copy(mode = EditingMode.ZOOM)
+        editingState = editingState.copy(mode = EditingMode.ZOOM)
     }
 
     fun togglePan() {
-        _editingState = editingState.copy(mode = EditingMode.PAN)
+        editingState = editingState.copy(mode = EditingMode.PAN)
     }
 
     fun toggleBlur() {
-        _editingState = editingState.copy(mode = EditingMode.BLUR)
+        editingState = editingState.copy(mode = EditingMode.BLUR)
     }
 
     fun isCropping(): Boolean = editingState.mode == EditingMode.CROP
@@ -447,6 +458,8 @@ class EditViewModel(
     fun isRotating(): Boolean = editingState.mode == EditingMode.ROTATE
 
     fun isResizing(): Boolean = editingState.mode == EditingMode.RESIZE
+
+    fun isErasing(): Boolean = editingState.mode == EditingMode.ERASE
 
     fun onRotate(angle: Float) {
         editManager.apply {
@@ -507,6 +520,41 @@ class EditViewModel(
         }
     }
 
+    fun onSetPaintColor(color: Color) {
+        drawingState = drawingState.copy(
+            drawPaint = drawingState.drawPaint.copy().also {
+                it.color = color
+            }
+        )
+    }
+
+    fun onSetPaintStrokeWidth(strokeWidth: Float) {
+        drawingState.drawPaint.strokeWidth = strokeWidth
+        drawingState.erasePaint.strokeWidth = strokeWidth
+    }
+
+    fun onSetBackgroundColor(color: Color) {
+        drawingState.backgroundPaint.color = color
+    }
+
+    fun onDrawPath(path: androidx.compose.ui.graphics.Path) {
+        editManager.addDrawPath(
+            DrawPath(
+                path,
+                if (isErasing()) drawingState.erasePaint.copy() else drawingState.drawPaint.copy()
+            )
+        )
+    }
+
+    private fun addDrawPath(path: androidx.compose.ui.graphics.Path) {
+        editManager.addDrawPath(
+            DrawPath(
+                path,
+                if (isErasing()) drawingState.erasePaint else drawingState.drawPaint
+            )
+        )
+    }
+
     private fun applyEdit() {
         val operation: Operation = with(editManager) {
             when (editingState.mode) {
@@ -514,11 +562,11 @@ class EditViewModel(
                 EditingMode.RESIZE -> this@EditViewModel.resizeOperation
                 EditingMode.ROTATE -> this@EditViewModel.rotateOperation
                 EditingMode.BLUR -> blurOperation
-                else -> drawOperation
+                else -> this@EditViewModel.drawOperation
             }
         }
         operation.apply()
-        if (operation != editManager.drawOperation) { showMenus(true) }
+        if (operation != drawOperation) { showMenus(true) }
     }
 
     private fun loadDefaultPaintColor() {
@@ -531,7 +579,7 @@ class EditViewModel(
                 Color(primaryColor.toULong()).also { _usedColors.add(it) }
             }
 
-            editManager.setPaintColor(color)
+            onSetPaintColor(color)
         }
     }
 

@@ -40,10 +40,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                 path.moveTo(eventX, eventY)
                 currentPoint.x = eventX
                 currentPoint.y = eventY
-                editManager.apply {
-                    drawOperation.draw(path)
-                    viewModel.applyOperation()
-                }
+                viewModel.onDrawPath(path)
             }
             MotionEvent.ACTION_MOVE -> {
                 path.quadraticBezierTo(

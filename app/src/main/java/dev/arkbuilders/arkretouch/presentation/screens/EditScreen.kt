@@ -117,9 +117,9 @@ fun EditScreen(
                 NewImageOptionsDialog(
                     it,
                     maxResolution,
-                    this.backgroundColor.value,
+                    viewModel.drawingState.backgroundPaint.color,
                     navigateBack,
-                    this,
+                    viewModel,
                     persistDefaults = { color, resolution ->
                         viewModel.persistDefaults(color, resolution)
                     },
@@ -482,7 +482,7 @@ private fun StrokeWidthPopup(
     editionState: EditingState
 ) {
     val editManager = viewModel.editManager
-    editManager.setPaintStrokeWidth(viewModel.editingState.strokeWidth.dp.toPx())
+    viewModel.onSetPaintStrokeWidth(viewModel.editingState.strokeWidth.dp.toPx())
     if (editionState.strokeSliderExpanded) {
         Column(
             modifier = modifier
@@ -504,7 +504,7 @@ private fun StrokeWidthPopup(
                         .fillMaxWidth()
                         .height(viewModel.editingState.strokeWidth.dp)
                         .clip(RoundedCornerShape(30))
-                        .background(editManager.paintColor.value)
+                        .background(viewModel.drawingState.drawPaint.color)
                 )
             }
 
@@ -658,7 +658,7 @@ private fun EditMenuContent(
                     .padding(12.dp)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(color = editManager.paintColor.value)
+                    .background(color = viewModel.drawingState.drawPaint.color)
                     .clickable {
                         if (editManager.isEyeDropperMode.value) {
                             viewModel.toggleEyeDropper()
@@ -670,7 +670,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEraseMode.value &&
+                            !viewModel.isErasing() &&
                             !editManager.isBlurMode.value
                         )
                             colorDialogExpanded.value = true
@@ -678,14 +678,14 @@ private fun EditMenuContent(
             )
             ColorPickerDialog(
                 isVisible = colorDialogExpanded,
-                initialColor = editManager.paintColor.value,
+                initialColor = viewModel.drawingState.drawPaint.color,
                 usedColors = viewModel.editingState.usedColors,
                 enableEyeDropper = true,
                 onToggleEyeDropper = {
                     viewModel.toggleEyeDropper()
                 },
                 onColorChanged = {
-                    editManager.setPaintColor(it)
+                    viewModel.onSetPaintColor(it)
                     viewModel.trackColor(it)
                 }
             )
@@ -712,7 +712,7 @@ private fun EditMenuContent(
                     !viewModel.isCropping() &&
                     !editManager.isEyeDropperMode.value &&
                     !editManager.isBlurMode.value
-                ) editManager.paintColor.value
+                ) viewModel.drawingState.drawPaint.color
                 else Color.Black,
                 contentDescription = null
             )
@@ -729,11 +729,11 @@ private fun EditMenuContent(
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
                         )
-                            editManager.toggleEraseMode()
+                            viewModel.toggleErase()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
                 tint = if (
-                    editManager.isEraseMode.value
+                    viewModel.isErasing()
                 )
                     MaterialTheme.colors.primary
                 else
@@ -752,7 +752,7 @@ private fun EditMenuContent(
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value &&
-                            !editManager.isEraseMode.value
+                            !viewModel.isErasing()
                         )
                             editManager.toggleZoomMode()
                     },
@@ -777,7 +777,7 @@ private fun EditMenuContent(
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value &&
-                            !editManager.isEraseMode.value
+                            !viewModel.isErasing()
                         )
                             editManager.togglePanMode()
                     },
@@ -801,7 +801,7 @@ private fun EditMenuContent(
                                 !viewModel.isRotating() &&
                                 !viewModel.isResizing() &&
                                 !isEyeDropperMode.value &&
-                                !isEraseMode.value &&
+                                !viewModel.isErasing() &&
                                 !isBlurMode.value
                             ) {
                                 viewModel.toggleCrop()
@@ -840,7 +840,7 @@ private fun EditMenuContent(
                                 !viewModel.isCropping() &&
                                 !viewModel.isResizing() &&
                                 !isEyeDropperMode.value &&
-                                !isEraseMode.value &&
+                                !viewModel.isErasing() &&
                                 !isBlurMode.value
                             ) {
                                 viewModel.toggleRotate()
@@ -874,7 +874,7 @@ private fun EditMenuContent(
                                 !viewModel.isRotating() &&
                                 !viewModel.isCropping() &&
                                 !isEyeDropperMode.value &&
-                                !isEraseMode.value &&
+                                !viewModel.isErasing() &&
                                 !isBlurMode.value
                             )
                                 viewModel.toggleResize()
@@ -913,7 +913,7 @@ private fun EditMenuContent(
                                 !viewModel.isCropping() &&
                                 !isEyeDropperMode.value &&
                                 !viewModel.isResizing() &&
-                                !isEraseMode.value &&
+                                !viewModel.isErasing() &&
                                 !editingState.strokeSliderExpanded
                             ) toggleBlurMode()
                             if (isBlurMode.value) {
