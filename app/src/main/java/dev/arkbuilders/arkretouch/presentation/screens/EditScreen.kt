@@ -728,8 +728,7 @@ private fun EditMenuContent(
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
                             !editManager.isBlurMode.value
-                        )
-                            viewModel.toggleErase()
+                        ) { viewModel.toggleErase() }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
                 tint = if (

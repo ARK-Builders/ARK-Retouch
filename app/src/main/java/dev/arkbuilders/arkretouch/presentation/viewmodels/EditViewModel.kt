@@ -421,12 +421,14 @@ class EditViewModel(
 
     fun toggleDraw() {
         editingState = editingState.copy(mode = EditingMode.DRAW)
-        drawingState = drawingState.copy(currentPaint = drawingState.drawPaint)
     }
 
     fun toggleErase() {
+        if (isErasing()) {
+            toggleDraw()
+            return
+        }
         editingState = editingState.copy(mode = EditingMode.ERASE)
-        drawingState = drawingState.copy(currentPaint = drawingState.erasePaint)
     }
 
     fun toggleCrop() {
