@@ -444,10 +444,18 @@ class EditViewModel(
     }
 
     fun toggleZoom() {
+        if (isZooming()) {
+            toggleDraw()
+            return
+        }
         editingState = editingState.copy(mode = EditingMode.ZOOM)
     }
 
     fun togglePan() {
+        if (isPanning()) {
+            toggleDraw()
+            return
+        }
         editingState = editingState.copy(mode = EditingMode.PAN)
     }
 
@@ -462,6 +470,10 @@ class EditViewModel(
     fun isResizing(): Boolean = editingState.mode == EditingMode.RESIZE
 
     fun isErasing(): Boolean = editingState.mode == EditingMode.ERASE
+
+    fun isZooming(): Boolean = editingState.mode == EditingMode.ZOOM
+
+    fun isPanning(): Boolean = editingState.mode == EditingMode.PAN
 
     fun onRotate(angle: Float) {
         editManager.apply {
@@ -504,7 +516,7 @@ class EditViewModel(
                             return@launch
                         }
 
-                        isZoomMode.value -> {
+                        isZooming() -> {
                             return@launch
                         }
 

@@ -149,12 +149,12 @@ fun EditScreen(
             viewModel.cancelOperation()
             return@BackHandler
         }
-        if (editManager.isZoomMode.value) {
-            editManager.toggleZoomMode()
+        if (viewModel.isZooming()) {
+            viewModel.toggleZoom()
             return@BackHandler
         }
-        if (editManager.isPanMode.value) {
-            editManager.togglePanMode()
+        if (viewModel.isPanning()) {
+            viewModel.togglePan()
             return@BackHandler
         }
         if (editManager.canUndo.value) {
@@ -412,12 +412,12 @@ private fun BoxScope.TopMenu(
                         viewModel.cancelOperation()
                         return@clickable
                     }
-                    if (isZoomMode.value) {
-                        toggleZoomMode()
+                    if (viewModel.isZooming()) {
+                        viewModel.toggleZoom()
                         return@clickable
                     }
-                    if (isPanMode.value) {
-                        togglePanMode()
+                    if (viewModel.isPanning()) {
+                        viewModel.togglePan()
                         return@clickable
                     }
                     if (
@@ -753,11 +753,11 @@ private fun EditMenuContent(
                             !editManager.isBlurMode.value &&
                             !viewModel.isErasing()
                         )
-                            editManager.toggleZoomMode()
+                            viewModel.toggleZoom()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_zoom_in),
                 tint = if (
-                    editManager.isZoomMode.value
+                    viewModel.isZooming()
                 )
                     MaterialTheme.colors.primary
                 else
@@ -778,15 +778,10 @@ private fun EditMenuContent(
                             !editManager.isBlurMode.value &&
                             !viewModel.isErasing()
                         )
-                            editManager.togglePanMode()
+                            viewModel.togglePan()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_pan_tool),
-                tint = if (
-                    editManager.isPanMode.value
-                )
-                    MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                tint = if (viewModel.isPanning()) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Icon(

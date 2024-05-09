@@ -74,8 +74,8 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
         DrawCanvas(modifier, viewModel)
     }
     if (
-        viewModel.isRotating() || editManager.isZoomMode.value ||
-        editManager.isPanMode.value
+        viewModel.isRotating() || viewModel.isZooming() ||
+        viewModel.isPanning()
     ) {
         Canvas(
             Modifier
@@ -96,11 +96,11 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                                         editManager.invalidatorTick.value++
                                     }
                                     else -> {
-                                        if (editManager.isZoomMode.value) {
+                                        if (viewModel.isZooming()) {
                                             scale *= event.calculateZoom()
                                             editManager.zoomScale = scale
                                         }
-                                        if (editManager.isPanMode.value) {
+                                        if (viewModel.isPanning()) {
                                             val pan = event.calculatePan()
                                             offset = Offset(
                                                 offset.x + pan.x,

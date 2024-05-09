@@ -96,14 +96,6 @@ class EditManager {
     private val _isBlurMode = mutableStateOf(false)
     val isBlurMode: State<Boolean> = _isBlurMode
 
-    // TODO: Consider using [EditionMode] instead
-    private val _isZoomMode = mutableStateOf(false)
-    val isZoomMode: State<Boolean> = _isZoomMode
-
-    // TODO: Consider using [EditionMode] instead
-    private val _isPanMode = mutableStateOf(false)
-    val isPanMode: State<Boolean> = _isPanMode
-
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
 
@@ -450,14 +442,6 @@ class EditManager {
     private fun restoreOriginalBackgroundImage() {
         backgroundImage.value = originalBackgroundImage.value
         updateAvailableDrawArea()
-    }
-
-    fun toggleZoomMode() {
-        _isZoomMode.value = !isZoomMode.value
-    }
-
-    fun togglePanMode() {
-        _isPanMode.value = !isPanMode.value
     }
 
     fun cancelCropMode() {
