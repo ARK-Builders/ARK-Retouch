@@ -144,7 +144,7 @@ fun EditScreen(
         if (
             viewModel.isCropping() || viewModel.isRotating() ||
             viewModel.isResizing() || editManager.isEyeDropperMode.value ||
-            editManager.isBlurMode.value
+            viewModel.isBlurring()
         ) {
             viewModel.cancelOperation()
             return@BackHandler
@@ -407,7 +407,7 @@ private fun BoxScope.TopMenu(
                     if (
                         viewModel.isCropping() || viewModel.isRotating() ||
                         viewModel.isResizing() || isEyeDropperMode.value ||
-                        isBlurMode.value
+                        viewModel.isBlurring()
                     ) {
                         viewModel.cancelOperation()
                         return@clickable
@@ -453,7 +453,7 @@ private fun BoxScope.TopMenu(
                     viewModel.editManager.apply {
                         if (
                             viewModel.isCropping() || viewModel.isRotating() ||
-                            viewModel.isResizing() || isBlurMode.value
+                            viewModel.isResizing() || viewModel.isBlurring()
                         ) {
                             viewModel.applyOperation()
                             return@clickable
@@ -465,7 +465,7 @@ private fun BoxScope.TopMenu(
                 viewModel.isCropping() ||
                 viewModel.isRotating() ||
                 viewModel.isResizing() ||
-                viewModel.editManager.isBlurMode.value
+                viewModel.isBlurring()
             )
                 ImageVector.vectorResource(R.drawable.ic_check)
             else ImageVector.vectorResource(R.drawable.ic_more_vert),
@@ -589,7 +589,13 @@ private fun EditMenuContent(
     ) {
         StrokeWidthPopup(Modifier, viewModel, editingState)
 
-        BlurIntensityPopup(editManager)
+        BlurIntensityPopup(
+            viewModel.isBlurring(),
+            viewModel.drawingState.blurIntensity,
+            viewModel.drawingState.blurSize,
+            onIntensityChange = { viewModel.onBlurIntensityChange(it) },
+            onSizeChange = { viewModel.onBlurSizeChange(it) }
+        )
 
         Row(
             Modifier
@@ -609,7 +615,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         ) {
                             editManager.undo()
                         }
@@ -621,7 +627,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
@@ -637,7 +643,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         ) editManager.redo()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
@@ -648,7 +654,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
@@ -671,7 +677,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !viewModel.isErasing() &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         )
                             colorDialogExpanded.value = true
                     }
@@ -700,7 +706,7 @@ private fun EditMenuContent(
                             !viewModel.isCropping() &&
                             !viewModel.isResizing() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         )
                             viewModel.setStrokeSliderExpanded(isExpanded = !editingState.strokeSliderExpanded)
                     },
@@ -711,7 +717,7 @@ private fun EditMenuContent(
                     !viewModel.isResizing() &&
                     !viewModel.isCropping() &&
                     !editManager.isEyeDropperMode.value &&
-                    !editManager.isBlurMode.value
+                    !viewModel.isBlurring()
                 ) viewModel.drawingState.drawPaint.color
                 else Color.Black,
                 contentDescription = null
@@ -727,7 +733,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value
+                            !viewModel.isBlurring()
                         ) { viewModel.toggleErase() }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_eraser),
@@ -750,7 +756,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value &&
+                            !viewModel.isBlurring() &&
                             !viewModel.isErasing()
                         )
                             viewModel.toggleZoom()
@@ -775,7 +781,7 @@ private fun EditMenuContent(
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
                             !editManager.isEyeDropperMode.value &&
-                            !editManager.isBlurMode.value &&
+                            !viewModel.isBlurring() &&
                             !viewModel.isErasing()
                         )
                             viewModel.togglePan()
@@ -796,7 +802,7 @@ private fun EditMenuContent(
                                 !viewModel.isResizing() &&
                                 !isEyeDropperMode.value &&
                                 !viewModel.isErasing() &&
-                                !isBlurMode.value
+                                !viewModel.isBlurring()
                             ) {
                                 viewModel.toggleCrop()
                                 viewModel.showMenus(!viewModel.isCropping())
@@ -835,7 +841,7 @@ private fun EditMenuContent(
                                 !viewModel.isResizing() &&
                                 !isEyeDropperMode.value &&
                                 !viewModel.isErasing() &&
-                                !isBlurMode.value
+                                !viewModel.isBlurring()
                             ) {
                                 viewModel.toggleRotate()
                                 if (viewModel.isRotating()) {
@@ -869,7 +875,7 @@ private fun EditMenuContent(
                                 !viewModel.isCropping() &&
                                 !isEyeDropperMode.value &&
                                 !viewModel.isErasing() &&
-                                !isBlurMode.value
+                                !viewModel.isBlurring()
                             )
                                 viewModel.toggleResize()
                             else return@clickable
@@ -909,20 +915,20 @@ private fun EditMenuContent(
                                 !viewModel.isResizing() &&
                                 !viewModel.isErasing() &&
                                 !editingState.strokeSliderExpanded
-                            ) toggleBlurMode()
-                            if (isBlurMode.value) {
+                            ) viewModel.toggleBlur()
+                            /* if (isBlurMode.value) {
                                 setBackgroundImage2()
                                 backgroundImage.value = viewModel.getEditedImage()
-                                blurOperation.init()
+                                viewModel.blurOperation.init()
                                 return@clickable
-                            }
-                            blurOperation.cancel()
-                            scaleToFit()
+                            }*/
+                            // viewModel.blurOperation.cancel()
+                            // scaleToFit()
                         }
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_blur_on),
-                tint = if (editManager.isBlurMode.value)
+                tint = if (viewModel.isBlurring())
                     MaterialTheme.colors.primary
                 else
                     Color.Black,

@@ -15,5 +15,7 @@ data class DrawingState(
         color = backgroundPaint.color
         style = PaintingStyle.Stroke
         blendMode = BlendMode.SrcOut
-    }
+    },
+    val blurSize: Float = 250f,
+    val blurIntensity: Float = 12f
 )

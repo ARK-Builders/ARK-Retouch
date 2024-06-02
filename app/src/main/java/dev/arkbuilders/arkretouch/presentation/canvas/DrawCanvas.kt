@@ -116,7 +116,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     computeDeltaX(currentPoint.x, eventX),
                     computeDeltaY(currentPoint.y, eventY)
                 )
-                editManager.blurOperation.move(position, delta)
+                viewModel.onBlurMove(position, delta)
                 currentPoint.x = eventX
                 currentPoint.y = eventY
             }
@@ -140,7 +140,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
 
             when (true) {
                 viewModel.isResizing() -> {}
-                editManager.isBlurMode.value -> handleBlurEvent(
+                viewModel.isBlurring() -> handleBlurEvent(
                     event.action,
                     eventX,
                     eventY
@@ -169,13 +169,13 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
         drawIntoCanvas { canvas ->
             editManager.apply {
                 var matrix = this.matrix
-                if (viewModel.isRotating() || viewModel.isResizing() || isBlurMode.value)
+                if (viewModel.isRotating() || viewModel.isResizing() || viewModel.isBlurring())
                     matrix = editMatrix
                 if (viewModel.isCropping()) matrix = Matrix()
                 canvas.nativeCanvas.setMatrix(matrix)
                 if (viewModel.isResizing()) return@drawIntoCanvas
-                if (isBlurMode.value) {
-                    editManager.blurOperation.draw(context, canvas)
+                if (viewModel.isBlurring()) {
+                    viewModel.onDrawBlur(context, canvas)
                     return@drawIntoCanvas
                 }
                 if (viewModel.isCropping()) {

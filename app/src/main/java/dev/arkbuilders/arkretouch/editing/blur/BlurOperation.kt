@@ -1,6 +1,5 @@
 package dev.arkbuilders.arkretouch.editing.blur
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
@@ -9,7 +8,6 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import android.content.Context
 import android.graphics.Bitmap
 import com.hoko.blur.processor.HokoBlurBuild
@@ -19,7 +17,7 @@ import java.util.Stack
 
 class BlurOperation(
     private val editManager: EditManager,
-    private val imageSize: IntSize
+    private val onApply: () -> Unit
 ) : Operation {
 
     private lateinit var blurredBitmap: Bitmap
@@ -30,21 +28,22 @@ class BlurOperation(
     private var offset = Offset.Zero
     private var bitmapPosition = IntOffset.Zero
 
-    val blurSize = mutableStateOf(BRUSH_SIZE.toFloat())
+    private var blurSize = BRUSH_SIZE.toFloat()
+    private var intensity = 12
 
     fun init() {
         editManager.apply {
             backgroundImage.value?.let {
                 bitmapPosition = IntOffset(
-                    (it.width / 2) - (blurSize.value.toInt() / 2),
-                    (it.height / 2) - (blurSize.value.toInt() / 2)
+                    (it.width / 2) - (blurSize.toInt() / 2),
+                    (it.height / 2) - (blurSize.toInt() / 2)
                 )
                 brushBitmap = Bitmap.createBitmap(
                     it.asAndroidBitmap(),
                     bitmapPosition.x,
                     bitmapPosition.y,
-                    blurSize.value.toInt(),
-                    blurSize.value.toInt()
+                    blurSize.toInt(),
+                    blurSize.toInt()
                 )
             }
             scaleToFitOnEdit()
@@ -58,15 +57,15 @@ class BlurOperation(
                     it.asAndroidBitmap(),
                     bitmapPosition.x,
                     bitmapPosition.y,
-                    blurSize.value.toInt(),
-                    blurSize.value.toInt()
+                    blurSize.toInt(),
+                    blurSize.toInt()
                 )
             }
         }
     }
 
     fun draw(context: Context, canvas: Canvas) {
-        if (blurSize.value in MIN_SIZE..MAX_SIZE) {
+        if (blurSize in MIN_SIZE..MAX_SIZE) {
             editManager.backgroundImage.value?.let {
                 this.context = context
                 if (isWithinBounds(it)) {
@@ -102,8 +101,8 @@ class BlurOperation(
                             it.asAndroidBitmap(),
                             bitmapPosition.x,
                             bitmapPosition.y,
-                            blurSize.value.toInt(),
-                            blurSize.value.toInt()
+                            blurSize.toInt(),
+                            blurSize.toInt()
                         )
                     }
                 }
@@ -121,19 +120,27 @@ class BlurOperation(
         editManager.redrawBackgroundImage2()
     }
 
+    fun setSize(size: Float) {
+        blurSize = size
+    }
+
+    fun setIntensity(intensity: Float) {
+        this.intensity = intensity.toInt()
+    }
+
     private fun isWithinBounds(image: ImageBitmap) = bitmapPosition.x >= 0 &&
-        (bitmapPosition.x + blurSize.value) <= image.width &&
-        bitmapPosition.y >= 0 && (bitmapPosition.y + blurSize.value) <= image.height
+        (bitmapPosition.x + blurSize) <= image.width &&
+        bitmapPosition.y >= 0 && (bitmapPosition.y + blurSize) <= image.height
 
     private fun isBrushTouched(position: Offset): Boolean {
-        return position.x >= offset.x && position.x <= (offset.x + blurSize.value) &&
-            position.y >= offset.y && position.y <= (offset.y + blurSize.value)
+        return position.x >= offset.x && position.x <= (offset.x + blurSize) &&
+            position.y >= offset.y && position.y <= (offset.y + blurSize)
     }
 
     override fun apply() {
         val image = ImageBitmap(
-            imageSize.width,
-            imageSize.height,
+            editManager.imageSize.width,
+            editManager.imageSize.height,
             ImageBitmapConfig.Argb8888
         )
         editManager.backgroundImage.value?.let {
@@ -152,8 +159,8 @@ class BlurOperation(
             editManager.addBlur()
         }
         editManager.keepEditedPaths()
-        editManager.toggleBlurMode()
         editManager.backgroundImage.value = image
+        onApply()
     }
 
     override fun undo() {
@@ -173,7 +180,7 @@ class BlurOperation(
     private fun blur(context: Context) {
         editManager.apply {
             val blurProcessor = HokoBlurBuild(context)
-                .radius(blurIntensity.value.toInt())
+                .radius(intensity)
                 .processor()
             blurredBitmap =
                 blurProcessor.blur(brushBitmap)
