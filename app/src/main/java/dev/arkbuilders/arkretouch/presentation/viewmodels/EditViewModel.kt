@@ -101,7 +101,7 @@ class EditViewModel(
         toggleDraw()
     }
 
-    val blurOperation = BlurOperation(editManager) {
+    private val blurOperation = BlurOperation(editManager) {
         toggleDraw()
     }
 
