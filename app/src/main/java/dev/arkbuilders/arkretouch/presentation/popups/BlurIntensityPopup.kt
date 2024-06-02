@@ -12,13 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.editing.manager.EditManager
 
 @Composable
 fun BlurIntensityPopup(
-    editManager: EditManager
+    isBlurring: Boolean,
+    intensity: Float,
+    size: Float,
+    onIntensityChange: (Float) -> Unit,
+    onSizeChange: (Float) -> Unit,
 ) {
-    if (editManager.isBlurMode.value) {
+    if (isBlurring) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -31,9 +34,10 @@ fun BlurIntensityPopup(
                 Slider(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    value = editManager.blurIntensity.value,
+                    value = intensity, // editManager.blurIntensity.value,
                     onValueChange = {
-                        editManager.blurIntensity.value = it
+                        onIntensityChange(it)
+                        // editManager.blurIntensity.value = it
                     },
                     valueRange = 0f..25f,
                 )
@@ -43,10 +47,11 @@ fun BlurIntensityPopup(
                 Slider(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    value = editManager.blurOperation.blurSize.value,
+                    value = size, // editManager.blurOperation.blurSize.value,
                     onValueChange = {
-                        editManager.blurOperation.blurSize.value = it
-                        editManager.blurOperation.resize()
+                        onSizeChange(it)
+                        // editManager.blurOperation.blurSize.value = it
+                        // editManager.blurOperation.resize()
                     },
                     valueRange = 100f..500f,
                 )

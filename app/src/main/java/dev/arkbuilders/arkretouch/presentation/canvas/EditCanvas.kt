@@ -33,7 +33,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
         editManager.apply {
             if (
                 viewModel.isRotating() || viewModel.isCropping() || viewModel.isResizing() ||
-                isBlurMode.value
+                viewModel.isBlurring()
             ) {
                 scale = 1f; zoomScale = scale; offset = Offset.Zero
             }
@@ -67,6 +67,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
             viewModel.isCropping(),
             viewModel.isRotating(),
             viewModel.isResizing(),
+            viewModel.isBlurring(),
             viewModel.imageSize,
             viewModel.drawingState.backgroundPaint,
             editManager

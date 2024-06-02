@@ -31,6 +31,7 @@ import dev.arkbuilders.arkretouch.data.model.ImageViewParams
 import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.data.repo.OldStorageRepository
 import dev.arkbuilders.arkretouch.editing.Operation
+import dev.arkbuilders.arkretouch.editing.blur.BlurOperation
 import dev.arkbuilders.arkretouch.editing.crop.CropOperation
 import dev.arkbuilders.arkretouch.editing.draw.DrawOperation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
@@ -72,7 +73,7 @@ class EditViewModel(
 
     val imageSize: IntSize
         get() = with(editManager) {
-            if (isResizing())
+            val size = if (isResizing())
                 backgroundImage2.value?.let {
                     IntSize(it.width, it.height)
                 } ?: originalBackgroundImage.value?.let {
@@ -82,6 +83,8 @@ class EditViewModel(
                 backgroundImage.value?.let {
                     IntSize(it.width, it.height)
                 } ?: resolution.value?.toIntSize() ?: drawAreaSize.value
+            editManager.setImageSize(size)
+            size
         }
 
     private val drawOperation = DrawOperation(editManager)
@@ -98,6 +101,10 @@ class EditViewModel(
         toggleDraw()
     }
 
+    val blurOperation = BlurOperation(editManager) {
+        toggleDraw()
+    }
+
     init {
         viewModelScope.launch {
             if (imageUri == null && imagePath == null) {
@@ -105,8 +112,8 @@ class EditViewModel(
                     prefs.readDefaults(),
                     maxResolution
                 )
+                editManager.setImageSize(imageSize)
             }
-            editManager.setImageSize(imageSize)
             loadDefaultPaintColor()
         }
     }
@@ -404,9 +411,9 @@ class EditViewModel(
                 toggleEyeDropper()
                 cancelEyeDropper()
             }
-            if (isBlurMode.value) {
-                toggleBlurMode()
-                blurOperation.cancel()
+            if (isBlurring()) {
+                toggleDraw()
+                this@EditViewModel.blurOperation.cancel()
             }
             showMenus(true)
             scaleToFit()
@@ -461,6 +468,9 @@ class EditViewModel(
 
     fun toggleBlur() {
         editingState = editingState.copy(mode = EditingMode.BLUR)
+        editManager.setBackgroundImage2()
+        editManager.backgroundImage.value = getEditedImage()
+        blurOperation.init()
     }
 
     fun isCropping(): Boolean = editingState.mode == EditingMode.CROP
@@ -475,10 +485,31 @@ class EditViewModel(
 
     fun isPanning(): Boolean = editingState.mode == EditingMode.PAN
 
+    fun isBlurring(): Boolean = editingState.mode == EditingMode.BLUR
+
     fun onRotate(angle: Float) {
         editManager.apply {
             this@EditViewModel.rotateOperation.onRotate(angle)
         }
+    }
+
+    fun onBlurSizeChange(size: Float) {
+        drawingState = drawingState.copy(blurSize = size)
+        blurOperation.setSize(drawingState.blurSize)
+        blurOperation.resize()
+    }
+
+    fun onBlurIntensityChange(intensity: Float) {
+        drawingState = drawingState.copy(blurIntensity = intensity)
+        blurOperation.setIntensity(drawingState.blurIntensity)
+    }
+
+    fun onBlurMove(position: Offset, delta: Offset) {
+        blurOperation.move(position, delta)
+    }
+
+    fun onDrawBlur(context: Context, canvas: Canvas) {
+        blurOperation.draw(context, canvas)
     }
 
     fun onDrawContainerSizeChanged(newSize: IntSize, context: Context) {
@@ -575,7 +606,7 @@ class EditViewModel(
                 EditingMode.CROP -> this@EditViewModel.cropOperation
                 EditingMode.RESIZE -> this@EditViewModel.resizeOperation
                 EditingMode.ROTATE -> this@EditViewModel.rotateOperation
-                EditingMode.BLUR -> blurOperation
+                EditingMode.BLUR -> this@EditViewModel.blurOperation
                 else -> this@EditViewModel.drawOperation
             }
         }

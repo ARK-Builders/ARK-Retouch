@@ -20,6 +20,7 @@ fun BackgroundCanvas(
     isCropping: Boolean,
     isRotating: Boolean,
     isResizing: Boolean,
+    isBlurring: Boolean,
     imageSize: IntSize,
     backgroundPaint: Paint,
     editManager: EditManager
@@ -30,7 +31,7 @@ fun BackgroundCanvas(
             var matrix = matrix
             if (
                 isCropping || isRotating ||
-                isResizing || isBlurMode.value
+                isResizing || isBlurring
             ) {
                 matrix = editMatrix
             }

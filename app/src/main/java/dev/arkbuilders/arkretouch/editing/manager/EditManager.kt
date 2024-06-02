@@ -27,11 +27,10 @@ import java.util.Stack
 // FIXME: This class is overloaded, split into smaller classes/managers
 class EditManager {
 
-    private var imageSize: IntSize = IntSize.Zero
+    var imageSize: IntSize = IntSize.Zero
+        private set
 
     private val _backgroundColor = mutableStateOf(Color.Transparent)
-
-    val blurIntensity = mutableStateOf(12f)
 
     val cropWindow = CropWindow(this)
 
@@ -39,7 +38,7 @@ class EditManager {
     val resizeOperation = ResizeOperation(this)
     val rotateOperation = RotateOperation(this, {})
     val cropOperation = CropOperation(this, {})
-    val blurOperation = BlurOperation(this, imageSize)
+    val blurOperation = BlurOperation(this, {})
 
     val drawPaths = Stack<DrawPath>()
 
@@ -91,10 +90,6 @@ class EditManager {
     // TODO: Consider using [EditionMode] instead
     private val _isEyeDropperMode = mutableStateOf(false)
     val isEyeDropperMode: State<Boolean> = _isEyeDropperMode
-
-    // TODO: Consider using [EditionMode] instead
-    private val _isBlurMode = mutableStateOf(false)
-    val isBlurMode: State<Boolean> = _isBlurMode
 
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
@@ -457,10 +452,6 @@ class EditManager {
     fun cancelResizeMode() {
         backgroundImage.value = backgroundImage2.value
         editMatrix.reset()
-    }
-
-    fun toggleBlurMode() {
-        _isBlurMode.value = !isBlurMode.value
     }
 
     fun calcImageOffset(): Offset {
