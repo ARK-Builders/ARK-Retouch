@@ -150,6 +150,14 @@ class EditViewModel(
         editingState = editingState.copy(showConfirmClearDialog = bool)
     }
 
+    fun showColorDialog(bool: Boolean) {
+        if (isRotating() && isResizing() && isCropping() && isErasing() && isBlurring()) return
+        if (isEyeDropping() && bool) {
+            toggleDraw()
+        }
+        editingState = editingState.copy(showColorDialog = bool)
+    }
+
     fun setIsLoaded(bool: Boolean) {
         editingState = editingState.copy(isLoaded = bool)
     }
@@ -222,10 +230,6 @@ class EditViewModel(
         viewModelScope.launch {
             prefs.persistUsedColors(editingState.usedColors)
         }
-    }
-
-    fun toggleEyeDropper() {
-        editManager.toggleEyeDropper()
     }
 
     fun cancelEyeDropper() {
@@ -407,9 +411,8 @@ class EditViewModel(
                 toggleDraw()
                 cancelResizeMode()
             }
-            if (isEyeDropperMode.value) {
-                toggleEyeDropper()
-                cancelEyeDropper()
+            if (isEyeDropping()) {
+                this@EditViewModel.toggleEyeDropper()
             }
             if (isBlurring()) {
                 toggleDraw()
@@ -478,6 +481,16 @@ class EditViewModel(
         blurOperation.init()
     }
 
+    fun toggleEyeDropper() {
+        if (isEyeDropping()) {
+            cancelEyeDropper()
+            toggleDraw()
+            return
+        }
+        editingState = editingState.copy(mode = EditingMode.EYEDROPPER)
+        showColorDialog(false)
+    }
+
     fun isCropping(): Boolean = editingState.mode == EditingMode.CROP
 
     fun isRotating(): Boolean = editingState.mode == EditingMode.ROTATE
@@ -491,6 +504,8 @@ class EditViewModel(
     fun isPanning(): Boolean = editingState.mode == EditingMode.PAN
 
     fun isBlurring(): Boolean = editingState.mode == EditingMode.BLUR
+
+    fun isEyeDropping(): Boolean = editingState.mode == EditingMode.EYEDROPPER
 
     fun onRotate(angle: Float) {
         editManager.apply {

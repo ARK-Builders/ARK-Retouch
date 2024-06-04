@@ -8,5 +8,6 @@ enum class EditingMode {
     ROTATE,
     ZOOM,
     PAN,
-    BLUR
+    BLUR,
+    EYEDROPPER
 }

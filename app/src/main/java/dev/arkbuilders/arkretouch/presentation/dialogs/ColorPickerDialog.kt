@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,14 +51,15 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ColorPickerDialog(
-    isVisible: MutableState<Boolean>,
+    isVisible: Boolean,
     initialColor: Color,
     usedColors: List<Color> = listOf(),
     enableEyeDropper: Boolean,
     onToggleEyeDropper: () -> Unit,
     onColorChanged: (Color) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    if (!isVisible.value) return
+    if (!isVisible) return
 
     var currentColor by remember {
         mutableStateOf(HsvColor.from(initialColor))
@@ -67,12 +67,12 @@ fun ColorPickerDialog(
 
     val finish = {
         onColorChanged(currentColor.toColor())
-        isVisible.value = false
+        onDismiss()
     }
 
     Dialog(
         onDismissRequest = {
-            isVisible.value = false
+            onDismiss()
         }
     ) {
         Column(
@@ -141,7 +141,7 @@ fun ColorPickerDialog(
                             .clip(CircleShape)
                             .clickable {
                                 onToggleEyeDropper()
-                                isVisible.value = false
+                                onDismiss()
                             },
                         contentAlignment = Alignment.Center
                     ) {

@@ -60,12 +60,15 @@ fun NewImageOptionsDialog(
     val showColorDialog = remember { mutableStateOf(false) }
 
     ColorPickerDialog(
-        isVisible = showColorDialog,
+        isVisible = showColorDialog.value,
         initialColor = backgroundColor,
         enableEyeDropper = false,
         onToggleEyeDropper = {},
         onColorChanged = {
             backgroundColor = it
+        },
+        onDismiss = {
+            showColorDialog.value = false
         }
     )
 

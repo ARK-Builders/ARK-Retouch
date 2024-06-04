@@ -152,7 +152,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     eventY
                 )
 
-                editManager.isEyeDropperMode.value -> handleEyeDropEvent(
+                viewModel.isEyeDropping() -> handleEyeDropEvent(
                     event.action,
                     event.x,
                     event.y

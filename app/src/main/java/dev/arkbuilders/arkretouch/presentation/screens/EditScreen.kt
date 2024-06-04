@@ -143,7 +143,7 @@ fun EditScreen(
         val editManager = viewModel.editManager
         if (
             viewModel.isCropping() || viewModel.isRotating() ||
-            viewModel.isResizing() || editManager.isEyeDropperMode.value ||
+            viewModel.isResizing() || viewModel.isEyeDropping() ||
             viewModel.isBlurring()
         ) {
             viewModel.cancelOperation()
@@ -379,7 +379,7 @@ private fun BoxScope.TopMenu(
                 if (
                     !viewModel.isRotating() &&
                     !viewModel.isResizing() &&
-                    !isEyeDropperMode.value
+                    !viewModel.isEyeDropping()
                 ) clearEdits()
             }
         },
@@ -393,7 +393,7 @@ private fun BoxScope.TopMenu(
         !viewModel.isRotating() &&
         !viewModel.isResizing() &&
         !viewModel.isCropping() &&
-        !viewModel.editManager.isEyeDropperMode.value
+        !viewModel.isEyeDropping()
     )
         return
     Icon(
@@ -406,7 +406,7 @@ private fun BoxScope.TopMenu(
                 viewModel.editManager.apply {
                     if (
                         viewModel.isCropping() || viewModel.isRotating() ||
-                        viewModel.isResizing() || isEyeDropperMode.value ||
+                        viewModel.isResizing() || viewModel.isEyeDropping() ||
                         viewModel.isBlurring()
                     ) {
                         viewModel.cancelOperation()
@@ -616,7 +616,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         ) {
                             editManager.undo()
@@ -628,7 +628,7 @@ private fun EditMenuContent(
                         !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
@@ -644,7 +644,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         ) editManager.redo()
                     },
@@ -655,7 +655,7 @@ private fun EditMenuContent(
                         !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         )
                 ) MaterialTheme.colors.primary else Color.Black,
@@ -668,24 +668,11 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .background(color = viewModel.drawingState.drawPaint.color)
                     .clickable {
-                        if (editManager.isEyeDropperMode.value) {
-                            viewModel.toggleEyeDropper()
-                            viewModel.cancelEyeDropper()
-                            colorDialogExpanded.value = true
-                            return@clickable
-                        }
-                        if (
-                            !viewModel.isRotating() &&
-                            !viewModel.isResizing() &&
-                            !viewModel.isCropping() &&
-                            !viewModel.isErasing() &&
-                            !viewModel.isBlurring()
-                        )
-                            colorDialogExpanded.value = true
+                        viewModel.showColorDialog(true)
                     }
             )
             ColorPickerDialog(
-                isVisible = colorDialogExpanded,
+                isVisible = viewModel.editingState.showColorDialog,
                 initialColor = viewModel.drawingState.drawPaint.color,
                 usedColors = viewModel.editingState.usedColors,
                 enableEyeDropper = true,
@@ -695,6 +682,9 @@ private fun EditMenuContent(
                 onColorChanged = {
                     viewModel.onSetPaintColor(it)
                     viewModel.trackColor(it)
+                },
+                onDismiss = {
+                    viewModel.showColorDialog(false)
                 }
             )
             Icon(
@@ -707,7 +697,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isCropping() &&
                             !viewModel.isResizing() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         )
                             viewModel.setStrokeSliderExpanded(isExpanded = !editingState.strokeSliderExpanded)
@@ -718,7 +708,7 @@ private fun EditMenuContent(
                     !viewModel.isRotating() &&
                     !viewModel.isResizing() &&
                     !viewModel.isCropping() &&
-                    !editManager.isEyeDropperMode.value &&
+                    !viewModel.isEyeDropping() &&
                     !viewModel.isBlurring()
                 ) viewModel.drawingState.drawPaint.color
                 else Color.Black,
@@ -734,7 +724,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         ) { viewModel.toggleErase() }
                     },
@@ -757,7 +747,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring() &&
                             !viewModel.isErasing()
                         )
@@ -782,7 +772,7 @@ private fun EditMenuContent(
                             !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
-                            !editManager.isEyeDropperMode.value &&
+                            !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring() &&
                             !viewModel.isErasing()
                         )
@@ -802,7 +792,7 @@ private fun EditMenuContent(
                             if (
                                 !viewModel.isRotating() &&
                                 !viewModel.isResizing() &&
-                                !isEyeDropperMode.value &&
+                                !viewModel.isEyeDropping() &&
                                 !viewModel.isErasing() &&
                                 !viewModel.isBlurring()
                             ) {
@@ -841,7 +831,7 @@ private fun EditMenuContent(
                             if (
                                 !viewModel.isCropping() &&
                                 !viewModel.isResizing() &&
-                                !isEyeDropperMode.value &&
+                                !viewModel.isEyeDropping() &&
                                 !viewModel.isErasing() &&
                                 !viewModel.isBlurring()
                             ) {
@@ -875,7 +865,7 @@ private fun EditMenuContent(
                             if (
                                 !viewModel.isRotating() &&
                                 !viewModel.isCropping() &&
-                                !isEyeDropperMode.value &&
+                                !viewModel.isEyeDropping() &&
                                 !viewModel.isErasing() &&
                                 !viewModel.isBlurring()
                             )
@@ -912,7 +902,7 @@ private fun EditMenuContent(
                             if (
                                 !viewModel.isRotating() &&
                                 !viewModel.isCropping() &&
-                                !isEyeDropperMode.value &&
+                                !viewModel.isEyeDropping() &&
                                 !viewModel.isResizing() &&
                                 !viewModel.isErasing() &&
                                 !editingState.strokeSliderExpanded
