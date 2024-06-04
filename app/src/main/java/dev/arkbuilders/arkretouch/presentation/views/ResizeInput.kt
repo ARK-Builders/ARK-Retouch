@@ -33,13 +33,12 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.editing.manager.EditManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun ResizeInput(isVisible: Boolean, imageSize: IntSize, editManager: EditManager) {
+fun ResizeInput(isVisible: Boolean, imageSize: IntSize, onResizeDown: (Int, Int) -> IntSize) {
     if (isVisible) {
         var width by rememberSaveable {
             mutableStateOf(
@@ -104,7 +103,7 @@ fun ResizeInput(isVisible: Boolean, imageSize: IntSize, editManager: EditManager
                         showHint = false
                         if (width.isEmpty()) height = width
                         if (width.isNotEmpty() && width.isDigitsOnly()) {
-                            height = editManager.resizeDown(width = width.toInt())
+                            height = onResizeDown(width.toInt(), 0)
                                 .height.toString()
                         }
                     },
@@ -148,7 +147,7 @@ fun ResizeInput(isVisible: Boolean, imageSize: IntSize, editManager: EditManager
                         showHint = false
                         if (height.isEmpty()) width = height
                         if (height.isNotEmpty() && height.isDigitsOnly()) {
-                            width = editManager.resizeDown(height = height.toInt())
+                            width = onResizeDown(0, height.toInt())
                                 .width.toString()
                         }
                     },

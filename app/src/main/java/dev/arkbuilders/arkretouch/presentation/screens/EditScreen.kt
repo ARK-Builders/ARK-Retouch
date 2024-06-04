@@ -539,7 +539,9 @@ private fun EditMenuContainer(
         ResizeInput(
             isVisible = viewModel.isResizing(),
             viewModel.imageSize,
-            viewModel.editManager
+            onResizeDown = { width, height ->
+                viewModel.onResizeDown(width, height)
+            }
         )
 
         Box(
@@ -878,8 +880,7 @@ private fun EditMenuContent(
                                 !viewModel.isBlurring()
                             )
                                 viewModel.toggleResize()
-                            else return@clickable
-                            viewModel.showMenus(!viewModel.isResizing())
+                            /* viewModel.showMenus(!viewModel.isResizing())
                             if (viewModel.isResizing()) {
                                 setBackgroundImage2()
                                 val imgBitmap = viewModel.getEditedImage()
@@ -890,7 +891,7 @@ private fun EditMenuContent(
                                 return@clickable
                             }
                             cancelResizeMode()
-                            scaleToFit()
+                            scaleToFit()*/
                         }
                     },
                 imageVector = ImageVector

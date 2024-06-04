@@ -443,7 +443,12 @@ class EditViewModel(
     }
 
     fun toggleResize() {
+        showMenus(!isResizing())
         editingState = editingState.copy(mode = EditingMode.RESIZE)
+        editManager.setBackgroundImage2()
+        val imgBitmap = getEditedImage()
+        editManager.backgroundImage.value = imgBitmap
+        resizeOperation.init(imgBitmap.asAndroidBitmap())
     }
 
     fun toggleRotate() {
@@ -490,6 +495,12 @@ class EditViewModel(
     fun onRotate(angle: Float) {
         editManager.apply {
             this@EditViewModel.rotateOperation.onRotate(angle)
+        }
+    }
+
+    fun onResizeDown(width: Int = 0, height: Int = 0): IntSize {
+        return resizeOperation.resizeDown(width, height) {
+            editManager.backgroundImage.value = it
         }
     }
 
