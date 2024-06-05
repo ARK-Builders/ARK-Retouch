@@ -60,7 +60,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
                     path.lineTo(currentPoint.x, currentPoint.y)
                 }
                 editManager.clearRedoPath()
-                editManager.updateRevised()
+                viewModel.updateUndoRedoState()
                 path = Path()
             }
             else -> {}

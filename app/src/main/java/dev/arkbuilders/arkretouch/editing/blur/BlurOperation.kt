@@ -13,6 +13,7 @@ import android.graphics.Bitmap
 import com.hoko.blur.processor.HokoBlurBuild
 import dev.arkbuilders.arkretouch.editing.Operation
 import dev.arkbuilders.arkretouch.editing.manager.EditManager
+import timber.log.Timber
 import java.util.Stack
 
 class BlurOperation(
@@ -113,7 +114,6 @@ class BlurOperation(
     fun clear() {
         blurs.clear()
         redoBlurs.clear()
-        editManager.updateRevised()
     }
 
     fun cancel() {
@@ -160,6 +160,7 @@ class BlurOperation(
         }
         editManager.keepEditedPaths()
         editManager.backgroundImage.value = image
+        Timber.tag("BLUR").d("${blurs.peek()}")
         onApply()
     }
 

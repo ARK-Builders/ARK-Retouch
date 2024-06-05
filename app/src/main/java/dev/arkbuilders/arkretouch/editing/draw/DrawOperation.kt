@@ -10,7 +10,6 @@ class DrawOperation(private val editManager: EditManager) : Operation {
         editManager.apply {
             if (drawPaths.isNotEmpty()) {
                 redoPaths.push(drawPaths.pop())
-                updateRevised()
                 return
             }
         }
@@ -20,7 +19,6 @@ class DrawOperation(private val editManager: EditManager) : Operation {
         editManager.apply {
             if (redoPaths.isNotEmpty()) {
                 drawPaths.push(redoPaths.pop())
-                updateRevised()
                 return
             }
         }

@@ -90,18 +90,26 @@ class EditViewModel(
     private val drawOperation = DrawOperation(editManager)
 
     private val cropOperation = CropOperation(editManager) {
+        clearRedo()
+        updateUndoRedoState()
         toggleDraw()
     }
 
     private val rotateOperation = RotateOperation(editManager) {
+        clearRedo()
+        updateUndoRedoState()
         toggleDraw()
     }
 
     private val resizeOperation = ResizeOperation(editManager) {
+        clearRedo()
+        updateUndoRedoState()
         toggleDraw()
     }
 
     private val blurOperation = BlurOperation(editManager) {
+        clearRedo()
+        updateUndoRedoState()
         toggleDraw()
     }
 
@@ -609,12 +617,58 @@ class EditViewModel(
     }
 
     fun onDrawPath(path: androidx.compose.ui.graphics.Path) {
+        clearRedo()
         editManager.addDrawPath(
             DrawPath(
                 path,
                 if (isErasing()) drawingState.erasePaint.copy() else drawingState.drawPaint.copy()
             )
         )
+    }
+
+    fun onUndoClick() {
+        if (editingState.canUndo) {
+            editManager.undo { task ->
+                operationByTask(task)
+            }
+        }
+        updateUndoRedoState()
+        editManager.invalidate()
+    }
+
+    fun onRedoClick() {
+        if (editingState.canRedo) {
+            editManager.redo { task ->
+                operationByTask(task)
+            }
+        }
+        updateUndoRedoState()
+        editManager.invalidate()
+    }
+
+    fun updateUndoRedoState() {
+        editManager.updateRevised { canUndo, canRedo ->
+            editingState = editingState.copy(canUndo = canUndo, canRedo = canRedo)
+        }
+    }
+
+    fun onClearEditsConfirm() {
+        editManager.clearEdits()
+        updateUndoRedoState()
+    }
+
+    private fun clearRedo() {
+        if (editingState.canRedo) {
+            editManager.clearRedo()
+        }
+    }
+
+    private fun operationByTask(task: String): Operation = when (task) {
+        EditManager.ROTATE -> rotateOperation
+        EditManager.RESIZE -> resizeOperation
+        EditManager.CROP -> cropOperation
+        EditManager.BLUR -> blurOperation
+        else -> drawOperation
     }
 
     private fun addDrawPath(path: androidx.compose.ui.graphics.Path) {
@@ -627,14 +681,12 @@ class EditViewModel(
     }
 
     private fun applyEdit() {
-        val operation: Operation = with(editManager) {
-            when (editingState.mode) {
-                EditingMode.CROP -> this@EditViewModel.cropOperation
-                EditingMode.RESIZE -> this@EditViewModel.resizeOperation
-                EditingMode.ROTATE -> this@EditViewModel.rotateOperation
-                EditingMode.BLUR -> this@EditViewModel.blurOperation
-                else -> this@EditViewModel.drawOperation
-            }
+        val operation: Operation = when (editingState.mode) {
+            EditingMode.CROP -> cropOperation
+            EditingMode.RESIZE -> resizeOperation
+            EditingMode.ROTATE -> rotateOperation
+            EditingMode.BLUR -> blurOperation
+            else -> drawOperation
         }
         operation.apply()
         if (operation != drawOperation) { showMenus(true) }

@@ -1,6 +1,5 @@
 package dev.arkbuilders.arkretouch.editing.manager
 
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
@@ -78,18 +77,6 @@ class EditManager {
     val availableDrawAreaSize = mutableStateOf(IntSize.Zero)
 
     var invalidatorTick = mutableStateOf(0)
-
-    // TODO: Consider using [EditionMode] instead
-    private val _canUndo: MutableState<Boolean> = mutableStateOf(false)
-    val canUndo: State<Boolean> = _canUndo
-
-    // TODO: Consider using [EditionMode] instead
-    private val _canRedo: MutableState<Boolean> = mutableStateOf(false)
-    val canRedo: State<Boolean> = _canRedo
-
-    // TODO: Consider using [EditionMode] instead
-    private val _isEyeDropperMode = mutableStateOf(false)
-    val isEyeDropperMode: State<Boolean> = _isEyeDropperMode
 
     val rotationAngle = mutableStateOf(0F)
     var prevRotationAngle = 0f
@@ -240,13 +227,8 @@ class EditManager {
         redoPaths.clear()
     }
 
-    fun toggleEyeDropper() {
-        _isEyeDropperMode.value = !isEyeDropperMode.value
-    }
-
-    fun updateRevised() {
-        _canUndo.value = undoStack.isNotEmpty()
-        _canRedo.value = redoStack.isNotEmpty()
+    fun updateRevised(updateState: (Boolean, Boolean) -> Unit) {
+        updateState(undoStack.isNotEmpty(), redoStack.isNotEmpty())
     }
 
     fun resizeDown(width: Int = 0, height: Int = 0) =
@@ -267,11 +249,9 @@ class EditManager {
     }
 
     fun addRotation() {
-        if (canRedo.value) clearRedo()
         rotationAngles.add(prevRotationAngle)
         undoStack.add(ROTATE)
         prevRotationAngle = rotationAngle.value
-        updateRevised()
     }
 
     private fun addAngle() {
@@ -279,11 +259,9 @@ class EditManager {
     }
 
     fun addResize() {
-        if (canRedo.value) clearRedo()
         resizes.add(backgroundImage2.value)
         undoStack.add(RESIZE)
         keepEditedPaths()
-        updateRevised()
     }
 
     fun keepEditedPaths() {
@@ -310,16 +288,12 @@ class EditManager {
     }
 
     fun addCrop() {
-        if (canRedo.value) clearRedo()
         cropStack.add(backgroundImage2.value)
         undoStack.add(CROP)
-        updateRevised()
     }
 
     fun addBlur() {
-        if (canRedo.value) clearRedo()
         undoStack.add(BLUR)
-        updateRevised()
     }
 
     private fun operationByTask(task: String) = when (task) {
@@ -330,26 +304,22 @@ class EditManager {
         else -> drawOperation
     }
 
-    fun undo() {
-        if (canUndo.value) {
-            val undoTask = undoStack.pop()
-            redoStack.push(undoTask)
-            Timber.tag("edit-manager").d("undoing $undoTask")
-            undoOperation(operationByTask(undoTask))
-        }
-        invalidatorTick.value++
-        updateRevised()
+    fun undo(operationByTask: (String) -> Operation) {
+        val undoTask = undoStack.pop()
+        redoStack.push(undoTask)
+        Timber.tag("edit-manager").d("undoing $undoTask")
+        undoOperation(operationByTask(undoTask))
     }
 
-    fun redo() {
-        if (canRedo.value) {
-            val redoTask = redoStack.pop()
-            undoStack.push(redoTask)
-            Timber.tag("edit-manager").d("redoing $redoTask")
-            redoOperation(operationByTask(redoTask))
-            invalidatorTick.value++
-            updateRevised()
-        }
+    fun redo(operationByTask: (String) -> Operation) {
+        val redoTask = redoStack.pop()
+        undoStack.push(redoTask)
+        Timber.tag("edit-manager").d("redoing $redoTask")
+        redoOperation(operationByTask(redoTask))
+    }
+
+    fun invalidate() {
+        invalidatorTick.value++
     }
 
     fun saveRotationAfterOtherOperation() {
@@ -366,7 +336,6 @@ class EditManager {
 
     fun addDrawPath(path: DrawPath) {
         drawPaths.add(path)
-        if (canRedo.value) clearRedo()
         undoStack.add(DRAW)
     }
 
@@ -374,13 +343,11 @@ class EditManager {
         drawPaths.clear()
         redoPaths.clear()
         invalidatorTick.value++
-        updateRevised()
     }
 
     private fun clearResizes() {
         resizes.clear()
         redoResize.clear()
-        updateRevised()
     }
 
     private fun resetRotation() {
@@ -404,22 +371,19 @@ class EditManager {
         redoStack.clear()
         restoreOriginalBackgroundImage()
         scaleToFit()
-        updateRevised()
     }
 
-    private fun clearRedo() {
+    fun clearRedo() {
         redoPaths.clear()
         redoCropStack.clear()
         redoRotationAngles.clear()
         redoResize.clear()
         redoStack.clear()
-        updateRevised()
     }
 
     private fun clearCrop() {
         cropStack.clear()
         redoCropStack.clear()
-        updateRevised()
     }
 
     fun setBackgroundImage2() {
@@ -469,11 +433,11 @@ class EditManager {
         availableDrawAreaSize.value.height / 2f
     )
 
-    private companion object {
-        private const val DRAW = "draw"
-        private const val CROP = "crop"
-        private const val RESIZE = "resize"
-        private const val ROTATE = "rotate"
-        private const val BLUR = "blur"
+    companion object {
+        const val DRAW = "draw"
+        const val CROP = "crop"
+        const val RESIZE = "resize"
+        const val ROTATE = "rotate"
+        const val BLUR = "blur"
     }
 }

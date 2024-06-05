@@ -157,8 +157,8 @@ fun EditScreen(
             viewModel.togglePan()
             return@BackHandler
         }
-        if (editManager.canUndo.value) {
-            editManager.undo()
+        if (viewModel.editingState.canUndo) {
+            viewModel.onUndoClick()
             return@BackHandler
         }
         if (viewModel.editingState.exitConfirmed) {
@@ -380,7 +380,7 @@ private fun BoxScope.TopMenu(
                     !viewModel.isRotating() &&
                     !viewModel.isResizing() &&
                     !viewModel.isEyeDropping()
-                ) clearEdits()
+                ) viewModel.onClearEditsConfirm()
             }
         },
         onDismiss = {
@@ -421,7 +421,7 @@ private fun BoxScope.TopMenu(
                         return@clickable
                     }
                     if (
-                        !viewModel.editManager.canUndo.value
+                        !viewModel.editingState.canUndo
                     ) {
                         if (launchedFromIntent) {
                             context
@@ -619,12 +619,12 @@ private fun EditMenuContent(
                             !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         ) {
-                            editManager.undo()
+                            viewModel.onUndoClick()
                         }
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (
-                    editManager.canUndo.value && (
+                    viewModel.editingState.canUndo && (
                         !viewModel.isRotating() &&
                             !viewModel.isResizing() &&
                             !viewModel.isCropping() &&
@@ -646,11 +646,11 @@ private fun EditMenuContent(
                             !viewModel.isCropping() &&
                             !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
-                        ) editManager.redo()
+                        ) viewModel.onRedoClick()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_redo),
                 tint = if (
-                    editManager.canRedo.value &&
+                    viewModel.editingState.canRedo &&
                     (
                         !viewModel.isRotating() &&
                             !viewModel.isResizing() &&

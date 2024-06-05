@@ -33,7 +33,6 @@ class CropOperation(
                 restoreRotationAfterUndoOtherOperation()
                 scaleToFit()
                 redrawEditedPaths()
-                updateRevised()
             }
         }
     }
@@ -47,7 +46,6 @@ class CropOperation(
                 saveRotationAfterOtherOperation()
                 scaleToFit()
                 keepEditedPaths()
-                updateRevised()
             }
         }
     }

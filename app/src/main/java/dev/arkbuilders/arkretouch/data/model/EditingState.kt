@@ -20,7 +20,9 @@ data class EditingState(
     val exitConfirmed: Boolean = false,
     val bottomButtonsScrollIsAtStart: Boolean = false,
     val bottomButtonsScrollIsAtEnd: Boolean = false,
-    val usedColors: List<Color> = listOf()
+    val usedColors: List<Color> = listOf(),
+    val canUndo: Boolean = false,
+    val canRedo: Boolean = false
 ) {
 
     companion object {
