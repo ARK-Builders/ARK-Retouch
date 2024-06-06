@@ -556,7 +556,7 @@ class EditViewModel(
                 editManager.apply {
                     when (true) {
                         isCropping() -> {
-                            cropWindow.updateOnDrawAreaSizeChange(newSize)
+                            cropWindow.updateOnDrawAreaSizeChange()
                             return@launch
                         }
 
@@ -571,9 +571,6 @@ class EditViewModel(
                                 this@EditViewModel.resizeOperation
                                     .updateEditMatrixScale(editMatrixScale)
                             }
-                            /* if (resizeOperation.isApplied()) {
-                                resizeOperation.resetApply()
-                            }*/
                             return@launch
                         }
 

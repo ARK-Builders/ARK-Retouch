@@ -37,6 +37,7 @@ fun BackgroundCanvas(
                 matrix = editMatrix
             }
             drawIntoCanvas { canvas ->
+                // force recomposition on invalidatorTick change
                 observeInvalidator.value
                 backgroundImage.value?.let {
                     canvas.nativeCanvas.drawBitmap(

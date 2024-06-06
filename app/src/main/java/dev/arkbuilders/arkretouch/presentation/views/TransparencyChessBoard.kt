@@ -81,6 +81,7 @@ private fun transparencyChessBoard(
 fun TransparencyChessBoardCanvas(modifier: Modifier, size: IntSize, matrix: Matrix, observeInvalidator: State<Int>) {
     Canvas(modifier.background(Color.Transparent)) {
         drawIntoCanvas { canvas ->
+            // force recomposition on invalidatorTick change
             observeInvalidator.value
             transparencyChessBoard(
                 canvas,

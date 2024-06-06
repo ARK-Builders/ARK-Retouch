@@ -61,9 +61,6 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                 translationX = offset.x
                 translationY = offset.y
             }
-        // force recomposition on invalidatorTick change
-        // editManager.invalidatorTick.intValue
-        // viewModel.observeCanvasInvalidator.value
         TransparencyChessBoardCanvas(
             modifier,
             viewModel.imageSize,

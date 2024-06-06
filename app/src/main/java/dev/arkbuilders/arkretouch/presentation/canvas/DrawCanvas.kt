@@ -166,6 +166,7 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel, observeInvalidator:
         }
     ) {
         drawIntoCanvas { canvas ->
+            // force recomposition on invalidatorTick change
             observeInvalidator.value
             editManager.apply {
                 var matrix = this.matrix

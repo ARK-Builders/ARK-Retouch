@@ -85,7 +85,7 @@ class CropWindow(private val editManager: EditManager) {
         offset = Offset(x, y)
     }
 
-    fun updateOnDrawAreaSizeChange(newSize: IntSize) {
+    fun updateOnDrawAreaSizeChange() {
         reInit()
         updateOnOffsetChange()
     }

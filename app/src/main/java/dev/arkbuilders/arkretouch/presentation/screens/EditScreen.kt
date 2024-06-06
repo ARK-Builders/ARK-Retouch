@@ -140,7 +140,6 @@ fun EditScreen(
     )
 
     BackHandler {
-        val editManager = viewModel.editManager
         if (
             viewModel.isCropping() || viewModel.isRotating() ||
             viewModel.isResizing() || viewModel.isEyeDropping() ||
@@ -277,7 +276,7 @@ private fun Menus(
                     )
                 }
 
-            EditMenuContainer(viewModel, editingState, navigateBack)
+            EditMenuContainer(viewModel, editingState)
         }
     }
 }
@@ -481,7 +480,6 @@ private fun StrokeWidthPopup(
     viewModel: EditViewModel,
     editionState: EditingState
 ) {
-    val editManager = viewModel.editManager
     viewModel.onSetPaintStrokeWidth(viewModel.editingState.strokeWidth.dp.toPx())
     if (editionState.strokeSliderExpanded) {
         Column(
@@ -525,7 +523,6 @@ private fun StrokeWidthPopup(
 private fun EditMenuContainer(
     viewModel: EditViewModel,
     editingState: EditingState,
-    navigateBack: () -> Unit
 ) {
     Column(
         Modifier
@@ -581,7 +578,6 @@ private fun EditMenuContent(
     viewModel: EditViewModel,
     editingState: EditingState
 ) {
-    val colorDialogExpanded = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val editManager = viewModel.editManager
     Column(
