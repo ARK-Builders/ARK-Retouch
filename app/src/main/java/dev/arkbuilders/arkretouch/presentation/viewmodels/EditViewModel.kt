@@ -1,5 +1,6 @@
 package dev.arkbuilders.arkretouch.presentation.viewmodels
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -289,7 +290,7 @@ class EditViewModel(
                     val centerX = size.width / 2
                     val centerY = size.height / 2
                     setRotate(
-                        editManager.rotationAngle.value,
+                        editManager.rotationAngle.floatValue,
                         centerX.toFloat(),
                         centerY.toFloat()
                     )
@@ -653,6 +654,7 @@ class EditViewModel(
     }
 
     fun onClearEditsConfirm() {
+        blurOperation.clear()
         editManager.clearEdits()
         updateUndoRedoState()
     }
@@ -669,15 +671,6 @@ class EditViewModel(
         EditManager.CROP -> cropOperation
         EditManager.BLUR -> blurOperation
         else -> drawOperation
-    }
-
-    private fun addDrawPath(path: androidx.compose.ui.graphics.Path) {
-        editManager.addDrawPath(
-            DrawPath(
-                path,
-                if (isErasing()) drawingState.erasePaint else drawingState.drawPaint
-            )
-        )
     }
 
     private fun applyEdit() {
@@ -706,9 +699,15 @@ class EditViewModel(
         }
     }
 
+    fun invalidateCanvas() {
+        editManager.invalidate()
+    }
+
     companion object {
         private const val KEEP_USED_COLORS = 20
     }
+
+    fun observeCanvasInvalidator(): State<Int> = editManager.invalidatorTick
 }
 
 fun resize(

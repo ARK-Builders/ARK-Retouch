@@ -128,7 +128,7 @@ fun ColorPickerDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(250.dp),
-                color = currentColor.toColor(),
+                color = currentColor,
                 onColorChanged = {
                     currentColor = it
                 }

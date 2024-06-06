@@ -3,6 +3,7 @@ package dev.arkbuilders.arkretouch.presentation.views
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -15,7 +16,6 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import android.graphics.Matrix
-import dev.arkbuilders.arkretouch.editing.manager.EditManager
 
 private class TransparencyChessBoard {
     fun create(boardSize: Size, canvas: Canvas, matrix: Matrix) {
@@ -78,14 +78,14 @@ private fun transparencyChessBoard(
 }
 
 @Composable
-fun TransparencyChessBoardCanvas(modifier: Modifier, size: IntSize, editManager: EditManager) {
+fun TransparencyChessBoardCanvas(modifier: Modifier, size: IntSize, matrix: Matrix, observeInvalidator: State<Int>) {
     Canvas(modifier.background(Color.Transparent)) {
-        editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
+            observeInvalidator.value
             transparencyChessBoard(
                 canvas,
                 size.toSize(),
-                editManager.backgroundMatrix
+                matrix
             )
         }
     }

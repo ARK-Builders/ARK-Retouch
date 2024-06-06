@@ -251,7 +251,7 @@ private fun Menus(
                             .clickable {
                                 viewModel.editManager.apply {
                                     viewModel.onRotate(-90f)
-                                    invalidatorTick.value++
+                                    viewModel.invalidateCanvas()
                                 }
                             },
                         imageVector = ImageVector
@@ -267,7 +267,7 @@ private fun Menus(
                             .clickable {
                                 viewModel.editManager.apply {
                                     viewModel.onRotate(90f)
-                                    invalidatorTick.value++
+                                    viewModel.invalidateCanvas()
                                 }
                             },
                         imageVector = ImageVector

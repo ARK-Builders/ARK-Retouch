@@ -3,6 +3,7 @@ package dev.arkbuilders.arkretouch.presentation.canvas
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,7 +26,7 @@ import dev.arkbuilders.arkretouch.presentation.viewmodels.EditViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
+fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel, observeInvalidator: State<Int>) {
     val context = LocalContext.current
     val editManager = viewModel.editManager
     var path = Path()
@@ -160,13 +161,12 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel) {
 
                 else -> handleDrawEvent(event.action, mappedX, mappedY)
             }
-            editManager.invalidatorTick.value++
+            viewModel.invalidateCanvas()
             true
         }
     ) {
-        // force recomposition on invalidatorTick change
-        editManager.invalidatorTick.value
         drawIntoCanvas { canvas ->
+            observeInvalidator.value
             editManager.apply {
                 var matrix = this.matrix
                 if (viewModel.isRotating() || viewModel.isResizing() || viewModel.isBlurring())

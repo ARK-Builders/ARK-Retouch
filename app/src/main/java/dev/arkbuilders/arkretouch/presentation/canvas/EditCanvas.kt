@@ -61,7 +61,15 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                 translationX = offset.x
                 translationY = offset.y
             }
-        TransparencyChessBoardCanvas(modifier, viewModel.imageSize, editManager)
+        // force recomposition on invalidatorTick change
+        // editManager.invalidatorTick.intValue
+        // viewModel.observeCanvasInvalidator.value
+        TransparencyChessBoardCanvas(
+            modifier,
+            viewModel.imageSize,
+            editManager.backgroundMatrix,
+            viewModel.observeCanvasInvalidator()
+        )
         BackgroundCanvas(
             modifier,
             viewModel.isCropping(),
@@ -70,9 +78,10 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
             viewModel.isBlurring(),
             viewModel.imageSize,
             viewModel.drawingState.backgroundPaint,
-            editManager
+            editManager,
+            viewModel.observeCanvasInvalidator()
         )
-        DrawCanvas(modifier, viewModel)
+        DrawCanvas(modifier, viewModel, viewModel.observeCanvasInvalidator())
     }
     if (
         viewModel.isRotating() || viewModel.isZooming() ||
@@ -94,7 +103,7 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
                                                 editManager.calcCenter()
                                             )
                                         viewModel.onRotate(angle)
-                                        editManager.invalidatorTick.value++
+                                        viewModel.invalidateCanvas()
                                     }
                                     else -> {
                                         if (viewModel.isZooming()) {

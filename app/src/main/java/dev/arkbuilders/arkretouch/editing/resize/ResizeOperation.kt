@@ -1,6 +1,5 @@
 package dev.arkbuilders.arkretouch.editing.resize
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntSize
@@ -18,7 +17,6 @@ class ResizeOperation(
     private lateinit var bitmap: Bitmap
     private var aspectRatio = 1f
     private lateinit var editMatrixScale: Scale
-    private val isApplied = mutableStateOf(false)
 
     override fun apply() {
         editManager.apply {
@@ -26,7 +24,6 @@ class ResizeOperation(
             saveRotationAfterOtherOperation()
             scaleToFit()
             editMatrix.reset()
-            isApplied.value = true
             onApply()
         }
     }
@@ -59,16 +56,11 @@ class ResizeOperation(
         this.bitmap = bitmap
         aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
         editMatrixScale = editManager.scaleToFitOnEdit().scale
-        isApplied.value = false
     }
 
     fun updateEditMatrixScale(scale: Scale) {
         editMatrixScale = scale
     }
-
-    fun isApplied() = isApplied.value
-
-    fun resetApply() { isApplied.value = false }
 
     fun resizeDown(
         width: Int,

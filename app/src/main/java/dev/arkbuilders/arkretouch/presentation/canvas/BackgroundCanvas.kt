@@ -2,6 +2,7 @@ package dev.arkbuilders.arkretouch.presentation.canvas
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -23,11 +24,11 @@ fun BackgroundCanvas(
     isBlurring: Boolean,
     imageSize: IntSize,
     backgroundPaint: Paint,
-    editManager: EditManager
+    editManager: EditManager,
+    observeInvalidator: State<Int>
 ) {
     Canvas(modifier) {
         editManager.apply {
-            invalidatorTick.value
             var matrix = matrix
             if (
                 isCropping || isRotating ||
@@ -36,6 +37,7 @@ fun BackgroundCanvas(
                 matrix = editMatrix
             }
             drawIntoCanvas { canvas ->
+                observeInvalidator.value
                 backgroundImage.value?.let {
                     canvas.nativeCanvas.drawBitmap(
                         it.asAndroidBitmap(),
