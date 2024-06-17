@@ -864,20 +864,7 @@ private fun EditMenuContent(
                                 !viewModel.isEyeDropping() &&
                                 !viewModel.isErasing() &&
                                 !viewModel.isBlurring()
-                            )
-                                viewModel.toggleResize()
-                            /* viewModel.showMenus(!viewModel.isResizing())
-                            if (viewModel.isResizing()) {
-                                setBackgroundImage2()
-                                val imgBitmap = viewModel.getEditedImage()
-                                backgroundImage.value = imgBitmap
-                                resizeOperation.init(
-                                    imgBitmap.asAndroidBitmap()
-                                )
-                                return@clickable
-                            }
-                            cancelResizeMode()
-                            scaleToFit()*/
+                            ) viewModel.toggleResize()
                         }
                     },
                 imageVector = ImageVector
@@ -903,14 +890,6 @@ private fun EditMenuContent(
                                 !viewModel.isErasing() &&
                                 !editingState.strokeSliderExpanded
                             ) viewModel.toggleBlur()
-                            /* if (isBlurMode.value) {
-                                setBackgroundImage2()
-                                backgroundImage.value = viewModel.getEditedImage()
-                                viewModel.blurOperation.init()
-                                return@clickable
-                            }*/
-                            // viewModel.blurOperation.cancel()
-                            // scaleToFit()
                         }
                     },
                 imageVector = ImageVector
