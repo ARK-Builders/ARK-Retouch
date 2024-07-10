@@ -48,7 +48,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -784,30 +783,7 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !viewModel.isRotating() &&
-                                !viewModel.isResizing() &&
-                                !viewModel.isEyeDropping() &&
-                                !viewModel.isErasing() &&
-                                !viewModel.isBlurring()
-                            ) {
-                                viewModel.toggleCrop()
-                                viewModel.showMenus(!viewModel.isCropping())
-                                if (viewModel.isCropping()) {
-                                    val bitmap = viewModel.getEditedImage()
-                                    setBackgroundImage2()
-                                    backgroundImage.value = bitmap
-                                    viewModel.editManager.cropWindow.init(
-                                        bitmap.asAndroidBitmap()
-                                    )
-                                    return@clickable
-                                }
-                                editManager.cancelCropMode()
-                                editManager.scaleToFit()
-                                editManager.cropWindow.close()
-                            }
-                        }
+                        viewModel.toggleCrop()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
                 tint = if (

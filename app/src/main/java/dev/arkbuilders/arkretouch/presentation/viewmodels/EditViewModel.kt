@@ -451,7 +451,18 @@ class EditViewModel(
     }
 
     fun toggleCrop() {
-        editingState = editingState.copy(mode = EditingMode.CROP)
+        if (!isRotating() && !isResizing() && !isEyeDropping() && !isErasing() && !isBlurring()) {
+            showMenus(!isCropping())
+            if (isCropping()) {
+                toggleDraw()
+                return
+            }
+            editingState = editingState.copy(mode = EditingMode.CROP)
+            val bitmap = getEditedImage()
+            editManager.setBackgroundImage2()
+            editManager.backgroundImage.value = bitmap
+            editManager.cropWindow.init(bitmap.asAndroidBitmap())
+        }
     }
 
     fun toggleResize() {
