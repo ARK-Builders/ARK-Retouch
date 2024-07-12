@@ -407,29 +407,28 @@ class EditViewModel(
     }
 
     fun cancelOperation() {
-        editManager.apply {
-            if (isRotating()) {
-                toggleDraw()
-                cancelRotateMode()
-            }
-            if (isCropping()) {
-                toggleDraw()
-                cancelCropMode()
-            }
-            if (isResizing()) {
-                toggleDraw()
-                cancelResizeMode()
-            }
-            if (isEyeDropping()) {
-                this@EditViewModel.toggleEyeDropper()
-            }
-            if (isBlurring()) {
-                toggleDraw()
-                this@EditViewModel.blurOperation.cancel()
-            }
-            showMenus(true)
-            scaleToFit()
+        if (isRotating()) {
+            toggleDraw()
+            editManager.cancelRotateMode()
         }
+        if (isCropping()) {
+            toggleDraw()
+            editManager.cancelCropMode()
+        }
+        if (isResizing()) {
+            toggleDraw()
+            editManager.cancelResizeMode()
+        }
+        if (isEyeDropping()) {
+            toggleEyeDropper()
+        }
+        if (isBlurring()) {
+            toggleDraw()
+            blurOperation.cancel()
+        }
+
+        showMenus(true)
+        editManager.scaleToFit()
     }
 
     fun persistDefaults(color: Color, resolution: Resolution) {
@@ -452,9 +451,8 @@ class EditViewModel(
 
     fun toggleCrop() {
         if (!isRotating() && !isResizing() && !isEyeDropping() && !isErasing() && !isBlurring()) {
-            showMenus(!isCropping())
             if (isCropping()) {
-                toggleDraw()
+                cancelOperation()
                 return
             }
             editingState = editingState.copy(mode = EditingMode.CROP)
@@ -466,39 +464,65 @@ class EditViewModel(
     }
 
     fun toggleResize() {
-        showMenus(!isResizing())
-        editingState = editingState.copy(mode = EditingMode.RESIZE)
-        editManager.setBackgroundImage2()
-        val imgBitmap = getEditedImage()
-        editManager.backgroundImage.value = imgBitmap
-        resizeOperation.init(imgBitmap.asAndroidBitmap())
+        if (!isRotating() && !isCropping() && !isEyeDropping() && !isErasing() && !isBlurring()) {
+            if (isResizing()) {
+                cancelOperation()
+                return
+            }
+            editingState = editingState.copy(mode = EditingMode.RESIZE)
+            editManager.setBackgroundImage2()
+            val imgBitmap = getEditedImage()
+            editManager.backgroundImage.value = imgBitmap
+            resizeOperation.init(imgBitmap.asAndroidBitmap())
+        }
     }
 
     fun toggleRotate() {
-        editingState = editingState.copy(mode = EditingMode.ROTATE)
+        if (!isCropping() && !isResizing() && !isEyeDropping() && !isErasing() && !isBlurring()) {
+            if (isRotating()) {
+                cancelOperation()
+                return
+            }
+            editingState = editingState.copy(mode = EditingMode.ROTATE)
+            editManager.setBackgroundImage2()
+            editManager.scaleToFitOnEdit()
+        }
     }
 
     fun toggleZoom() {
-        if (isZooming()) {
-            toggleDraw()
-            return
+        if (!isRotating() && !isResizing() && !isCropping() && !isEyeDropping() && !isBlurring() && !isErasing()) {
+            if (isZooming()) {
+                toggleDraw()
+                return
+            }
+            editingState = editingState.copy(mode = EditingMode.ZOOM)
         }
-        editingState = editingState.copy(mode = EditingMode.ZOOM)
     }
 
     fun togglePan() {
-        if (isPanning()) {
-            toggleDraw()
-            return
+        if (!isRotating() && !isResizing() && !isCropping() && !isEyeDropping() && !isBlurring() && !isErasing()) {
+            if (isPanning()) {
+                toggleDraw()
+                return
+            }
+            editingState = editingState.copy(mode = EditingMode.PAN)
         }
-        editingState = editingState.copy(mode = EditingMode.PAN)
     }
 
     fun toggleBlur() {
-        editingState = editingState.copy(mode = EditingMode.BLUR)
-        editManager.setBackgroundImage2()
-        editManager.backgroundImage.value = getEditedImage()
-        blurOperation.init()
+        if (
+            !isRotating() && !isCropping() && !isEyeDropping() && !isResizing() && !isErasing()
+        ) {
+            if (isBlurring()) {
+                cancelOperation()
+                return
+            }
+            if (editingState.strokeSliderExpanded) { setStrokeSliderExpanded(false) }
+            editingState = editingState.copy(mode = EditingMode.BLUR)
+            editManager.setBackgroundImage2()
+            editManager.backgroundImage.value = getEditedImage()
+            blurOperation.init()
+        }
     }
 
     fun toggleEyeDropper() {

@@ -738,15 +738,7 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        if (
-                            !viewModel.isRotating() &&
-                            !viewModel.isResizing() &&
-                            !viewModel.isCropping() &&
-                            !viewModel.isEyeDropping() &&
-                            !viewModel.isBlurring() &&
-                            !viewModel.isErasing()
-                        )
-                            viewModel.toggleZoom()
+                        viewModel.toggleZoom()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_zoom_in),
                 tint = if (
@@ -763,15 +755,7 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        if (
-                            !viewModel.isRotating() &&
-                            !viewModel.isResizing() &&
-                            !viewModel.isCropping() &&
-                            !viewModel.isEyeDropping() &&
-                            !viewModel.isBlurring() &&
-                            !viewModel.isErasing()
-                        )
-                            viewModel.togglePan()
+                        viewModel.togglePan()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_pan_tool),
                 tint = if (viewModel.isPanning()) MaterialTheme.colors.primary else Color.Black,
@@ -799,25 +783,7 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !viewModel.isCropping() &&
-                                !viewModel.isResizing() &&
-                                !viewModel.isEyeDropping() &&
-                                !viewModel.isErasing() &&
-                                !viewModel.isBlurring()
-                            ) {
-                                viewModel.toggleRotate()
-                                if (viewModel.isRotating()) {
-                                    setBackgroundImage2()
-                                    viewModel.showMenus(!viewModel.isRotating())
-                                    scaleToFitOnEdit()
-                                    return@clickable
-                                }
-                                cancelRotateMode()
-                                scaleToFit()
-                            }
-                        }
+                        viewModel.toggleRotate()
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
@@ -834,13 +800,7 @@ private fun EditMenuContent(
                     .clip(CircleShape)
                     .clickable {
                         editManager.apply {
-                            if (
-                                !viewModel.isRotating() &&
-                                !viewModel.isCropping() &&
-                                !viewModel.isEyeDropping() &&
-                                !viewModel.isErasing() &&
-                                !viewModel.isBlurring()
-                            ) viewModel.toggleResize()
+                            viewModel.toggleResize()
                         }
                     },
                 imageVector = ImageVector
@@ -857,16 +817,7 @@ private fun EditMenuContent(
                     .size(40.dp)
                     .clip(CircleShape)
                     .clickable {
-                        editManager.apply {
-                            if (
-                                !viewModel.isRotating() &&
-                                !viewModel.isCropping() &&
-                                !viewModel.isEyeDropping() &&
-                                !viewModel.isResizing() &&
-                                !viewModel.isErasing() &&
-                                !editingState.strokeSliderExpanded
-                            ) viewModel.toggleBlur()
-                        }
+                        viewModel.toggleBlur()
                     },
                 imageVector = ImageVector
                     .vectorResource(R.drawable.ic_blur_on),
@@ -879,9 +830,7 @@ private fun EditMenuContent(
         }
     }
     viewModel.setBottomButtonsScrollIsAtStart(scrollState.value == 0)
-    viewModel.setBottomButtonsScrollIsAtEnd(
-        scrollState.value == scrollState.maxValue
-    )
+    viewModel.setBottomButtonsScrollIsAtEnd(scrollState.value == scrollState.maxValue)
 }
 
 @Composable
