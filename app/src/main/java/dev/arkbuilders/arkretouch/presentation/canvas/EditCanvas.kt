@@ -1,15 +1,16 @@
 package dev.arkbuilders.arkretouch.presentation.canvas
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -26,7 +27,7 @@ import dev.arkbuilders.arkretouch.utils.calculateRotationFromOneFingerGesture
 @Composable
 fun EditCanvasScreen(viewModel: EditViewModel) {
     val editManager = viewModel.editManager
-    var scale by remember { mutableStateOf(1f) }
+    var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     fun resetScaleAndTranslate() {
@@ -88,36 +89,34 @@ fun EditCanvasScreen(viewModel: EditViewModel) {
             Modifier
                 .fillMaxSize()
                 .pointerInput(Any()) {
-                    forEachGesture {
-                        awaitPointerEventScope {
-                            awaitFirstDown()
-                            do {
-                                val event = awaitPointerEvent()
-                                when (true) {
-                                    (viewModel.isRotating()) -> {
-                                        val angle = event
-                                            .calculateRotationFromOneFingerGesture(
-                                                editManager.calcCenter()
-                                            )
-                                        viewModel.onRotate(angle)
-                                        viewModel.invalidateCanvas()
+                    awaitEachGesture {
+                        awaitFirstDown()
+                        do {
+                            val event = awaitPointerEvent()
+                            when (true) {
+                                (viewModel.isRotating()) -> {
+                                    val angle = event
+                                        .calculateRotationFromOneFingerGesture(
+                                            editManager.calcCenter()
+                                        )
+                                    viewModel.onRotate(angle)
+                                    viewModel.invalidateCanvas()
+                                }
+                                else -> {
+                                    if (viewModel.isZooming()) {
+                                        scale *= event.calculateZoom()
+                                        editManager.zoomScale = scale
                                     }
-                                    else -> {
-                                        if (viewModel.isZooming()) {
-                                            scale *= event.calculateZoom()
-                                            editManager.zoomScale = scale
-                                        }
-                                        if (viewModel.isPanning()) {
-                                            val pan = event.calculatePan()
-                                            offset = Offset(
-                                                offset.x + pan.x,
-                                                offset.y + pan.y
-                                            )
-                                        }
+                                    if (viewModel.isPanning()) {
+                                        val pan = event.calculatePan()
+                                        offset = Offset(
+                                            offset.x + pan.x,
+                                            offset.y + pan.y
+                                        )
                                     }
                                 }
-                            } while (event.changes.any { it.pressed })
-                        }
+                            }
+                        } while (event.changes.any { it.pressed })
                     }
                 }
         ) {}

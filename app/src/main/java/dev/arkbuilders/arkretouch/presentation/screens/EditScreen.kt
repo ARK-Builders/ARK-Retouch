@@ -81,8 +81,7 @@ import dev.arkbuilders.arkretouch.presentation.views.Hint
 import dev.arkbuilders.arkretouch.presentation.views.ResizeInput
 import dev.arkbuilders.arkretouch.presentation.views.delayHidingHint
 import dev.arkbuilders.arkretouch.utils.getActivity
-import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
-import dev.arkbuilders.arkretouch.utils.permission.requestWritePermissions
+import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper.isWritePermissionGranted
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import java.nio.file.Path
@@ -92,9 +91,10 @@ fun EditScreen(
     imagePath: Path?,
     imageUri: String?,
     fragmentManager: FragmentManager,
-    navigateBack: () -> Unit,
     launchedFromIntent: Boolean,
-    maxResolution: Resolution
+    maxResolution: Resolution,
+    navigateBack: () -> Unit,
+    onWritePermNotGranted: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colors.primary.value.toLong()
     val viewModel: EditViewModel = koinViewModel {
@@ -185,7 +185,8 @@ fun EditScreen(
         viewModel,
         launchedFromIntent,
         editingState,
-        navigateBack
+        navigateBack,
+        onWritePermNotGranted
     )
 
     if (viewModel.editingState.isSavingImage) {
@@ -215,6 +216,7 @@ private fun Menus(
     launchedFromIntent: Boolean,
     editingState: EditingState,
     navigateBack: () -> Unit,
+    onWritePermNotGranted: () -> Unit
 ) {
     Box(
         Modifier
@@ -230,7 +232,8 @@ private fun Menus(
                 fragmentManager,
                 viewModel,
                 launchedFromIntent,
-                navigateBack
+                navigateBack,
+                onWritePermNotGranted
             )
         }
         Column(
@@ -319,7 +322,8 @@ private fun BoxScope.TopMenu(
     fragmentManager: FragmentManager,
     viewModel: EditViewModel,
     launchedFromIntent: Boolean,
-    navigateBack: () -> Unit
+    navigateBack: () -> Unit,
+    onWritePermNotGranted: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -359,7 +363,7 @@ private fun BoxScope.TopMenu(
             },
             onSaveClick = {
                 if (!context.isWritePermissionGranted()) {
-                    context.requestWritePermissions()
+                    onWritePermNotGranted()
                     return@MoreOptionsPopup
                 }
                 viewModel.showSavePathDialog(true)

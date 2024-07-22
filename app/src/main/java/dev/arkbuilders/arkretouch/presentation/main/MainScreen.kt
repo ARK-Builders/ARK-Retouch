@@ -18,7 +18,7 @@ import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.presentation.picker.PickerScreen
 import dev.arkbuilders.arkretouch.presentation.screens.EditScreen
 import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper
-import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
+import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper.isWritePermissionGranted
 import kotlin.io.path.Path
 
 @Composable
@@ -70,6 +70,7 @@ fun MainScreen(
                         )
                     )
                 },
+                onWritePermNotGranted = { PermissionsHelper.launchWritePerm(launcher) }
             )
         }
         composable(
@@ -95,9 +96,10 @@ fun MainScreen(
                 entry.arguments?.getString("path")?.let { Path(it) },
                 entry.arguments?.getString("uri"),
                 fragmentManager,
-                navigateBack = { navController.popBackStack() },
                 entry.arguments?.getBoolean("launchedFromIntent")!!,
-                maxResolution
+                maxResolution,
+                navigateBack = { navController.popBackStack() },
+                onWritePermNotGranted = { PermissionsHelper.launchWritePerm(launcher) }
             )
         }
     }

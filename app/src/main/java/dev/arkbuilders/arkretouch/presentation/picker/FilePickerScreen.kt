@@ -42,13 +42,13 @@ import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.presentation.theme.Purple500
 import dev.arkbuilders.arkretouch.presentation.theme.Purple700
 import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
-import dev.arkbuilders.arkretouch.utils.permission.requestWritePermissions
 import java.nio.file.Path
 
 @Composable
 fun PickerScreen(
     fragmentManager: FragmentManager,
-    onNavigateToEdit: (Path?, Resolution) -> Unit
+    onNavigateToEdit: (Path?, Resolution) -> Unit,
+    onWritePermNotGranted: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
@@ -74,7 +74,7 @@ fun PickerScreen(
                 .background(Purple500)
                 .clickable {
                     if (!context.isWritePermissionGranted()) {
-                        context.requestWritePermissions()
+                        onWritePermNotGranted()
                         return@clickable
                     }
 
