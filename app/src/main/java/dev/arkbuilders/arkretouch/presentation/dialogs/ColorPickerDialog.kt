@@ -124,15 +124,15 @@ fun ColorPickerDialog(
                     )
                 }
             }
-            ClassicColorPicker(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp),
-                color = currentColor,
-                onColorChanged = {
-                    currentColor = it
-                }
-            )
+            /*            ClassicColorPicker(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp),
+                            color = currentColor,
+                            onColorChanged = {
+                                currentColor = it
+                            }
+                        )*/
             if (enableEyeDropper) {
                 Box(Modifier.padding(8.dp)) {
                     Box(
