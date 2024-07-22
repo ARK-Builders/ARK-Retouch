@@ -41,7 +41,7 @@ import dev.arkbuilders.arkretouch.R
 import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.presentation.theme.Purple500
 import dev.arkbuilders.arkretouch.presentation.theme.Purple700
-import dev.arkbuilders.arkretouch.utils.permission.isWritePermissionGranted
+import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper.isWritePermissionGranted
 import java.nio.file.Path
 
 @Composable
