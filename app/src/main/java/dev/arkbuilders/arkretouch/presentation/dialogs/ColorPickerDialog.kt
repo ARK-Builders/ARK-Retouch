@@ -180,39 +180,6 @@ fun ColorPickerDialog(
     }
 }
 
-fun scrollToEnd(state: LazyListState, scope: CoroutineScope) {
-    scope.launch {
-        if (enableScroll(state)) {
-            val lastIndex = state.layoutInfo.totalItemsCount - 1
-            state.scrollToItem(lastIndex, 0)
-        }
-    }
-}
-
-fun enableScroll(state: LazyListState): Boolean {
-    return state.layoutInfo.totalItemsCount !=
-        state.layoutInfo.visibleItemsInfo.size
-}
-
-fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
-    var scrollIsAtStart = true
-    var scrollIsAtEnd = false
-    if (enableScroll(state)) {
-        val totalItems = state.layoutInfo.totalItemsCount
-        val visibleItems = state.layoutInfo.visibleItemsInfo.size
-        val itemSize =
-            state.layoutInfo.visibleItemsInfo.firstOrNull()?.size
-                ?: 0
-        val rowSize = itemSize * totalItems
-        val visibleRowSize = itemSize * visibleItems
-        val scrollValue = state.firstVisibleItemIndex * itemSize
-        val maxScrollValue = rowSize - visibleRowSize
-        scrollIsAtStart = scrollValue == 0
-        scrollIsAtEnd = scrollValue == maxScrollValue
-    }
-    return scrollIsAtStart to scrollIsAtEnd
-}
-
 @Composable
 fun BoxScope.UsedColorsFlowHint(
     scrollIsEnabled: () -> Boolean,
@@ -251,4 +218,37 @@ fun BoxScope.UsedColorsFlowHint(
             Modifier.size(32.dp)
         )
     }
+}
+
+fun scrollToEnd(state: LazyListState, scope: CoroutineScope) {
+    scope.launch {
+        if (enableScroll(state)) {
+            val lastIndex = state.layoutInfo.totalItemsCount - 1
+            state.scrollToItem(lastIndex, 0)
+        }
+    }
+}
+
+fun enableScroll(state: LazyListState): Boolean {
+    return state.layoutInfo.totalItemsCount !=
+        state.layoutInfo.visibleItemsInfo.size
+}
+
+fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
+    var scrollIsAtStart = true
+    var scrollIsAtEnd = false
+    if (enableScroll(state)) {
+        val totalItems = state.layoutInfo.totalItemsCount
+        val visibleItems = state.layoutInfo.visibleItemsInfo.size
+        val itemSize =
+            state.layoutInfo.visibleItemsInfo.firstOrNull()?.size
+                ?: 0
+        val rowSize = itemSize * totalItems
+        val visibleRowSize = itemSize * visibleItems
+        val scrollValue = state.firstVisibleItemIndex * itemSize
+        val maxScrollValue = rowSize - visibleRowSize
+        scrollIsAtStart = scrollValue == 0
+        scrollIsAtEnd = scrollValue == maxScrollValue
+    }
+    return scrollIsAtStart to scrollIsAtEnd
 }
