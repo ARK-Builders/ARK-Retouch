@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,7 +60,7 @@ fun ColorPickerDialog(
     onColorChanged: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
-    if (!isVisible) return
+    if (!isVisible) { return }
 
     var currentColor by remember {
         mutableStateOf(HsvColor.from(initialColor))
@@ -84,17 +85,10 @@ fun ColorPickerDialog(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (usedColors.isNotEmpty()) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                ) {
+                Box(Modifier.fillMaxWidth()) {
                     val state = rememberLazyListState()
 
-                    LazyRow(
-                        Modifier
-                            .align(Alignment.Center),
-                        state = state
-                    ) {
+                    LazyRow(Modifier.align(Alignment.Center), state = state) {
                         items(usedColors) { color ->
                             Box(
                                 Modifier
@@ -114,31 +108,19 @@ fun ColorPickerDialog(
                             )
                         }
                     }
-                    LaunchedEffect(state) {
-                        scrollToEnd(state, this)
-                    }
-                    UsedColorsFlowHint(
-                        { enableScroll(state) },
-                        { checkScroll(state).first },
-                        { checkScroll(state).second }
-                    )
+                    LaunchedEffect(state) { scrollToEnd(state, this) }
+                    UsedColorsFlowHint({ enableScroll(state) }, { checkScroll(state).first }, { checkScroll(state).second })
                 }
             }
             ClassicColorPicker(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp),
+                modifier = Modifier.fillMaxWidth().height(250.dp),
                 color = currentColor,
-                onColorChanged = {
-                    currentColor = it
-                }
+                onColorChanged = { currentColor = it }
             )
             if (enableEyeDropper) {
                 Box(Modifier.padding(8.dp)) {
                     Box(
-                        Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
+                        Modifier.size(50.dp).clip(CircleShape)
                             .clickable {
                                 onToggleEyeDropper()
                                 onDismiss()
@@ -154,26 +136,16 @@ fun ColorPickerDialog(
                 }
             }
             TextButton(
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
                 onClick = finish
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .size(50.dp)
-                            .border(
-                                2.dp,
-                                Color.LightGray,
-                                CircleShape
-                            )
-                            .padding(6.dp)
+                        modifier = Modifier.padding(12.dp).size(50.dp).border(2.dp, Color.LightGray, CircleShape).padding(6.dp)
                             .clip(CircleShape)
                             .background(color = currentColor.toColor())
                     )
-                    Text(text = "Pick", fontSize = 18.sp)
+                    Text(text = stringResource(R.string.ark_retouch_pick), fontSize = 18.sp)
                 }
             }
         }
@@ -187,9 +159,7 @@ fun BoxScope.UsedColorsFlowHint(
     scrollIsAtEnd: () -> Boolean
 ) {
     AnimatedVisibility(
-        visible = scrollIsEnabled() && (
-            scrollIsAtEnd() || (!scrollIsAtStart() && !scrollIsAtEnd())
-            ),
+        visible = scrollIsEnabled() && (scrollIsAtEnd() || (!scrollIsAtStart() && !scrollIsAtEnd())),
         enter = fadeIn(tween(500)),
         exit = fadeOut(tween(500)),
         modifier = Modifier
@@ -203,9 +173,7 @@ fun BoxScope.UsedColorsFlowHint(
         )
     }
     AnimatedVisibility(
-        visible = scrollIsEnabled() && (
-            scrollIsAtStart() || (!scrollIsAtStart() && !scrollIsAtEnd())
-            ),
+        visible = scrollIsEnabled() && (scrollIsAtStart() || (!scrollIsAtStart() && !scrollIsAtEnd())),
         enter = fadeIn(tween(500)),
         exit = fadeOut(tween(500)),
         modifier = Modifier
@@ -230,8 +198,7 @@ fun scrollToEnd(state: LazyListState, scope: CoroutineScope) {
 }
 
 fun enableScroll(state: LazyListState): Boolean {
-    return state.layoutInfo.totalItemsCount !=
-        state.layoutInfo.visibleItemsInfo.size
+    return state.layoutInfo.totalItemsCount != state.layoutInfo.visibleItemsInfo.size
 }
 
 fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
@@ -240,9 +207,7 @@ fun checkScroll(state: LazyListState): Pair<Boolean, Boolean> {
     if (enableScroll(state)) {
         val totalItems = state.layoutInfo.totalItemsCount
         val visibleItems = state.layoutInfo.visibleItemsInfo.size
-        val itemSize =
-            state.layoutInfo.visibleItemsInfo.firstOrNull()?.size
-                ?: 0
+        val itemSize = state.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
         val rowSize = itemSize * totalItems
         val visibleRowSize = itemSize * visibleItems
         val scrollValue = state.firstVisibleItemIndex * itemSize
