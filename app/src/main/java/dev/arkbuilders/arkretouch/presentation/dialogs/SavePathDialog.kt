@@ -47,7 +47,6 @@ import dev.arkbuilders.arkretouch.utils.toast
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
-import kotlin.streams.toList
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -111,8 +110,7 @@ fun SavePathDialog(
                             currentPath = path
                             currentPath?.let {
                                 imagePath = it.resolve(name)
-                                showOverwriteCheckbox.value = Files.list(it).toList()
-                                    .contains(imagePath)
+                                showOverwriteCheckbox.value = Files.list(it).anyMatch { anyPath -> anyPath == imagePath }
                                 if (showOverwriteCheckbox.value) {
                                     name = it.findNotExistCopyName(
                                         imagePath?.fileName!!
@@ -140,8 +138,7 @@ fun SavePathDialog(
                         }
                         currentPath?.let { path ->
                             imagePath = path.resolve(name)
-                            showOverwriteCheckbox.value = Files.list(path).toList()
-                                .contains(imagePath)
+                            showOverwriteCheckbox.value = Files.list(path).anyMatch { anyPath -> anyPath == imagePath }
                             if (showOverwriteCheckbox.value) {
                                 name = path.findNotExistCopyName(
                                     imagePath?.fileName!!
