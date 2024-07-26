@@ -45,8 +45,8 @@ import dev.arkbuilders.arkretouch.utils.loadImageWithUri
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.createTempFile
+import kotlin.io.path.createDirectory
+import kotlin.io.path.exists
 import kotlin.io.path.outputStream
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.Dispatchers
@@ -216,7 +216,8 @@ class EditViewModel(
     fun shareImage(root: Path, provideUri: (File) -> Uri, startShare: (Intent) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val intent = Intent(Intent.ACTION_SEND)
-            val tempPath = createTempFile(createTempDirectory(root.resolve("images/")), suffix = ".png")
+            val imagesPath = root.resolve("images").apply { if (!exists()) createDirectory() }
+            val tempPath = kotlin.io.path.createTempFile(imagesPath, suffix = ".png")
             val bitmap = getEditedImage().asAndroidBitmap()
             tempPath.outputStream().use { out ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
