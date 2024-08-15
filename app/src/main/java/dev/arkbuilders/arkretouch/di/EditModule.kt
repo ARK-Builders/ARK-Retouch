@@ -13,12 +13,11 @@ object EditModule : InjectionModule {
         viewModel {
                 (
                     primaryColor: Long,
-                    launchedFromIntent: Boolean,
                     imagePath: Path?,
                     imageUri: String?,
                     maxResolution: Resolution
                 ) ->
-            EditViewModel(primaryColor, launchedFromIntent, imagePath, imageUri, maxResolution, get())
+            EditViewModel(primaryColor, imagePath, imageUri, maxResolution, get())
         }
     }
 }

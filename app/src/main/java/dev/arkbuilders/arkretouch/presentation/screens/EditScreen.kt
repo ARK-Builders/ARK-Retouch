@@ -35,6 +35,8 @@ import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -98,7 +100,7 @@ fun EditScreen(
 ) {
     val primaryColor = MaterialTheme.colors.primary.value.toLong()
     val viewModel: EditViewModel = koinViewModel {
-        parametersOf(primaryColor, launchedFromIntent, imagePath, imageUri, maxResolution)
+        parametersOf(primaryColor, imagePath, imageUri, maxResolution)
     }
 
     val editingState = viewModel.editingState
@@ -581,7 +583,6 @@ private fun EditMenuContent(
     editingState: EditingState
 ) {
     val scrollState = rememberScrollState()
-    val editManager = viewModel.editManager
     Column(
         Modifier
             .fillMaxWidth()
@@ -616,9 +617,7 @@ private fun EditMenuContent(
                             !viewModel.isCropping() &&
                             !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
-                        ) {
-                            viewModel.onUndoClick()
-                        }
+                        ) viewModel.onUndoClick()
                     },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_undo),
                 tint = if (
@@ -753,81 +752,33 @@ private fun EditMenuContent(
                 contentDescription = null
             )
             Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        viewModel.togglePan()
-                    },
+                modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.togglePan() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_pan_tool),
                 tint = if (viewModel.isPanning()) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        viewModel.toggleCrop()
-                    },
+                modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleCrop() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
-                tint = if (
-                    viewModel.isCropping()
-                ) MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                tint = if (viewModel.isCropping()) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        viewModel.toggleRotate()
-                    },
-                imageVector = ImageVector
-                    .vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
-                tint = if (viewModel.isRotating())
-                    MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleRotate() },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
+                tint = if (viewModel.isRotating()) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        editManager.apply {
-                            viewModel.toggleResize()
-                        }
-                    },
-                imageVector = ImageVector
-                    .vectorResource(R.drawable.ic_aspect_ratio),
-                tint = if (viewModel.isResizing())
-                    MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleResize() },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_aspect_ratio),
+                tint = if (viewModel.isResizing()) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        viewModel.toggleBlur()
-                    },
-                imageVector = ImageVector
-                    .vectorResource(R.drawable.ic_blur_on),
-                tint = if (viewModel.isBlurring())
-                    MaterialTheme.colors.primary
-                else
-                    Color.Black,
+                modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleBlur() },
+                imageVector = ImageVector.vectorResource(R.drawable.ic_blur_on),
+                tint = if (viewModel.isBlurring()) MaterialTheme.colors.primary else Color.Black,
                 contentDescription = null
             )
         }
@@ -849,12 +800,9 @@ fun EditMenuFlowHint(
             modifier = Modifier.align(Alignment.BottomStart)
         ) {
             Icon(
-                Icons.Filled.KeyboardArrowLeft,
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = null,
-                Modifier
-                    .background(Gray)
-                    .padding(top = 16.dp, bottom = 16.dp)
-                    .size(32.dp)
+                Modifier.background(Gray).padding(top = 16.dp, bottom = 16.dp).size(32.dp)
             )
         }
         AnimatedVisibility(
@@ -864,12 +812,9 @@ fun EditMenuFlowHint(
             modifier = Modifier.align(Alignment.BottomEnd)
         ) {
             Icon(
-                Icons.Filled.KeyboardArrowRight,
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                Modifier
-                    .background(Gray)
-                    .padding(top = 16.dp, bottom = 16.dp)
-                    .size(32.dp)
+                Modifier.background(Gray).padding(top = 16.dp, bottom = 16.dp).size(32.dp)
             )
         }
     }

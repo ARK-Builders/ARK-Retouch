@@ -55,7 +55,6 @@ import kotlinx.coroutines.launch
 
 class EditViewModel(
     private val primaryColor: Long,
-    private val launchedFromIntent: Boolean,
     private val imagePath: Path?,
     private val imageUri: String?,
     private val maxResolution: Resolution,
@@ -314,9 +313,7 @@ class EditViewModel(
             }
             combinedCanvas.drawImage(drawBitmap, Offset.Zero, Paint())
         }
-        Timber.tag("edit-viewmodel: getCombinedImageBitmap").d(
-            "processing edits took ${time / 1000} s ${time % 1000} ms"
-        )
+        Timber.tag("edit-viewmodel: getCombinedImageBitmap").d("processing edits took ${time / 1000} s ${time % 1000} ms")
         return combinedBitmap
     }
 

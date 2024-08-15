@@ -181,9 +181,9 @@ fun BoxScope.UsedColorsFlowHint(
             .align(Alignment.CenterEnd)
     ) {
         Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            Modifier.size(32.dp)
+            modifier = Modifier.size(32.dp)
         )
     }
 }

@@ -26,7 +26,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -48,7 +47,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SavePathDialog(
     initialImagePath: Path?,
@@ -101,21 +99,13 @@ fun SavePathDialog(
                 )
                 TextButton(
                     onClick = {
-                        ArkFilePickerFragment
-                            .newInstance(
-                                folderFilePickerConfig(currentPath)
-                            )
-                            .show(fragmentManager, null)
+                        ArkFilePickerFragment.newInstance(folderFilePickerConfig(currentPath)).show(fragmentManager, null)
                         fragmentManager.onArkPathPicked(lifecycleOwner) { path ->
                             currentPath = path
                             currentPath?.let {
                                 imagePath = it.resolve(name)
                                 showOverwriteCheckbox.value = Files.list(it).anyMatch { anyPath -> anyPath == imagePath }
-                                if (showOverwriteCheckbox.value) {
-                                    name = it.findNotExistCopyName(
-                                        imagePath?.fileName!!
-                                    ).name
-                                }
+                                if (showOverwriteCheckbox.value) { name = it.findNotExistCopyName(imagePath?.fileName!!).name }
                             }
                         }
                     }
