@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.drawable.Drawable
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.view.MotionEvent
@@ -20,19 +19,12 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -44,7 +36,6 @@ import dev.arkbuilders.arkretouch.data.Preferences
 import dev.arkbuilders.arkretouch.data.Resolution
 import dev.arkbuilders.arkretouch.di.DIManager
 import dev.arkbuilders.arkretouch.presentation.drawing.EditManager
-import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import timber.log.Timber
 import java.io.File
 import java.nio.file.Path
@@ -60,6 +51,7 @@ class EditViewModel(
     private val prefs: Preferences
 ) : ViewModel() {
     val editManager = EditManager()
+    val bitMapLoader = BitmapLoader(editManager = editManager)
 
     var strokeSliderExpanded by mutableStateOf(false)
     var menusVisible by mutableStateOf(true)
@@ -109,19 +101,11 @@ class EditViewModel(
     fun loadImage() {
         isLoaded = true
         imagePath?.let {
-            loadImageWithPath(
-                DIManager.component.app(),
-                imagePath,
-                editManager
-            )
+            bitMapLoader.loadImageFromPath(it)
             return
         }
         imageUri?.let {
-            loadImageWithUri(
-                DIManager.component.app(),
-                imageUri,
-                editManager
-            )
+            bitMapLoader.loadImageFromUri(imageUri.toUri())
             return
         }
         editManager.scaleToFit()
@@ -451,142 +435,3 @@ class EditViewModelFactory @AssistedInject constructor(
         ): EditViewModelFactory
     }
 }
-
-private fun loadImageWithPath(
-    context: Context,
-    image: Path,
-    editManager: EditManager
-) {
-    initGlideBuilder(context)
-        .load(image.toFile())
-        .loadInto(editManager)
-}
-
-private fun loadImageWithUri(
-    context: Context,
-    uri: String,
-    editManager: EditManager
-) {
-    initGlideBuilder(context)
-        .load(uri.toUri())
-        .loadInto(editManager)
-}
-
-private fun initGlideBuilder(context: Context) = Glide
-    .with(context)
-    .asBitmap()
-    .skipMemoryCache(true)
-    .diskCacheStrategy(DiskCacheStrategy.NONE)
-
-private fun RequestBuilder<Bitmap>.loadInto(
-    editManager: EditManager
-) {
-    into(object : CustomTarget<Bitmap>() {
-        override fun onResourceReady(
-            bitmap: Bitmap,
-            transition: Transition<in Bitmap>?
-        ) {
-            editManager.apply {
-                val image = bitmap.asImageBitmap()
-                backgroundImage.value = image
-                setOriginalBackgroundImage(image)
-                scaleToFit()
-            }
-        }
-
-        override fun onLoadCleared(placeholder: Drawable?) {}
-    })
-}
-
-fun resize(
-    imageBitmap: ImageBitmap,
-    maxWidth: Int,
-    maxHeight: Int
-): ImageBitmap {
-    val bitmap = imageBitmap.asAndroidBitmap()
-    val width = bitmap.width
-    val height = bitmap.height
-
-    val bitmapRatio = width.toFloat() / height.toFloat()
-    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
-
-    var finalWidth = maxWidth
-    var finalHeight = maxHeight
-
-    if (maxRatio > bitmapRatio) {
-        finalWidth = (maxHeight.toFloat() * bitmapRatio).toInt()
-    } else {
-        finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
-    }
-    return Bitmap
-        .createScaledBitmap(bitmap, finalWidth, finalHeight, true)
-        .asImageBitmap()
-}
-
-fun fitImage(
-    imageBitmap: ImageBitmap,
-    maxWidth: Int,
-    maxHeight: Int
-): ImageViewParams {
-    val bitmap = imageBitmap.asAndroidBitmap()
-    val width = bitmap.width
-    val height = bitmap.height
-
-    val bitmapRatio = width.toFloat() / height.toFloat()
-    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
-
-    var finalWidth = maxWidth
-    var finalHeight = maxHeight
-
-    if (maxRatio > bitmapRatio) {
-        finalWidth = (maxHeight.toFloat() * bitmapRatio).toInt()
-    } else {
-        finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
-    }
-    return ImageViewParams(
-        IntSize(
-            finalWidth,
-            finalHeight,
-        ),
-        ResizeOperation.Scale(
-            finalWidth.toFloat() / width.toFloat(),
-            finalHeight.toFloat() / height.toFloat()
-        )
-    )
-}
-
-fun fitBackground(
-    resolution: IntSize,
-    maxWidth: Int,
-    maxHeight: Int
-): ImageViewParams {
-
-    val width = resolution.width
-    val height = resolution.height
-
-    val resolutionRatio = width.toFloat() / height.toFloat()
-    val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
-
-    var finalWidth = maxWidth
-    var finalHeight = maxHeight
-
-    if (maxRatio > resolutionRatio) {
-        finalWidth = (maxHeight.toFloat() * resolutionRatio).toInt()
-    } else {
-        finalHeight = (maxWidth.toFloat() / resolutionRatio).toInt()
-    }
-    return ImageViewParams(
-        IntSize(
-            finalWidth,
-            finalHeight,
-        ),
-        ResizeOperation.Scale(
-            finalWidth.toFloat() / width.toFloat(),
-            finalHeight.toFloat() / height.toFloat()
-        )
-    )
-}
-class ImageViewParams(
-    val drawArea: IntSize,
-    val scale: ResizeOperation.Scale
-)

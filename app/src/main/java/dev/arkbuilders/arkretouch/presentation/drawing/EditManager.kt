@@ -1,5 +1,6 @@
 package dev.arkbuilders.arkretouch.presentation.drawing
 
+import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -13,17 +14,16 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntSize
 import dev.arkbuilders.arkretouch.data.ImageDefaults
 import dev.arkbuilders.arkretouch.data.Resolution
-import dev.arkbuilders.arkretouch.presentation.edit.ImageViewParams
 import dev.arkbuilders.arkretouch.presentation.edit.Operation
 import dev.arkbuilders.arkretouch.presentation.edit.blur.BlurOperation
 import dev.arkbuilders.arkretouch.presentation.edit.crop.CropOperation
 import dev.arkbuilders.arkretouch.presentation.edit.crop.CropWindow
 import dev.arkbuilders.arkretouch.presentation.edit.draw.DrawOperation
-import dev.arkbuilders.arkretouch.presentation.edit.fitBackground
-import dev.arkbuilders.arkretouch.presentation.edit.fitImage
 import dev.arkbuilders.arkretouch.presentation.edit.resize.ResizeOperation
 import dev.arkbuilders.arkretouch.presentation.edit.rotate.RotateOperation
 import timber.log.Timber
@@ -349,6 +349,95 @@ class EditManager {
         updateRevised()
     }
 
+    fun resize(
+        imageBitmap: ImageBitmap,
+        maxWidth: Int,
+        maxHeight: Int
+    ): ImageBitmap {
+        val bitmap = imageBitmap.asAndroidBitmap()
+        val width = bitmap.width
+        val height = bitmap.height
+
+        val bitmapRatio = width.toFloat() / height.toFloat()
+        val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+
+        var finalWidth = maxWidth
+        var finalHeight = maxHeight
+
+        if (maxRatio > bitmapRatio) {
+            finalWidth = (maxHeight.toFloat() * bitmapRatio).toInt()
+        } else {
+            finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
+        }
+        return Bitmap
+            .createScaledBitmap(bitmap, finalWidth, finalHeight, true)
+            .asImageBitmap()
+    }
+
+    private fun fitImage(
+        imageBitmap: ImageBitmap,
+        maxWidth: Int,
+        maxHeight: Int
+    ): ImageViewParams {
+        val bitmap = imageBitmap.asAndroidBitmap()
+        val width = bitmap.width
+        val height = bitmap.height
+
+        val bitmapRatio = width.toFloat() / height.toFloat()
+        val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+
+        var finalWidth = maxWidth
+        var finalHeight = maxHeight
+
+        if (maxRatio > bitmapRatio) {
+            finalWidth = (maxHeight.toFloat() * bitmapRatio).toInt()
+        } else {
+            finalHeight = (maxWidth.toFloat() / bitmapRatio).toInt()
+        }
+        return ImageViewParams(
+            IntSize(
+                finalWidth,
+                finalHeight,
+            ),
+            ResizeOperation.Scale(
+                finalWidth.toFloat() / width.toFloat(),
+                finalHeight.toFloat() / height.toFloat()
+            )
+        )
+    }
+
+    private fun fitBackground(
+        resolution: IntSize,
+        maxWidth: Int,
+        maxHeight: Int
+    ): ImageViewParams {
+
+        val width = resolution.width
+        val height = resolution.height
+
+        val resolutionRatio = width.toFloat() / height.toFloat()
+        val maxRatio = maxWidth.toFloat() / maxHeight.toFloat()
+
+        var finalWidth = maxWidth
+        var finalHeight = maxHeight
+
+        if (maxRatio > resolutionRatio) {
+            finalWidth = (maxHeight.toFloat() * resolutionRatio).toInt()
+        } else {
+            finalHeight = (maxWidth.toFloat() / resolutionRatio).toInt()
+        }
+        return ImageViewParams(
+            IntSize(
+                finalWidth,
+                finalHeight,
+            ),
+            ResizeOperation.Scale(
+                finalWidth.toFloat() / width.toFloat(),
+                finalHeight.toFloat() / height.toFloat()
+            )
+        )
+    }
+
     fun keepEditedPaths() {
         val stack = Stack<DrawPath>()
         if (drawPaths.isNotEmpty()) {
@@ -588,6 +677,11 @@ class EditManager {
 class DrawPath(
     val path: Path,
     val paint: Paint
+)
+
+class ImageViewParams(
+    val drawArea: IntSize,
+    val scale: ResizeOperation.Scale
 )
 
 fun Paint.copy(): Paint {
