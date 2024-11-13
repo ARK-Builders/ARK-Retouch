@@ -13,3 +13,5 @@
 *.tab
 *.tab.values.at
 misc.xml
+
+*.DS_Store

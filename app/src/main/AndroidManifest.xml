@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="dev.arkbuilders.arkretouch">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission
@@ -17,10 +16,10 @@
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.ARKRetouch"
-        android:name=".presentation.App"
+        android:name=".App"
         tools:targetApi="31">
         <activity
-            android:name=".presentation.main.MainActivity"
+            android:name="dev.arkbuilders.arkretouch.presentation.main.RootActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.ARKRetouch">

@@ -1,0 +1,31 @@
+configurations {
+    ktlint
+}
+
+dependencies {
+    ktlint "com.pinterest:ktlint:0.45.2"
+}
+
+tasks.register('ktlint', JavaExec) {
+    mainClass = "com.pinterest.ktlint.Main"
+    classpath = configurations.ktlint
+    args("$rootDir/**/*.kt", "!$rootDir/**/build/**")
+    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+
+    if (project.hasProperty("autoCorrect") && project.property("autoCorrect") == "0") {
+        logger.quiet("(KTLINT): auto correction is disabled")
+    } else {
+        logger.quiet("(KTLINT): auto correction is enabled")
+        args "-F"
+    }
+}
+
+tasks.register('ktlintCheck', JavaExec) {
+    classpath = configurations.ktlint
+    mainClass = "com.pinterest.ktlint.Main"
+    args "src/**/*.kt", "**.kts", "!**/build/**"
+}
+
+tasks.preBuild.dependsOn ktlintCheck
+
+tasks.ktlintCheck.dependsOn ktlint

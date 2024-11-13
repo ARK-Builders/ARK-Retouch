@@ -6,9 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -38,17 +38,17 @@ import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerFragme
 import dev.arkbuilders.arkfilepicker.presentation.filepicker.ArkFilePickerMode
 import dev.arkbuilders.arkfilepicker.presentation.onArkPathPicked
 import dev.arkbuilders.arkretouch.R
-import dev.arkbuilders.arkretouch.data.Resolution
-import dev.arkbuilders.arkretouch.presentation.utils.askWritePermissions
-import dev.arkbuilders.arkretouch.presentation.utils.isWritePermGranted
+import dev.arkbuilders.arkretouch.data.model.Resolution
 import dev.arkbuilders.arkretouch.presentation.theme.Purple500
 import dev.arkbuilders.arkretouch.presentation.theme.Purple700
+import dev.arkbuilders.arkretouch.utils.permission.PermissionsHelper.isWritePermissionGranted
 import java.nio.file.Path
 
 @Composable
 fun PickerScreen(
     fragmentManager: FragmentManager,
-    onNavigateToEdit: (Path?, Resolution) -> Unit
+    onNavigateToEdit: (Path?, Resolution) -> Unit,
+    onWritePermNotGranted: () -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
@@ -73,8 +73,8 @@ fun PickerScreen(
                 .clip(RoundedCornerShape(10))
                 .background(Purple500)
                 .clickable {
-                    if (!context.isWritePermGranted()) {
-                        context.askWritePermissions()
+                    if (!context.isWritePermissionGranted()) {
+                        onWritePermNotGranted()
                         return@clickable
                     }
 
