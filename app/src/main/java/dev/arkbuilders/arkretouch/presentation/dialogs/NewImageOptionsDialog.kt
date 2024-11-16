@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Checkbox
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
-import androidx.compose.material.TextField
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -174,7 +174,7 @@ fun NewImageOptionsDialog(
                             Text(
                                 stringResource(R.string.width),
                                 Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colors.primary,
+                                color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center
                             )
                         },
@@ -223,7 +223,7 @@ fun NewImageOptionsDialog(
                             Text(
                                 stringResource(R.string.height),
                                 Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colors.primary,
+                                color = MaterialTheme.colorScheme.primary,
                                 textAlign = TextAlign.Center
                             )
                         },

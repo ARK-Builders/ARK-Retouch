@@ -27,20 +27,18 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Slider
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -98,7 +96,7 @@ fun EditScreen(
     navigateBack: () -> Unit,
     onWritePermNotGranted: () -> Unit
 ) {
-    val primaryColor = MaterialTheme.colors.primary.value.toLong()
+    val primaryColor = MaterialTheme.colorScheme.primary.value.toLong()
     val viewModel: EditViewModel = koinViewModel {
         parametersOf(primaryColor, imagePath, imageUri, maxResolution)
     }
@@ -259,7 +257,7 @@ private fun Menus(
                             },
                         imageVector = ImageVector
                             .vectorResource(R.drawable.ic_rotate_left),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         contentDescription = null
                     )
                     Icon(
@@ -275,7 +273,7 @@ private fun Menus(
                             },
                         imageVector = ImageVector
                             .vectorResource(R.drawable.ic_rotate_right),
-                        tint = MaterialTheme.colors.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         contentDescription = null
                     )
                 }
@@ -439,7 +437,7 @@ private fun BoxScope.TopMenu(
                 }
             },
         imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-        tint = MaterialTheme.colors.primary,
+        tint = MaterialTheme.colorScheme.primary,
         contentDescription = null
     )
 
@@ -472,7 +470,7 @@ private fun BoxScope.TopMenu(
             )
                 ImageVector.vectorResource(R.drawable.ic_check)
             else ImageVector.vectorResource(R.drawable.ic_more_vert),
-            tint = MaterialTheme.colors.primary,
+            tint = MaterialTheme.colorScheme.primary,
             contentDescription = null
         )
     }
@@ -628,7 +626,7 @@ private fun EditMenuContent(
                             !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         )
-                ) MaterialTheme.colors.primary else Color.Black,
+                ) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
@@ -655,7 +653,7 @@ private fun EditMenuContent(
                             !viewModel.isEyeDropping() &&
                             !viewModel.isBlurring()
                         )
-                ) MaterialTheme.colors.primary else Color.Black,
+                ) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
             Box(
@@ -729,7 +727,7 @@ private fun EditMenuContent(
                 tint = if (
                     viewModel.isErasing()
                 )
-                    MaterialTheme.colors.primary
+                    MaterialTheme.colorScheme.primary
                 else
                     Color.Black,
                 contentDescription = null
@@ -746,7 +744,7 @@ private fun EditMenuContent(
                 tint = if (
                     viewModel.isZooming()
                 )
-                    MaterialTheme.colors.primary
+                    MaterialTheme.colorScheme.primary
                 else
                     Color.Black,
                 contentDescription = null
@@ -754,31 +752,31 @@ private fun EditMenuContent(
             Icon(
                 modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.togglePan() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_pan_tool),
-                tint = if (viewModel.isPanning()) MaterialTheme.colors.primary else Color.Black,
+                tint = if (viewModel.isPanning()) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
                 modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleCrop() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_crop),
-                tint = if (viewModel.isCropping()) MaterialTheme.colors.primary else Color.Black,
+                tint = if (viewModel.isCropping()) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
                 modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleRotate() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_rotate_90_degrees_ccw),
-                tint = if (viewModel.isRotating()) MaterialTheme.colors.primary else Color.Black,
+                tint = if (viewModel.isRotating()) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
                 modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleResize() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_aspect_ratio),
-                tint = if (viewModel.isResizing()) MaterialTheme.colors.primary else Color.Black,
+                tint = if (viewModel.isResizing()) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
             Icon(
                 modifier = Modifier.padding(12.dp).size(40.dp).clip(CircleShape).clickable { viewModel.toggleBlur() },
                 imageVector = ImageVector.vectorResource(R.drawable.ic_blur_on),
-                tint = if (viewModel.isBlurring()) MaterialTheme.colors.primary else Color.Black,
+                tint = if (viewModel.isBlurring()) MaterialTheme.colorScheme.primary else Color.Black,
                 contentDescription = null
             )
         }
