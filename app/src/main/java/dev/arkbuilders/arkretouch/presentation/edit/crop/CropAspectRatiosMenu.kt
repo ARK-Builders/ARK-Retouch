@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -67,7 +67,7 @@ fun CropAspectRatiosMenu(
                     contentDescription =
                     stringResource(id = R.string.ark_retouch_crop_free),
                     tint = if (isCropFree.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
                 Text(
@@ -75,7 +75,7 @@ fun CropAspectRatiosMenu(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally),
                     color = if (isCropFree.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
             }
@@ -96,14 +96,14 @@ fun CropAspectRatiosMenu(
                     contentDescription =
                     stringResource(id = R.string.ark_retouch_crop_square),
                     tint = if (isCropSquare.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
                 Text(
                     stringResource(R.string.ark_retouch_crop_square),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     color = if (isCropSquare.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
             }
@@ -128,14 +128,14 @@ fun CropAspectRatiosMenu(
                     contentDescription =
                     stringResource(id = R.string.ark_retouch_crop_4_5),
                     tint = if (isCrop_4_5.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
                 Text(
                     stringResource(R.string.ark_retouch_crop_4_5),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     color = if (isCrop_4_5.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
             }
@@ -160,14 +160,14 @@ fun CropAspectRatiosMenu(
                     contentDescription =
                     stringResource(id = R.string.ark_retouch_crop_9_16),
                     tint = if (isCrop_9_16.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
                 Text(
                     stringResource(R.string.ark_retouch_crop_9_16),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     color = if (isCrop_9_16.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
             }
@@ -192,14 +192,14 @@ fun CropAspectRatiosMenu(
                     contentDescription =
                     stringResource(id = R.string.ark_retouch_crop_2_3),
                     tint = if (isCrop_2_3.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
                 Text(
                     stringResource(R.string.ark_retouch_crop_2_3),
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     color = if (isCrop_2_3.value)
-                        MaterialTheme.colors.primary
+                        MaterialTheme.colorScheme.primary
                     else Color.Black
                 )
             }

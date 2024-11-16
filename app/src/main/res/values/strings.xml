@@ -25,9 +25,6 @@
     <string name="digits_only">Input digits only</string>
     <string name="width_too_large">Width should be less than %d</string>
     <string name="height_too_large">Height should be less than %d</string>
-    <string name="crash_dialog_description">Sorry, the application crashed. Please send a report to the developers.</string>
-    <string name="crash_dialog_title">Crash</string>
-    <string name="crash_dialog_comment">You can add a comment here:</string>
     <string name="pick_color">Pick a color please</string>
     <string name="background">Background</string>
     <string name="height_not_accepted">Height cannot be %s</string>
