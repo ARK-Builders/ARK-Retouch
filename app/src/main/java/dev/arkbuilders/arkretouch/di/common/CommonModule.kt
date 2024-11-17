@@ -8,7 +8,9 @@ import org.koin.dsl.module
 object CommonModule : InjectionModule {
 
     override fun create() = module {
-        singleOf(::OldStorageRepository)
+        single {
+            OldStorageRepository(androidContext())
+        }
         singleOf(::FilesRepository)
     }
 }
