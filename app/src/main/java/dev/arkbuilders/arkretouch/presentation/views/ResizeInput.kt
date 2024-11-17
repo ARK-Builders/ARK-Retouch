@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -112,7 +112,7 @@ fun ResizeInput(isVisible: Boolean, imageSize: IntSize, onResizeDown: (Int, Int)
                             stringResource(R.string.width),
                             modifier = Modifier
                                 .fillMaxWidth(),
-                            color = MaterialTheme.colors.primary,
+                            color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center
                         )
                     },
@@ -156,7 +156,7 @@ fun ResizeInput(isVisible: Boolean, imageSize: IntSize, onResizeDown: (Int, Int)
                             stringResource(R.string.height),
                             modifier = Modifier
                                 .fillMaxWidth(),
-                            color = MaterialTheme.colors.primary,
+                            color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center
                         )
                     },
