@@ -1,4 +1,4 @@
-# ARK Rate: Lightweight Graphic Editor by ARK Builders
+# ARK Retouch: Lightweight Graphic Editor by ARK Builders
 
 **ARK Retouch** is your powerful graphic assistant right in your pocket! This app is designed not only for photo editing but also for drawing, creating graphic notes with a stylus, and highlighting important information in screenshots.
 
