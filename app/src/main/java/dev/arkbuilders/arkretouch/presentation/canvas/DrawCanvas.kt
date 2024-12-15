@@ -95,6 +95,9 @@ fun DrawCanvas(modifier: Modifier, viewModel: EditViewModel, observeInvalidator:
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
                 editManager.cropWindow.resetDelta()
             }
+            else -> {
+                // otherwise, crop borders "float" when bluetooth pen is used
+            }
         }
     }
 
